@@ -32,15 +32,15 @@ public struct AdsProviderConfiguration: Sendable {
     public let enabledPlacementCodes: [String]
     /// String provided by the publisher to identify the user cohort in order to compare A/B test groups.
     public let variantId: String?
-    /// Device-specific identifier provided by the operating systems (IDFA), only if available.
+    /// Device-specific identifier provided by the operating systems (IDFA).
     ///
-    /// - UIDevice.current.advertisingIdentifier, avoid using other identifiers like UUID.
+    /// - ASIdentifierManager.advertisingIdentifier, avoid using other identifiers like UUID.
     /// - More at: https://developer.apple.com/documentation/adsupport/asidentifiermanager/advertisingidentifier
     public let advertisingId: String?
-    /// Vendor-specific identifier provided by the operating systems (IDFV), only if available.
+    /// An alphanumeric string that uniquely identifies a device to the app’s vendor. (IDFV).
     ///
     /// - Mostly used as fallback when advertisingId is not available.
-    /// - UIDevice.current.identifierForVendor, avoid using other identifiers like UUID.
+    /// - UIDevice.current.identifierForVendor?.uuidString, avoid using other identifiers like UUID.
     /// - More at: https://developer.apple.com/documentation/uikit/uidevice/identifierforvendor
     public let vendorId: String?
     /// URL of the server from which the ads are served.
@@ -56,8 +56,8 @@ public struct AdsProviderConfiguration: Sendable {
     ///     - enabledPlacementCodes: A list of placement codes that identify ad slots in your app. You receive them from your account manager.
     ///     - character: Assistant's character information (if any).
     ///     - variantId: String provided by the publisher to identify the user cohort in order to compare A/B test groups.
-    ///     - advertisingId: Device-specific identifier provided by the operating systems (IDFA), only if available.
-    ///     - vendorId: Vendor-specific identifier provided by the operating systems (IDFV), only if available.
+    ///     - advertisingId: Device-specific identifier provided by the operating systems (IDFA).
+    ///     - vendorId: Vendor-specific identifier provided by the operating systems (IDFV).
     ///     - adServerUrl: URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
     public init(
         publisherToken: String,

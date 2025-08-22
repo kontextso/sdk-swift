@@ -45,23 +45,51 @@ Once you have the dependency added and resolved you should be able to import the
 import KontextSwiftSDK
 ```
 
-Then you need to create `AdsProviderConfiguration` and `AdsProvider` scoped to one conversation. You can have multiple instances of AdsProvider if yo uhave multilpe conversations.
+Then you need to create `AdsProviderConfiguration` and `AdsProvider` scoped to one conversation. You can have multiple instances of AdsProvider if you have multiple conversations.
 
 ```swift
+// Character that is being conversed with, leave nil if not relevant for this conversation.
+let character = Character(
+    // Unique ID of the character
+    id: "12345",
+    // Name of the character
+    name: "Alice",
+    // URL of the character’s avatar
+    avatarUrl: URL(string: "https://example.com/avatar.png"),
+    // Whether the character is NSFW
+    isNsfw: false,
+    // Greeting of the character
+    greeting: "Hello there!",
+    // Description of the character’s personality
+    persona: "Friendly and helpful",
+    // Tags of the character (list of strings)
+    tags: ["assistant", "friendly"]
+)
+
 let configuration = AdsProviderConfiguration(
-    publisherToken: "nexus-dev", 		// Your unique publisher token received from your account manager.
-    userId: "<some id>", 				// A unique string that should remain the same during the user’s lifetime (used for retargeting and rewarded ads). Eg. uuid or hash of email address work well.
-    conversationId: "<some id>",		// Unique ID of the conversation. This is mostly used for ad pacing. 
-    enabledPlacementCodes: ["inlineAd"], // A list of placement codes that identify ad slots in your app. You receive them from your account manager.
-    character: nil,						// Assistant's character information (if any)
-    advertisingId: nil,					// IDFA or GAID (if available)
-    vendorId: nil,						// IDFV (mostly used as fallback if IDFA is not available)
+	// Your unique publisher token received from your account manager.
+	publisherToken: "nexus-dev",
+	// A unique string that should remain the same during the user’s lifetime (used for retargeting and rewarded ads). Eg. uuid or hash of email address work well.
+	userId: "<some id>",
+	// Unique ID of the conversation. This is mostly used for ad pacing.
+	conversationId: "<some id>",
+	// A list of placement codes that identify ad slots in your app. You receive them from your account manager.
+	enabledPlacementCodes: ["inlineAd"],
+	// The character object used in this conversation
+	character: character,
+	// Advertising identifier (IDFA) or GAID, when allowed by user, otherwise nil
+	advertisingId: ASIdentifierManager.shared().advertisingIdentifier,
+	// An alphanumeric string that uniquely identifies a device to the app’s vendor (IDFV).
+	vendorId: UIDevice.current.identifierForVendor,
+	// URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
+	adServerUrl: nil
 )
 
 let adsProvider = AdsProvider(
-	configuration: configuration, 		// Previously created configuration (it is immutable and publicly available if you need to refer to it later)
-	sessionId: nil,						// ID of the session, will be nil for new chats, SDK will resolve it internally with first ads.
-	isDisabled: false					// Flag whether the displaying of ads isDisabled
+	// Previously created configuration (it is immutable and publicly available if you need to refer to it later)
+	configuration: configuration,
+	// ID of the session, will be nil for new chats, SDK will resolve it internally with first ads.
+	sessionId: nil
 )
 
 ```
