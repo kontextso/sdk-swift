@@ -37,12 +37,12 @@ public struct Regulatory: Sendable {
         - gppSid: List of the section(s) of the GPP string which should be applied for this transaction.
      */
     init(
-        gdpr: Int?,
-        gdprConsent: String?,
-        coppa: Int?,
-        usPrivacy: String?,
-        gpp: String?,
-        gppSid: [Int]?
+        gdpr: Int? = nil,
+        gdprConsent: String? = nil,
+        coppa: Int? = nil,
+        usPrivacy: String? = nil,
+        gpp: String? = nil,
+        gppSid: [Int]? = nil
     ) {
         self.gdpr = gdpr
         self.gdprConsent = gdprConsent
