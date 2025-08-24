@@ -12,9 +12,10 @@ import SwiftUI
 /// - Until the ad is available, it will be an empty space.
 public struct InlineAdView: View {
     @Environment(\.openURL) private var openURL
-    
+    @State var fullscreenCoverIsPresented = false
+
     @StateObject private var viewModel: InlineAdViewModel
-    
+
     /// SwiftUI view that represents an inline ad in the chat UI.
     /// It starts as EmptyView and when ad content is retrieved it will expand.
     ///
@@ -36,7 +37,7 @@ public struct InlineAdView: View {
         )
         _viewModel = StateObject(wrappedValue: viewModel)
     }
-    
+
     public var body: some View {
         if let url = viewModel.url {
             InlineAdWebViewRepresentable(
@@ -50,7 +51,19 @@ public struct InlineAdView: View {
                 openURL(newURL)
             }
         } else {
-            EmptyView()
+            Button(action: {
+                self.fullscreenCoverIsPresented = true
+            }) {
+                Text("Display fullscreenCover modal")
+            }
+            .fullScreenCover(isPresented: self.$fullscreenCoverIsPresented) {
+                VStack {
+                    Text("This is a fullscreen modal")
+                    Button("Dismiss") {
+                        self.fullscreenCoverIsPresented = false
+                    }
+                }
+            }
         }
     }
 }
