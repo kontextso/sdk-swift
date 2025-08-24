@@ -48,23 +48,12 @@ import KontextSwiftSDK
 Then you need to create `AdsProviderConfiguration` and `AdsProvider` scoped to one conversation. You can have multiple instances of AdsProvider if you have multiple conversations.
 
 ```swift
-// Character that is being conversed with, leave nil if not relevant for this conversation.
-let character = Character(
-    // Unique ID of the character
-    id: "12345",
-    // Name of the character
-    name: "Alice",
-    // URL of the character’s avatar
-    avatarUrl: URL(string: "https://example.com/avatar.png"),
-    // Whether the character is NSFW
-    isNsfw: false,
-    // Greeting of the character
-    greeting: "Hello there!",
-    // Description of the character’s personality
-    persona: "Friendly and helpful",
-    // Tags of the character (list of strings)
-    tags: ["assistant", "friendly"]
-)
+// Character that is being conversed with, leave nil if not relevant for this conversation, see documentation for details.
+let character = Character(...)
+
+
+/// Prepare reglatory compliance object, see documentation for details.
+let regulatory = Regulatory(...)
 
 let configuration = AdsProviderConfiguration(
 	// Your unique publisher token received from your account manager.

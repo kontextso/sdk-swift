@@ -1,7 +1,7 @@
 import Foundation
 
 /// Character that is being talked to in associated conversation
-public struct Character: Codable, Sendable {
+public struct Character: Sendable {
     /// Unique ID of the character
     public let id: String?
     /// Name of the character

@@ -14,20 +14,11 @@ struct MessageDTO: Codable {
     let content: String
     /// Timestamp when the message was created
     let createdAt: Date
-    
-    init(id: String, role: Role, content: String, createdAt: Date) {
-        self.id = id
-        self.role = RoleDTO(from: role)
-        self.content = content
-        self.createdAt = createdAt
-    }
-    
+
     init(from model: AdsMessage) {
-        self.init(
-            id: model.id,
-            role: model.role,
-            content: model.content,
-            createdAt: model.createdAt
-        )
+        id = model.id
+        role = RoleDTO(from: model.role)
+        content = model.content
+        createdAt = model.createdAt
     }
 }
