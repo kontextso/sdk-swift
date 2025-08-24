@@ -37,7 +37,8 @@ struct ChatView: View {
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
-            character: character
+            character: character,
+            regulatory: Regulatory(gdpr: 1, coppa: nil)
         )
 
         // 3. Create AdsProvider associated to this conversation
