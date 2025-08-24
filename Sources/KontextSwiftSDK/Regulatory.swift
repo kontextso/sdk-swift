@@ -36,7 +36,7 @@ public struct Regulatory: Sendable {
         - gpp: Global Privacy Platform (GPP) consent string.
         - gppSid: List of the section(s) of the GPP string which should be applied for this transaction.
      */
-    init(
+    public init(
         gdpr: Int? = nil,
         gdprConsent: String? = nil,
         coppa: Int? = nil,
