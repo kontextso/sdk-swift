@@ -45,16 +45,43 @@ Once you have the dependency added and resolved you should be able to import the
 import KontextSwiftSDK
 ```
 
-Then you need to create `AdsProviderConfiguration` and `AdsProvider` scoped to one conversation. You can have multiple instances of AdsProvider if you have multiple conversations.
+### 1. Character
+
+Firstly, prepare information about assistant's Character if it is relevant for this conversation.
 
 ```swift
-// Character that is being conversed with, leave nil if not relevant for this conversation, see documentation for details.
-let character = Character(...)
+// Character that is being conversed with, leave nil if not relevant for this conversation.
+let character = Character(
+    // Unique ID of the character
+    id: "12345",
+    // Name of the character
+    name: "Alice",
+    // URL of the character’s avatar
+    avatarUrl: URL(string: "https://example.com/avatar.png"),
+    // Whether the character is NSFW
+    isNsfw: false,
+    // Greeting of the character
+    greeting: "Hello there!",
+    // Description of the character’s personality
+    persona: "Friendly and helpful",
+    // Tags of the character (list of strings)
+    tags: ["assistant", "friendly"]
+)
+```
 
+### 2. Regulatory
 
-/// Prepare reglatory compliance object, see documentation for details.
+Secondly, prepare regulatory compliance object. More information about its properties can be found as documentation of the object in the code.
+
+```
 let regulatory = Regulatory(...)
+```
 
+### 3. AdsProviderConfiguration
+
+Thirdly, you need to create `AdsProviderConfiguration`. Its information is scoped to one conversation. It uses previously created `character` and `regulatory`.
+
+```swift
 let configuration = AdsProviderConfiguration(
 	// Your unique publisher token received from your account manager.
 	publisherToken: "nexus-dev",
@@ -72,8 +99,16 @@ let configuration = AdsProviderConfiguration(
 	vendorId: UIDevice.current.identifierForVendor,
 	// URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
 	adServerUrl: nil
+	/// Information about regulatory requirements that apply
+	regulatory: regulatory
 )
+```
 
+### 4. AdsProvider
+
+Next, `AdsProvider`, the object responsible for managing the loading and displaying ads. This is the most important part of the library. It utilizes previously created `configuration`.
+
+```swift
 let adsProvider = AdsProvider(
 	// Previously created configuration (it is immutable and publicly available if you need to refer to it later)
 	configuration: configuration,
@@ -83,7 +118,9 @@ let adsProvider = AdsProvider(
 
 ```
 
-Adapt your message onject to provide necessary information for the ads recommendation to work. You have two options, either make them conform to `MessageRepresentable` to return respective properties or to `MessageRepresentableProviding` and return the `MessageRepresentable` as a whole new object. There is `struct AdsMessage: MessageRepresentable` which you can use for this scenario.
+### 5. Provide information about messages
+
+Adapt your message object to provide necessary information for the ads recommendation to work. You have two options, either make them conform to `MessageRepresentable` to return respective properties or to `MessageRepresentableProviding` and return the `MessageRepresentable` as a whole new object. There is `struct AdsMessage: MessageRepresentable` which you can use for this scenario.
 
 ```swift
 // 1. Option: Conformance to MessageRepresentable
@@ -121,7 +158,9 @@ Whenever your list of messages changes you need to pass the new list to AdsProvi
 adsProvider.setMessages(messages)
 ```
 
-The last thing remaining is to provide place for the Ads to manifest into. This is done by placing `InlineAdView` into View hieararchy just after the associated message. It will stay empty until an ad linked to the respective message is retrieved.
+### 6. Insert InlineAdView into view hierarchy
+
+Lastly, provide place for the Ads to manifest into. This is done by placing `InlineAdView` into View hierarchy just after the associated message. It will stay empty until an ad linked to the respective message is retrieved.
 
 ```swift
 ForEach(messages, id: \.uuid.uuidString) { message in
@@ -142,7 +181,7 @@ Now you are set up and ready to go 🎉
 
 ## Documentation
 
-For advanced usage, supported formats, and configuration details, see the docs: https://docs.kontext.so/sdk/ios
+For advanced usage, supported formats, and configuration details, see the docs: [https://docs.kontext.so/sdk/ios](https://docs.kontext.so/sdk/ios)
 
 ## License
 
