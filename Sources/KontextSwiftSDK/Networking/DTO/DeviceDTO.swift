@@ -3,6 +3,8 @@
 //  KontextSwiftSDK
 //
 
+import Foundation
+
 struct DeviceDTO: Encodable {
     let os: String
     let systemVersion: String
@@ -13,6 +15,10 @@ struct DeviceDTO: Encodable {
     let appVersion: String
     let appStoreUrl: String?
     let soundOn: Bool
+    let locale: String
+    let screenWidth: CGFloat
+    let screenHeight: CGFloat
+    let isDarkMode: Bool
     let additionalInfo: [String: String]
 
     init(from model: Device) {
@@ -25,6 +31,10 @@ struct DeviceDTO: Encodable {
         appVersion = model.appVersion
         appStoreUrl = model.appStoreUrl
         soundOn = model.soundOn
+        locale = model.locale
+        screenWidth = model.screenWidth
+        screenHeight = model.screenHeight
+        isDarkMode = model.isDarkMode
         additionalInfo = model.additionalInfo
     }
 }

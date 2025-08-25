@@ -17,6 +17,7 @@ struct PreloadRequestDTO: Encodable {
     let sdk: String
     let sdkVersion: String
     let regulatory: RegulatoryDTO?
+    
 
     init(
         sessionId: String?,

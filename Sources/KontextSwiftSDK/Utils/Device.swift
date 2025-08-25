@@ -22,6 +22,14 @@ struct Device: Codable, Sendable {
     let appStoreUrl: String?
     /// Device sound status (true if sound is on, false if muted)
     let soundOn: Bool
+    /// Device locale identifier (e.g., "en_US")
+    let locale: String
+    /// Device screen width size
+    let screenWidth: CGFloat
+    /// Device screen height size
+    let screenHeight: CGFloat
+    /// Device dark mode status (true if dark mode is on, false if light mode is on)
+    let isDarkMode: Bool
     /// Additional device information
     let additionalInfo: [String: String]
     
@@ -35,6 +43,10 @@ struct Device: Codable, Sendable {
         appVersion: String,
         appStoreUrl: String? = nil,
         soundOn: Bool = true,
+        locale: String,
+        screenWidth: CGFloat,
+        screenHeight: CGFloat,
+        isDarkMode: Bool,
         additionalInfo: [String: String] = [:]
     ) {
         self.os = os
@@ -46,6 +58,10 @@ struct Device: Codable, Sendable {
         self.appVersion = appVersion
         self.appStoreUrl = appStoreUrl
         self.soundOn = soundOn
+        self.locale = locale
+        self.screenWidth = screenWidth
+        self.screenHeight = screenHeight
+        self.isDarkMode = isDarkMode
         self.additionalInfo = additionalInfo
     }
 }
@@ -93,7 +109,12 @@ extension Device {
         additionalInfo["screenWidth"] = "\(UIScreen.main.bounds.width)"
         additionalInfo["screenHeight"] = "\(UIScreen.main.bounds.height)"
         additionalInfo["scale"] = "\(UIScreen.main.scale)"
-        
+
+        let locale = Locale.current.identifier
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        let isDarkMode = UITraitCollection.current.userInterfaceStyle == .dark
+
         return Device(
             os: os,
             systemVersion: systemVersion,
@@ -104,6 +125,10 @@ extension Device {
             appVersion: appVersion,
             appStoreUrl: nil,
             soundOn: soundOn,
+            locale: locale,
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
+            isDarkMode: isDarkMode,
             additionalInfo: additionalInfo
         )
     }
