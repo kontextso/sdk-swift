@@ -53,19 +53,19 @@ Firstly, prepare information about assistant's Character if it is relevant for t
 // Character that is being conversed with, leave nil if not relevant for this conversation.
 let character = Character(
     // Unique ID of the character
-    id: "12345",
+    id: "<character-id>",
     // Name of the character
-    name: "Alice",
+    name: "<character-name>",
     // URL of the character’s avatar
-    avatarUrl: URL(string: "https://example.com/avatar.png"),
+    avatarUrl: URL(string: "<character-avatar-url>"),
     // Whether the character is NSFW
-    isNsfw: false,
+    isNsfw: <bool>,
     // Greeting of the character
-    greeting: "Hello there!",
+    greeting: "<character-greeting>",
     // Description of the character’s personality
-    persona: "Friendly and helpful",
+    persona: "<character-persona>",
     // Tags of the character (list of strings)
-    tags: ["assistant", "friendly"]
+    tags: ["<tag-1>", "<tag-2>"]
 )
 ```
 
@@ -84,13 +84,13 @@ Thirdly, you need to create `AdsProviderConfiguration`. Its information is scope
 ```swift
 let configuration = AdsProviderConfiguration(
 	// Your unique publisher token received from your account manager.
-	publisherToken: "nexus-dev",
+	publisherToken: "<publisher-token>",
 	// A unique string that should remain the same during the user’s lifetime (used for retargeting and rewarded ads). Eg. uuid or hash of email address work well.
-	userId: "<some id>",
+	userId: "<user-id>",
 	// Unique ID of the conversation. This is mostly used for ad pacing.
-	conversationId: "<some id>",
+	conversationId: "<conversation-id>",
 	// A list of placement codes that identify ad slots in your app. You receive them from your account manager.
-	enabledPlacementCodes: ["inlineAd"],
+	enabledPlacementCodes: ["<code>"],
 	// The character object used in this conversation
 	character: character,
 	// Advertising identifier (IDFA) or GAID, when allowed by user, otherwise nil
