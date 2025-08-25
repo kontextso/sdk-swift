@@ -11,10 +11,11 @@ enum MyMessagesCollectionViewModel {
     case ad(InlineAdViewModel)
 }
 
-class MyMessagesCollectionViewController: UICollectionViewController {
-    let adsProvider: AdsProvider
-    var messages: [MyMessage]
-    var viewModels: [MyMessagesCollectionViewModel]
+final class MyMessagesCollectionViewController: UICollectionViewController {
+    private let adsProvider: AdsProvider
+    private var messages: [MyMessage]
+    private var viewModels: [MyMessagesCollectionViewModel]
+    private var test = false
 
     private let sendButton: UIButton = {
         let button = UIButton(type: .system)
@@ -36,7 +37,8 @@ class MyMessagesCollectionViewController: UICollectionViewController {
         let layout = UICollectionViewCompositionalLayout { (_, _) -> NSCollectionLayoutSection? in
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1),
-                heightDimension: .estimated(60))
+                heightDimension: .estimated(60)
+            )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1),
@@ -45,9 +47,7 @@ class MyMessagesCollectionViewController: UICollectionViewController {
             let group = NSCollectionLayoutGroup.vertical(
                 layoutSize: groupSize, subitem: item, count: 1
             )
-            group.edgeSpacing = NSCollectionLayoutEdgeSpacing(
-                leading: nil, top: .flexible(0),
-                trailing: nil, bottom: .flexible(0))
+
             return NSCollectionLayoutSection(group: group)
         }
 
@@ -60,7 +60,7 @@ class MyMessagesCollectionViewController: UICollectionViewController {
         )
         // 2. Create AdsProvider associated to this conversation
         // Multiple instances can be created, for each conversation one
-        self.adsProvider = AdsProvider(
+        adsProvider = AdsProvider(
             configuration: configuration
         )
 
@@ -75,11 +75,11 @@ class MyMessagesCollectionViewController: UICollectionViewController {
             forCellWithReuseIdentifier: MyMessageCollectionViewCell.reuseIdentifier
         )
         collectionView.register(
-            InlineAdCollectionViewCell.self,
-            forCellWithReuseIdentifier: InlineAdCollectionViewCell.reuseIdentifier
+            HostingCell<InlineAdView>.self,
+            forCellWithReuseIdentifier: HostingCell<InlineAdView>.self.reuseIdentifier
         )
 
-        self.collectionView.dataSource = self
+        collectionView.dataSource = self
 
         view.addSubview(sendButton)
         NSLayoutConstraint.activate([
@@ -92,16 +92,17 @@ class MyMessagesCollectionViewController: UICollectionViewController {
         collectionView.contentInset.bottom = 66
     }
 
-    @objc private func addMessage() {
+    @objc private func addMessage() {        
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
             content: "Hello, this is a static message!",
             createdAt: Date()
         )
+
         messages.append(message)
         adsProvider.setMessages(messages)
-        addViewModels(for: message)
+        addViewModels(for: message, includeAd: false)
         collectionView.reloadData()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
@@ -120,58 +121,107 @@ class MyMessagesCollectionViewController: UICollectionViewController {
 
         messages.append(assistantMessage)
         adsProvider.setMessages(messages)
-        addViewModels(for: assistantMessage)
+        addViewModels(for: assistantMessage, includeAd: true)
         collectionView.reloadData()
     }
 
-    private func addViewModels(for message: MyMessage) {
+    private func addViewModels(for message: MyMessage, includeAd: Bool) {
+        viewModels.removeAll(where: {
+            if case .ad = $0 {
+                return true
+            }
+            return false
+        })
         viewModels.append(
             .message(MyMessageViewModel(message: message))
         )
-        viewModels.append(
-            .ad(
-                InlineAdViewModel(
-                    adsProvider: adsProvider,
-                    code: "inlineAd",
-                    messageId: message.id,
-                    otherParams: [:]
+        if includeAd {
+            viewModels.append(
+                .ad(
+                    InlineAdViewModel(
+                        adsProvider: adsProvider,
+                        code: "inlineAd",
+                        messageId: message.id,
+                        otherParams: [:]
+                    )
                 )
             )
-        )
+        }
     }
 }
 
 // MARK: - UICollectionViewDataSource
 
 extension MyMessagesCollectionViewController {
-    override func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return 1
+    override func numberOfSections(
+        in collectionView: UICollectionView
+    ) -> Int {
+        1
     }
 
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.viewModels.count
+    override func collectionView(
+        _ collectionView: UICollectionView,
+        numberOfItemsInSection section: Int
+    ) -> Int {
+        viewModels.count
     }
 
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    override func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
         let viewModel = viewModels[indexPath.item]
 
-        switch viewModel {
+        return switch viewModel {
         case .message(let messageViewModel):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: MyMessageCollectionViewCell.reuseIdentifier, for: indexPath
-            ) as? MyMessageCollectionViewCell else {
-                fatalError("Could not dequeue MyMessageCollectionViewCell")
-            }
-            cell.configure(with: messageViewModel)
-            return cell
+            createMessageCell(indexPath: indexPath, viewModel: messageViewModel)
         case .ad(let adViewModel):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: InlineAdCollectionViewCell.reuseIdentifier, for: indexPath
-            ) as? InlineAdCollectionViewCell else {
-                fatalError("Could not dequeue InlineAdCollectionViewCell")
-            }
-            cell.configureHosting(with: adViewModel, inside: self)
-            return cell
+            createAdCell(indexPath: indexPath, viewModel: adViewModel)
         }
+    }
+}
+
+// MARK: Factories
+private extension MyMessagesCollectionViewController {
+    func createMessageCell(
+        indexPath: IndexPath,
+        viewModel: MyMessageViewModel
+    ) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: MyMessageCollectionViewCell.reuseIdentifier, for: indexPath
+        ) as? MyMessageCollectionViewCell else {
+            fatalError("Could not dequeue MyMessageCollectionViewCell")
+        }
+        cell.configure(with: viewModel)
+        return cell
+    }
+
+    func createAdCell(
+        indexPath: IndexPath,
+        viewModel: InlineAdViewModel
+    ) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: HostingCell<InlineAdView>.reuseIdentifier,
+            for: indexPath
+        ) as? HostingCell<InlineAdView> else {
+            return UICollectionViewCell()
+        }
+
+        cell.set(
+            rootView: InlineAdView(
+                adsProvider: viewModel.adsProvider,
+                code: viewModel.code,
+                messageId: viewModel.messageId,
+                otherParams: viewModel.otherParams,
+                didChangeSize:{ [weak collectionView] in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        collectionView?.performBatchUpdates(nil)
+                        print("UPDATED")
+                    }
+                }
+            ),
+            parentController: self
+        )
+        return cell
     }
 }

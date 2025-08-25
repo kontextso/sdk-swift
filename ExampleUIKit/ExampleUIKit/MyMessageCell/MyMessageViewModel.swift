@@ -3,7 +3,7 @@
 //  ExampleUIKit
 //
 
-class MyMessageViewModel {
+final class MyMessageViewModel {
     let message: MyMessage
 
     init(message: MyMessage) {

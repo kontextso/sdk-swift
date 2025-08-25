@@ -22,11 +22,10 @@ public final class AdsProvider: @unchecked Sendable {
     /// Dependency container that holds all dependencies used by AdsProvider.
     private let dependencies: DependencyContainer
 
-
     /// Initializes a new instance of `AdsProvider`.
     ///
     /// - Parameters:
-    ///     - configuration: The configuration od immutable setup of the AdsProvider. Can be later accessd through `configuration` property.
+    ///     - configuration: The configuration of immutable setup of the AdsProvider. Can be later accessed through `configuration` property.
     ///     - sessionId: Session ID representing the current user session. If not provided, a new session ID will be generated.
     @MainActor
     public init(

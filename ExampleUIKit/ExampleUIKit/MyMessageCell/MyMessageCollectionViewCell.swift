@@ -4,9 +4,7 @@
 
 import UIKit
 
-class MyMessageCollectionViewCell: UICollectionViewCell {
-    static let reuseIdentifier = String(describing: MyMessageCollectionViewCell.self)
-
+final class MyMessageCollectionViewCell: UICollectionViewCell {
     private let bubbleView = UIView()
     private let label = UILabel()
 

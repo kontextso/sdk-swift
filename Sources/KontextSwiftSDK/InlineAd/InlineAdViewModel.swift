@@ -89,7 +89,9 @@ final class InlineAdViewModel: ObservableObject {
         $bid
             .receive(on: RunLoop.main)
             .map { bid -> URL? in
-                guard let bid else { return nil }
+                guard let bid else {
+                    return nil
+                }
                 return adsServerAPI.frameURL(
                     messageId: messageId,
                     bidId: bid.bidId,

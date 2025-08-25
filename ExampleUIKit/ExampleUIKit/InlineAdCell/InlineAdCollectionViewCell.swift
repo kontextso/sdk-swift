@@ -7,49 +7,49 @@ import KontextSwiftSDK
 import UIKit
 import SwiftUI
 
-class InlineAdCollectionViewCell: UICollectionViewCell {
-    static let reuseIdentifier = String(describing: InlineAdCollectionViewCell.self)
+final class InlineAdCollectionViewCell: UICollectionViewCell {
+    var onContentSizeChange: (() -> Void)?
 
-    var hostingController: UIHostingController<InlineAdView>?
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+    private var inlineAdView: InlineAdUIView?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
 
-    func configureHosting(with viewModel: InlineAdViewModel, inside parent: UIViewController) {
-        let view = InlineAdView(
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        inlineAdView = nil
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func configure(with viewModel: InlineAdViewModel) {
+        inlineAdView?.removeFromSuperview()
+
+        let inlineAdView = InlineAdUIView(
             adsProvider: viewModel.adsProvider,
             code: viewModel.code,
             messageId: viewModel.messageId,
             otherParams: viewModel.otherParams
         )
-        let newHostingController = UIHostingController(rootView: view)
 
-        // Add hostingController.view to superview and pin constraints
-        newHostingController.willMove(toParent: parent)
-        let hostedView = newHostingController.view!
-        hostedView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(hostedView)
+        self.inlineAdView = inlineAdView
+
+        inlineAdView.onContentSizeChange = { [weak self] in
+            self?.onContentSizeChange?()
+        }
+
+        contentView.addSubview(inlineAdView)
+
+        inlineAdView.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
-            hostedView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            hostedView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            hostedView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            hostedView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
+            inlineAdView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            inlineAdView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            inlineAdView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            inlineAdView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
         ])
-        parent.addChild(newHostingController)
-        newHostingController.didMove(toParent: parent)
-
-        self.hostingController = newHostingController
-    }
-
-    func unconfigureHosting() {
-        self.hostingController?.willMove(toParent: nil)
-        self.hostingController?.view.removeFromSuperview()
-        self.hostingController?.removeFromParent()
-        self.hostingController = nil
     }
 }
