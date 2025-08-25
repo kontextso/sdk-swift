@@ -2,7 +2,7 @@
 
 The official Swift SDK for integrating Kontext.so ads into your mobile application.
 
-KontextSwiftSDK is a Swift package that provides an easy way to integrate Kontext.so ads into your iOS application. It manages ad loading, placement and errors with minimalist API. There is no need for complex state management, just iniatlize it and pass it messages whenever they change. The SDK will take care of the rest.
+KontextSwiftSDK is a Swift package that provides an easy way to integrate Kontext.so ads into your iOS application. It manages ad loading, placement and errors with minimalist API. There is no need for complex state management, just initialize it and pass it messages whenever they change. The SDK will take care of the rest.
 
 ## Requirements
 
@@ -29,7 +29,7 @@ Alternatively you can use Xcode's UI: `File > Add Package Dependencies ...` and 
 
 ### CocoaPods
 
-If you prefer Cococapods instead.
+If you prefer CocoaPods instead.
 
 Add the following line to your `Podfile`:
 
@@ -52,7 +52,7 @@ Then you need to create `AdsProviderConfiguration` and `AdsProvider` scoped to o
 let character = Character(...)
 
 
-/// Prepare reglatory compliance object, see documentation for details.
+/// Prepare regulatory compliance object, see documentation for details.
 let regulatory = Regulatory(...)
 
 let configuration = AdsProviderConfiguration(
@@ -83,7 +83,7 @@ let adsProvider = AdsProvider(
 
 ```
 
-Adapt your message onject to provide necessary information for the ads recommendation to work. You have two options, either make them conform to `MessageRepresentable` to return respective properties or to `MessageRepresentableProviding` and return the `MessageRepresentable` as a whole new object. There is `struct AdsMessage: MessageRepresentable` which you can use for this scenario.
+Adapt your message object to provide necessary information for the ads recommendation to work. You have two options, either make them conform to `MessageRepresentable` to return respective properties or to `MessageRepresentableProviding` and return the `MessageRepresentable` as a whole new object. There is `struct AdsMessage: MessageRepresentable` which you can use for this scenario.
 
 ```swift
 // 1. Option: Conformance to MessageRepresentable
@@ -121,10 +121,10 @@ Whenever your list of messages changes you need to pass the new list to AdsProvi
 adsProvider.setMessages(messages)
 ```
 
-The last thing remaining is to provide place for the Ads to manifest into. This is done by placing `InlineAdView` into View hieararchy just after the associated message. It will stay empty until an ad linked to the respective message is retrieved.
+The last thing remaining is to provide place for the Ads to manifest into. This is done by placing `InlineAdView` into View hierarchy just after the associated message. It will stay empty until an ad linked to the respective message is retrieved.
 
 ```swift
-ForEach(messages, id: \.uuid.uuidString) { message in
+ForEach(messages, id: \.id) { message in
 	VStack {
 		MyChatMessageView(message)
 		InlineAdView(
