@@ -84,6 +84,5 @@ public struct AdsProviderConfiguration: Sendable {
         self.vendorId = vendorId
         self.adServerUrl = adServerUrl ?? SDKInfo.defaultAdServerURL
         self.regulatory = regulatory
-
     }
 }
