@@ -21,9 +21,11 @@ final class InlineAdViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable>
 
     @Published private(set) var iframeEvent: InlineAdEvent?
+    @Published private var iFrameHeight: CGFloat
+    @Published private var showIFrame: Bool
+    @Published private(set) var iframeEvent: AdEvent?
     @Published private(set) var url: URL?
     @Published private(set) var preferredHeight: CGFloat
-    @Published private(set) var showIFrame: Bool
 
     var updateIFrameData: UpdateIFrameData {
         UpdateIFrameData(
@@ -52,6 +54,7 @@ final class InlineAdViewModel: ObservableObject {
         messages = []
         url = nil
         preferredHeight = 0
+        iFrameHeight = 0
         showIFrame = false
         cancellables = []
 
@@ -117,6 +120,12 @@ private extension InlineAdViewModel {
                 )
             }
             .assign(to: &$url)
+
+        $showIFrame.combineLatest($iFrameHeight)
+            .sink { [weak self] (showIFrame, iFrameHeight) in
+                self?.preferredHeight = showIFrame ? iFrameHeight : 0
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -126,15 +135,19 @@ private extension InlineAdViewModel {
         switch adEvent {
         case .initIframe:
             break // Handled by InlineAdWebView
+
         case .showIframe:
             if sharedStorage.lastAssistantMessageId == messageId {
                 sharedStorage.relevantAssistantMessageId = messageId
             }
             showIFrame = true
+
         case .hideIframe:
             showIFrame = false
+
         case .viewIframe(let viewData):
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
+
         case .clickIframe(let clickData):
             if let iframeClickedURL = if let clickDataURL = clickData.url {
                 adsServerAPI.redirectURL(relativeURL: clickDataURL)
@@ -143,8 +156,10 @@ private extension InlineAdViewModel {
             } {
                 UIApplication.shared.open(iframeClickedURL)
             }
+
         case .resizeIframe(let resizedData):
-            preferredHeight = resizedData.height
+            iFrameHeight = resizedData.height
+
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message.message)")
             showIFrame = false
