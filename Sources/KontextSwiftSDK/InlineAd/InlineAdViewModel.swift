@@ -20,8 +20,8 @@ final class InlineAdViewModel: ObservableObject {
     private var messages: [AdsMessage] = []
     private var cancellables: Set<AnyCancellable>
 
-    @Published private var iFrameHeight: CGFloat
-    @Published private var showIFrame: Bool
+    @Published private var iframeHeight: CGFloat
+    @Published private var showIframe: Bool
     @Published private(set) var iframeEvent: InlineAdEvent?
     @Published private(set) var url: URL?
     @Published private(set) var preferredHeight: CGFloat
@@ -53,8 +53,8 @@ final class InlineAdViewModel: ObservableObject {
         messages = []
         url = nil
         preferredHeight = 0
-        iFrameHeight = 0
-        showIFrame = false
+        iframeHeight = 0
+        showIframe = false
         cancellables = []
 
         bindData()
@@ -120,7 +120,7 @@ private extension InlineAdViewModel {
             }
             .assign(to: &$url)
 
-        $showIFrame.combineLatest($iFrameHeight)
+        $showIframe.combineLatest($iframeHeight)
             .sink { [weak self] (showIFrame, iFrameHeight) in
                 self?.preferredHeight = showIFrame ? iFrameHeight : 0
             }
@@ -139,10 +139,10 @@ private extension InlineAdViewModel {
             if sharedStorage.lastAssistantMessageId == messageId {
                 sharedStorage.relevantAssistantMessageId = messageId
             }
-            showIFrame = true
+            showIframe = true
 
         case .hideIframe:
-            showIFrame = false
+            showIframe = false
 
         case .viewIframe(let viewData):
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
@@ -157,11 +157,11 @@ private extension InlineAdViewModel {
             }
 
         case .resizeIframe(let resizedData):
-            iFrameHeight = resizedData.height
+            iframeHeight = resizedData.height
 
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message.message)")
-            showIFrame = false
+            showIframe = false
             Task { await adsProviderActing.reset() }
         case .unknown:
             break

@@ -44,7 +44,6 @@ public struct InlineAdView: View {
                 updateIFrameData: viewModel.updateIFrameData,
                 onIFrameEvent: { viewModel.send(.didReceiveAdEvent($0)) }
             )
-            .frame(height: viewModel.showIFrame ? viewModel.preferredHeight : 0)
             .frame(height: viewModel.preferredHeight)
         } else {
             // TODO: Remove after testing
