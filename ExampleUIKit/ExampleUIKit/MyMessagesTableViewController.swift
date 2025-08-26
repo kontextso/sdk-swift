@@ -10,6 +10,7 @@ final class MyMessagesTableViewController: UITableViewController {
     private let adsProvider: AdsProvider
     private var messages: [MyMessage]
     private var viewModels: [MyMessagesCollectionViewModel]
+    private var adHeight: CGFloat? = 60
 
     private let sendButton: UIButton = {
         let button = UIButton(type: .system)
@@ -153,7 +154,6 @@ extension MyMessagesTableViewController {
             return createAdCell(indexPath: indexPath, viewModel: adViewModel)
         }
     }
-
     override func tableView(
         _ tableView: UITableView,
         estimatedHeightForRowAt indexPath: IndexPath
@@ -161,12 +161,17 @@ extension MyMessagesTableViewController {
         60
     }
 
-    // Automatic height based on content
     override func tableView(
         _ tableView: UITableView,
         heightForRowAt indexPath: IndexPath
     ) -> CGFloat {
-        UITableView.automaticDimension
+        let viewModel = viewModels[indexPath.row]
+
+        if case .ad = viewModel {
+            return adHeight ?? 60
+        } else {
+            return UITableView.automaticDimension
+        }
     }
 }
 
@@ -196,7 +201,14 @@ private extension MyMessagesTableViewController {
             fatalError("Could not dequeue InlineAdTableViewCell")
         }
         cell.configure(with: viewModel)
+        cell.onAdHeightChange = { [weak self] height in
+            self?.adHeight = height
+
+            Task { @MainActor in
+                self?.tableView.beginUpdates()
+                self?.tableView.endUpdates()
+            }
+        }
         return cell
     }
 }
-

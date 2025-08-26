@@ -11,6 +11,7 @@ public final class InlineAdUIView: UIView {
     private var viewModel: InlineAdViewModel
     private var cancellables: Set<AnyCancellable> = []
     private var heightConstraint: NSLayoutConstraint?
+    private var onAdHeightChange: ((CGFloat) -> Void)?
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -25,8 +26,10 @@ public final class InlineAdUIView: UIView {
         adsProvider: AdsProvider,
         code: String,
         messageId: String,
-        otherParams: [String: String]
+        otherParams: [String: String],
+        onAdHeightChange: ((CGFloat) -> Void)? = nil
     ) {
+        self.onAdHeightChange = onAdHeightChange
         viewModel = adsProvider.inlineAdViewModel(
             code: code,
             messageId: messageId,
@@ -54,6 +57,7 @@ private extension InlineAdUIView {
         adView.loadAd(from: url)
         addSubview(adView)
 
+        translatesAutoresizingMaskIntoConstraints = false
         adView.translatesAutoresizingMaskIntoConstraints = false
 
         let heightConstraint = adView.heightAnchor.constraint(equalTo: heightAnchor)
@@ -63,7 +67,6 @@ private extension InlineAdUIView {
             adView.topAnchor.constraint(equalTo: topAnchor),
             adView.leadingAnchor.constraint(equalTo: leadingAnchor),
             adView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            adView.bottomAnchor.constraint(equalTo: bottomAnchor),
             heightConstraint
         ])
     }
@@ -79,8 +82,15 @@ private extension InlineAdUIView {
 
         viewModel.$preferredHeight
             .sink { [weak self] height in
+                guard let self else { return }
+                self.onAdHeightChange?(height)
+
                 Task { @MainActor in
-                    self?.heightConstraint?.constant = height
+                    self.heightConstraint?.constant = height
+                    self.setNeedsUpdateConstraints()
+                    self.updateConstraintsIfNeeded()
+                    self.setNeedsLayout()
+                    self.layoutIfNeeded()
                 }
             }
             .store(in: &cancellables)
