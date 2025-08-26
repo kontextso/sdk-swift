@@ -20,10 +20,9 @@ final class InlineAdViewModel: ObservableObject {
     private var messages: [AdsMessage] = []
     private var cancellables: Set<AnyCancellable>
 
-    @Published private(set) var iframeEvent: InlineAdEvent?
     @Published private var iFrameHeight: CGFloat
     @Published private var showIFrame: Bool
-    @Published private(set) var iframeEvent: AdEvent?
+    @Published private(set) var iframeEvent: InlineAdEvent?
     @Published private(set) var url: URL?
     @Published private(set) var preferredHeight: CGFloat
 
