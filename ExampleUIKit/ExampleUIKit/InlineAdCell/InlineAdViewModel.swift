@@ -5,7 +5,7 @@
 
 import KontextSwiftSDK
 
-class InlineAdViewModel {
+final class InlineAdViewModel {
     let adsProvider: AdsProvider
     let code: String
     let messageId: String

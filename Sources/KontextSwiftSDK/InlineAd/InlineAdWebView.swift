@@ -43,17 +43,17 @@ private final class InlineAdScriptMessageHandler: NSObject, WKScriptMessageHandl
 final class InlineAdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
     private let updateIFrameData: UpdateIFrameData
-    private let onContentSizeChange: ((CGFloat) -> Void)?
+    private let onIFrameEvent: (InlineAdEvent) -> Void
 
     private var scriptHandler: InlineAdScriptMessageHandler?
-    @Binding var iframeEvent: InlineAdEvent?
 
     init(
         frame: CGRect = .zero,
         updateFrameData: UpdateIFrameData,
-        iframeEvent: Binding<InlineAdEvent?>,
-        onContentSizeChange: ((CGFloat) -> Void)? = nil
+        onIFrameEvent: @escaping (InlineAdEvent) -> Void
     ) {
+        self.onIFrameEvent = onIFrameEvent
+
         let js = """
         window.addEventListener('message', function(event) {
             window.webkit.messageHandlers.iframeMessage.postMessage(event.data);
@@ -71,8 +71,6 @@ final class InlineAdWebView: WKWebView {
         updateIFrameData = updateFrameData
         webConfiguration.allowsInlineMediaPlayback = true
         webConfiguration.userContentController = contentController
-        _iframeEvent = iframeEvent
-        self.onContentSizeChange = onContentSizeChange
 
         super.init(frame: frame, configuration: webConfiguration)
 
@@ -110,12 +108,10 @@ private extension InlineAdWebView {
         switch event {
         case .initIframe:
             sendUpdateIframe()
-        case let .resizeIframe(data):
-            onContentSizeChange?(data.height)
         case .showIframe, .hideIframe, .viewIframe, .clickIframe, .resizeIframe, .errorIframe, .unknown:
             break
         }
-        iframeEvent = event
+        onIFrameEvent(event)
     }
 
     func sendUpdateIframe() {

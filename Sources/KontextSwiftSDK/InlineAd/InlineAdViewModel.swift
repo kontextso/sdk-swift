@@ -12,16 +12,18 @@ final class InlineAdViewModel: ObservableObject {
     private let code: String
     private let messageId: String
     private let otherParams: [String: String]
+    private let sharedStorage: SharedStorage
+    private let adsServerAPI: AdsServerAPI
+    private let adsProviderActing: AdsProviderActing
 
-    @Published var iframeEvent: InlineAdEvent?
-    @Published private(set) var bid: Bid?
-    @Published private(set) var messages: [AdsMessage]
+    private var messages: [AdsMessage] = []
+    private var cancellables: Set<AnyCancellable>
+
+    @Published private(set) var iframeEvent: InlineAdEvent?
     @Published private(set) var url: URL?
     @Published private(set) var preferredHeight: CGFloat
     @Published private(set) var iframeClickedURL: URL?
     @Published private(set) var showIFrame: Bool
-
-    private var cancellables: Set<AnyCancellable>
 
     var updateIFrameData: UpdateIFrameData {
         UpdateIFrameData(
@@ -41,21 +43,43 @@ final class InlineAdViewModel: ObservableObject {
         messageId: String,
         otherParams: [String: String] = [:]
     ) {
+        self.sharedStorage = sharedStorage
+        self.adsServerAPI = adsServerAPI
+        self.adsProviderActing = adsProviderActing
         self.code = code
         self.messageId = messageId
         self.otherParams = otherParams
-        bid = nil
         messages = []
         url = nil
         preferredHeight = 0
         showIFrame = false
         cancellables = []
 
+        bindData()
+    }
+
+    func send(_ action: InlineAdViewModel.Action) {
+        switch action {
+        case .didReceiveAdEvent(let inlineAdEvent):
+            onAdEventAction(adEvent: inlineAdEvent)
+        }
+    }
+}
+
+extension InlineAdViewModel {
+    enum Action {
+        case didReceiveAdEvent(InlineAdEvent)
+    }
+}
+
+// MARK: Data binding
+private extension InlineAdViewModel {
+    func bindData() {
         // Find relevant bid
-        sharedStorage
+        let bid = sharedStorage
             .$bids
             .receive(on: RunLoop.main)
-            .map { $0.first { $0.code == code } }
+            .map { $0.first { $0.code == self.code } }
             .combineLatest(
                 sharedStorage.$lastUserMessageId,
                 sharedStorage.$lastAssistantMessageId,
@@ -67,9 +91,9 @@ final class InlineAdViewModel: ObservableObject {
                 }
 
                 let isLastUserMessage = bid.adDisplayPosition == .afterUserMessage
-                && lastUserMessageId == messageId
+                && lastUserMessageId == self.messageId
                 let isLastAssistantMessage = bid.adDisplayPosition == .afterAssistantMessage
-                && (relevantAssistantMessageId ?? lastAssistantMessageId) == messageId
+                && (relevantAssistantMessageId ?? lastAssistantMessageId) == self.messageId
 
                 if isLastUserMessage == true || isLastAssistantMessage == true {
                     return bid
@@ -77,61 +101,53 @@ final class InlineAdViewModel: ObservableObject {
                     return nil
                 }
             }
-            .assign(to: &$bid)
-
-        // Assign messages
-        sharedStorage
-            .$messages
-            .receive(on: RunLoop.main)
-            .assign(to: &$messages)
 
         // Generate URL for WebView frame
-        $bid
+        bid
             .receive(on: RunLoop.main)
             .map { bid -> URL? in
                 guard let bid else {
                     return nil
                 }
-                return adsServerAPI.frameURL(
-                    messageId: messageId,
+                return self.adsServerAPI.frameURL(
+                    messageId: self.messageId,
                     bidId: bid.bidId,
                     bidCode: bid.code
                 )
             }
             .assign(to: &$url)
+    }
+}
 
-        // Listen to iframe events and handle what's intended
-        $iframeEvent
-            .compactMap { $0 }
-            .receive(on: RunLoop.main)
-            .sink { [weak self] event in
-                switch event {
-                case .initIframe:
-                    break // Handled by InlineAdWebView
-                case .showIframe:
-                    if sharedStorage.lastAssistantMessageId == messageId {
-                        sharedStorage.relevantAssistantMessageId = messageId
-                    }
-                    self?.showIFrame = true
-                case .hideIframe:
-                    self?.showIFrame = false
-                case .viewIframe(let viewData):
-                    os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
-                case .clickIframe(let clickData):
-                    self?.iframeClickedURL = if let clickDataURL = clickData.url {
-                        adsServerAPI.redirectURL(relativeURL: clickDataURL)
-                    } else {
-                        self?.url
-                    }
-                case .resizeIframe(let resizedData):
-                    self?.preferredHeight = resizedData.height
-                case .errorIframe(let message):
-                    os_log(.error, "[InlineAd]: Error: \(message.message)")
-                    self?.showIFrame = false
-                    Task { await adsProviderActing.reset() }
-                case .unknown:
-                    break
-                }
-            }.store(in: &cancellables)
+// MARK: Actions
+private extension InlineAdViewModel {
+    func onAdEventAction(adEvent: InlineAdEvent) {
+        switch adEvent {
+        case .initIframe:
+            break // Handled by InlineAdWebView
+        case .showIframe:
+            if sharedStorage.lastAssistantMessageId == messageId {
+                sharedStorage.relevantAssistantMessageId = messageId
+            }
+            showIFrame = true
+        case .hideIframe:
+            showIFrame = false
+        case .viewIframe(let viewData):
+            os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
+        case .clickIframe(let clickData):
+            iframeClickedURL = if let clickDataURL = clickData.url {
+                adsServerAPI.redirectURL(relativeURL: clickDataURL)
+            } else {
+                url
+            }
+        case .resizeIframe(let resizedData):
+            preferredHeight = resizedData.height
+        case .errorIframe(let message):
+            os_log(.error, "[InlineAd]: Error: \(message.message)")
+            showIFrame = false
+            Task { await adsProviderActing.reset() }
+        case .unknown:
+            break
+        }
     }
 }

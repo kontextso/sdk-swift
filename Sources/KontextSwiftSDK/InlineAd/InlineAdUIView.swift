@@ -47,14 +47,14 @@ private extension InlineAdUIView {
         let adView = InlineAdWebView(
             frame: .zero,
             updateFrameData: viewModel.updateIFrameData,
-            iframeEvent: Binding<InlineAdEvent?>(
-                get: { self.viewModel.iframeEvent },
-                set: { self.viewModel.iframeEvent = $0 }
-            ),
-            onContentSizeChange: { [weak self] height in
-                DispatchQueue.main.async {
-                    self?.heightConstraint?.constant = height
+            onIFrameEvent: { [weak self] event in
+                if case .resizeIframe(let data) = event {
+                    DispatchQueue.main.async {
+                        self?.heightConstraint?.constant = data.height
+                    }
                 }
+
+                self?.viewModel.send(.didReceiveAdEvent(event))
             }
         )
         adView.loadAd(from: url)

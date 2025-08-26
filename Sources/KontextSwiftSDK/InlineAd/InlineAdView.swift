@@ -48,7 +48,7 @@ public struct InlineAdView: View {
             InlineAdWebViewRepresentable(
                 url: url,
                 updateIFrameData: viewModel.updateIFrameData,
-                iframeEvent: $viewModel.iframeEvent
+                onIFrameEvent: { viewModel.send(.didReceiveAdEvent($0)) }
             )
             .frame(height: viewModel.showIFrame ? viewModel.preferredHeight : 0)
             .onReceive(viewModel.$iframeClickedURL) { newURL in
