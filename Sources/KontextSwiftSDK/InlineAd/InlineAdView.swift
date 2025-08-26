@@ -11,12 +11,9 @@ import SwiftUI
 /// - It will not display ad below every message, only when the ad is available.
 /// - Until the ad is available, it will be an empty space.
 public struct InlineAdView: View {
-    @Environment(\.openURL) private var openURL
-    @State private var fullscreenCoverIsPresented = false
-    @State private var adPresented = false
-    @State private var previousUrl: URL?
-
     @StateObject private var viewModel: InlineAdViewModel
+
+    @State private var fullscreenCoverIsPresented = false
 
     /// SwiftUI view that represents an inline ad in the chat UI.
     /// It starts as EmptyView and when ad content is retrieved it will expand.
@@ -30,7 +27,7 @@ public struct InlineAdView: View {
         adsProvider: AdsProvider,
         code: String,
         messageId: String,
-        otherParams: [String: String]        
+        otherParams: [String: String]
     ) {
         let viewModel = adsProvider.inlineAdViewModel(
             code: code,
@@ -48,21 +45,18 @@ public struct InlineAdView: View {
                 onIFrameEvent: { viewModel.send(.didReceiveAdEvent($0)) }
             )
             .frame(height: viewModel.showIFrame ? viewModel.preferredHeight : 0)
-            .onReceive(viewModel.$iframeClickedURL) { newURL in
-                guard let newURL else { return }
-                openURL(newURL)
-            }
         } else {
+            // TODO: Remove after testing
             Button(action: {
-                self.fullscreenCoverIsPresented = true
+                fullscreenCoverIsPresented = true
             }) {
                 Text("Display fullscreenCover modal")
             }
-            .fullScreenCover(isPresented: self.$fullscreenCoverIsPresented) {
+            .fullScreenCover(isPresented: $fullscreenCoverIsPresented) {
                 VStack {
                     Text("This is a fullscreen modal")
                     Button("Dismiss") {
-                        self.fullscreenCoverIsPresented = false
+                        fullscreenCoverIsPresented = false
                     }
                 }
             }

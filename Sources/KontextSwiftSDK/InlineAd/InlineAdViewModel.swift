@@ -6,6 +6,7 @@
 import Combine
 import Foundation
 import OSLog
+import UIKit
 
 @MainActor
 final class InlineAdViewModel: ObservableObject {
@@ -22,7 +23,6 @@ final class InlineAdViewModel: ObservableObject {
     @Published private(set) var iframeEvent: InlineAdEvent?
     @Published private(set) var url: URL?
     @Published private(set) var preferredHeight: CGFloat
-    @Published private(set) var iframeClickedURL: URL?
     @Published private(set) var showIFrame: Bool
 
     var updateIFrameData: UpdateIFrameData {
@@ -66,6 +66,7 @@ final class InlineAdViewModel: ObservableObject {
     }
 }
 
+// MARK: Action
 extension InlineAdViewModel {
     enum Action {
         case didReceiveAdEvent(InlineAdEvent)
@@ -135,10 +136,12 @@ private extension InlineAdViewModel {
         case .viewIframe(let viewData):
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
         case .clickIframe(let clickData):
-            iframeClickedURL = if let clickDataURL = clickData.url {
+            if let iframeClickedURL = if let clickDataURL = clickData.url {
                 adsServerAPI.redirectURL(relativeURL: clickDataURL)
             } else {
                 url
+            } {
+                UIApplication.shared.open(iframeClickedURL)
             }
         case .resizeIframe(let resizedData):
             preferredHeight = resizedData.height
