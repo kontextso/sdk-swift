@@ -10,3 +10,9 @@ extension UICollectionReusableView {
         String(describing: Self.self)
     }
 }
+
+extension UITableViewCell {
+    static var reuseIdentifier: String {
+        String(describing: self)
+    }
+}

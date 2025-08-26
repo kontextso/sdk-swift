@@ -11,7 +11,12 @@ final class InlineAdViewModel {
     let messageId: String
     let otherParams: [String: String]
 
-    init(adsProvider: AdsProvider, code: String, messageId: String, otherParams: [String : String]) {
+    init(
+        adsProvider: AdsProvider,
+        code: String,
+        messageId: String,
+        otherParams: [String : String]
+    ) {
         self.adsProvider = adsProvider
         self.code = code
         self.messageId = messageId
