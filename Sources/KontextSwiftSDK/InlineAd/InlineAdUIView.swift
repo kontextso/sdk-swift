@@ -8,10 +8,9 @@ import UIKit
 import SwiftUI
 
 public final class InlineAdUIView: UIView {
-    public var onContentSizeChange: (() -> Void)?
-
     private var viewModel: InlineAdViewModel
     private var cancellables: Set<AnyCancellable> = []
+    private var heightConstraint: NSLayoutConstraint?
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -40,12 +39,6 @@ public final class InlineAdUIView: UIView {
 }
 
 private extension InlineAdUIView {
-    // Call this when the web content/frame size changes
-    func updateContentSize(to newSize: CGSize) {
-        invalidateIntrinsicContentSize()
-        onContentSizeChange?()
-    }
-
     func setupUI(_ url: URL?) {
         guard let url else {
             return
@@ -57,23 +50,33 @@ private extension InlineAdUIView {
             iframeEvent: Binding<InlineAdEvent?>(
                 get: { self.viewModel.iframeEvent },
                 set: { self.viewModel.iframeEvent = $0 }
-            )
+            ),
+            onContentSizeChange: { [weak self] height in
+                DispatchQueue.main.async {
+                    self?.heightConstraint?.constant = height
+                }
+            }
         )
         adView.loadAd(from: url)
         addSubview(adView)
 
         adView.translatesAutoresizingMaskIntoConstraints = false
 
+        let heightConstraint = adView.heightAnchor.constraint(equalTo: heightAnchor)
+        self.heightConstraint = heightConstraint
+
         NSLayoutConstraint.activate([
             adView.topAnchor.constraint(equalTo: topAnchor),
             adView.leadingAnchor.constraint(equalTo: leadingAnchor),
             adView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            adView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            adView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            heightConstraint
         ])
     }
 
     func observeChanges() {
         viewModel.$url
+            .first(where: { $0 != nil })
             .sink { [weak self] url in
                 self?.subviews.forEach { $0.removeFromSuperview() }
                 self?.setupUI(url)

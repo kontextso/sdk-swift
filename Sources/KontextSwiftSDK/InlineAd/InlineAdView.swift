@@ -44,65 +44,31 @@ public struct InlineAdView: View {
     }
 
     public var body: some View {
-        Group {
-            if adPresented {
-                Rectangle()
-                    .fill(.green)
-                    .frame(height: 100)
-            } else {
-                Rectangle()
-                    .fill(.green)
-                    .frame(height: 60)
+        if let url = viewModel.url {
+            InlineAdWebViewRepresentable(
+                url: url,
+                updateIFrameData: viewModel.updateIFrameData,
+                iframeEvent: $viewModel.iframeEvent
+            )
+            .frame(height: viewModel.showIFrame ? viewModel.preferredHeight : 0)
+            .onReceive(viewModel.$iframeClickedURL) { newURL in
+                guard let newURL else { return }
+                openURL(newURL)
+            }
+        } else {
+            Button(action: {
+                self.fullscreenCoverIsPresented = true
+            }) {
+                Text("Display fullscreenCover modal")
+            }
+            .fullScreenCover(isPresented: self.$fullscreenCoverIsPresented) {
+                VStack {
+                    Text("This is a fullscreen modal")
+                    Button("Dismiss") {
+                        self.fullscreenCoverIsPresented = false
+                    }
+                }
             }
         }
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(
-            GeometryReader { geometry in
-                Color.clear
-                    .onAppear {
-                        didChangeSize()
-                    }
-                    .onChange(of: adPresented) { _ in
-                        didChangeSize()
-                    }
-                    .onChange(of: geometry.size) { _ in
-                        didChangeSize()
-                    }
-            }
-        )
-        .onChange(of: viewModel.url) { newValue in
-            if previousUrl != newValue {
-                adPresented = true
-            }
-
-            previousUrl = newValue
-        }
-//        if let url = viewModel.url {
-//            InlineAdWebViewRepresentable(
-//                url: url,
-//                updateIFrameData: viewModel.updateIFrameData,
-//                iframeEvent: $viewModel.iframeEvent
-//            )
-//            // .frame(height: viewModel.showIFrame ? viewModel.preferredHeight : 0)
-//            .onReceive(viewModel.$iframeClickedURL) { newURL in
-//                guard let newURL else { return }
-//                openURL(newURL)
-//            }
-//        } else {
-//            Button(action: {
-//                self.fullscreenCoverIsPresented = true
-//            }) {
-//                Text("Display fullscreenCover modal")
-//            }
-//            .fullScreenCover(isPresented: self.$fullscreenCoverIsPresented) {
-//                VStack {
-//                    Text("This is a fullscreen modal")
-//                    Button("Dismiss") {
-//                        self.fullscreenCoverIsPresented = false
-//                    }
-//                }
-//            }
-//        }
     }
 }

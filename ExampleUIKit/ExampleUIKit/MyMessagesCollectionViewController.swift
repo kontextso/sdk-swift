@@ -15,7 +15,6 @@ final class MyMessagesCollectionViewController: UICollectionViewController {
     private let adsProvider: AdsProvider
     private var messages: [MyMessage]
     private var viewModels: [MyMessagesCollectionViewModel]
-    private var test = false
 
     private let sendButton: UIButton = {
         let button = UIButton(type: .system)
@@ -75,8 +74,8 @@ final class MyMessagesCollectionViewController: UICollectionViewController {
             forCellWithReuseIdentifier: MyMessageCollectionViewCell.reuseIdentifier
         )
         collectionView.register(
-            HostingCell<InlineAdView>.self,
-            forCellWithReuseIdentifier: HostingCell<InlineAdView>.self.reuseIdentifier
+            InlineAdCollectionViewCell.self,
+            forCellWithReuseIdentifier: InlineAdCollectionViewCell.self.reuseIdentifier
         )
 
         collectionView.dataSource = self
@@ -201,27 +200,11 @@ private extension MyMessagesCollectionViewController {
         viewModel: InlineAdViewModel
     ) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: HostingCell<InlineAdView>.reuseIdentifier,
-            for: indexPath
-        ) as? HostingCell<InlineAdView> else {
-            return UICollectionViewCell()
+            withReuseIdentifier: InlineAdCollectionViewCell.reuseIdentifier, for: indexPath
+        ) as? InlineAdCollectionViewCell else {
+            fatalError("Could not dequeue MyMessageCollectionViewCell")
         }
-
-        cell.set(
-            rootView: InlineAdView(
-                adsProvider: viewModel.adsProvider,
-                code: viewModel.code,
-                messageId: viewModel.messageId,
-                otherParams: viewModel.otherParams,
-                didChangeSize:{ [weak collectionView] in
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        collectionView?.performBatchUpdates(nil)
-                        print("UPDATED")
-                    }
-                }
-            ),
-            parentController: self
-        )
+        cell.configure(with: viewModel)
         return cell
     }
 }

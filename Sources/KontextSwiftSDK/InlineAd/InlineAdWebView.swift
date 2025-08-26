@@ -43,13 +43,16 @@ private final class InlineAdScriptMessageHandler: NSObject, WKScriptMessageHandl
 final class InlineAdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
     private let updateIFrameData: UpdateIFrameData
+    private let onContentSizeChange: ((CGFloat) -> Void)?
+
     private var scriptHandler: InlineAdScriptMessageHandler?
     @Binding var iframeEvent: InlineAdEvent?
 
     init(
         frame: CGRect = .zero,
         updateFrameData: UpdateIFrameData,
-        iframeEvent: Binding<InlineAdEvent?>
+        iframeEvent: Binding<InlineAdEvent?>,
+        onContentSizeChange: ((CGFloat) -> Void)? = nil
     ) {
         let js = """
         window.addEventListener('message', function(event) {
@@ -69,6 +72,7 @@ final class InlineAdWebView: WKWebView {
         webConfiguration.allowsInlineMediaPlayback = true
         webConfiguration.userContentController = contentController
         _iframeEvent = iframeEvent
+        self.onContentSizeChange = onContentSizeChange
 
         super.init(frame: frame, configuration: webConfiguration)
 
@@ -106,6 +110,8 @@ private extension InlineAdWebView {
         switch event {
         case .initIframe:
             sendUpdateIframe()
+        case let .resizeIframe(data):
+            onContentSizeChange?(data.height)
         case .showIframe, .hideIframe, .viewIframe, .clickIframe, .resizeIframe, .errorIframe, .unknown:
             break
         }

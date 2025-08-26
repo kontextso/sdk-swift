@@ -8,8 +8,6 @@ import UIKit
 import SwiftUI
 
 final class InlineAdCollectionViewCell: UICollectionViewCell {
-    var onContentSizeChange: (() -> Void)?
-
     private var inlineAdView: InlineAdUIView?
 
     override init(frame: CGRect) {
@@ -18,6 +16,7 @@ final class InlineAdCollectionViewCell: UICollectionViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        inlineAdView?.removeFromSuperview()
         inlineAdView = nil
     }
 
@@ -36,10 +35,6 @@ final class InlineAdCollectionViewCell: UICollectionViewCell {
         )
 
         self.inlineAdView = inlineAdView
-
-        inlineAdView.onContentSizeChange = { [weak self] in
-            self?.onContentSizeChange?()
-        }
 
         contentView.addSubview(inlineAdView)
 
