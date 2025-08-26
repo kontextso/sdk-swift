@@ -19,7 +19,14 @@ protocol AdsServerAPI: Sendable {
         bidId: String,
         bidCode: String
     ) -> URL?
-    
+
+    func componentURL(
+        messageId: String,
+        bidId: String,
+        bidCode: String,
+        component: String
+    ) -> URL?
+
     func redirectURL(relativeURL: URL) -> URL
 }
 
@@ -81,11 +88,30 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             pathComponents: ["api", "frame", bidId],
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
+                URLQueryItem(name: "code", value: bidCode),
+                URLQueryItem(name: "sdk", value: SDKInfo.name),
+                // TODO: Theme
+                URLQueryItem(name: "theme", value: "dark")
+            ]
+        ).asURL()
+    }
+
+    func componentURL(
+        messageId: String,
+        bidId: String,
+        bidCode: String,
+        component: String
+    ) -> URL? {
+        BaseURLConvertible(
+            baseURL: baseURL,
+            pathComponents: ["api", component, bidId],
+            queryItems: [
+                URLQueryItem(name: "messageId", value: messageId),
                 URLQueryItem(name: "code", value: bidCode)
             ]
         ).asURL()
     }
-    
+
     func redirectURL(relativeURL: URL) -> URL {
         URL(string: relativeURL.relativeString, relativeTo: baseURL) ?? relativeURL
     }

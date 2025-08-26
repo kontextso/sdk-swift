@@ -70,9 +70,8 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello, how are you?"
+            content: "kontextso ad_format:INTERSTITIAL"
         )
-
 
         messages.append(userMessage)
         adsProvider.setMessages(messages)

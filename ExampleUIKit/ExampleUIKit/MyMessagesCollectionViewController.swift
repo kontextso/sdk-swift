@@ -95,7 +95,7 @@ final class MyMessagesCollectionViewController: UICollectionViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello, this is a static message!",
+            content: "kontextso ad_format:INTERSTITIAL",
             createdAt: Date()
         )
 

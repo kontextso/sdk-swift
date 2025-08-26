@@ -13,7 +13,7 @@ import SwiftUI
 public struct InlineAdView: View {
     @StateObject private var viewModel: InlineAdViewModel
 
-    @State private var fullscreenCoverIsPresented = false
+    @State private var componentURL: URL? = nil
 
     /// SwiftUI view that represents an inline ad in the chat UI.
     /// It starts as EmptyView and when ad content is retrieved it will expand.
@@ -39,27 +39,25 @@ public struct InlineAdView: View {
 
     public var body: some View {
         if let url = viewModel.url {
-            InlineAdWebViewRepresentable(
+            AdWebViewRepresentable(
                 url: url,
-                updateIFrameData: viewModel.updateIFrameData,
-                onIFrameEvent: { viewModel.send(.didReceiveAdEvent($0)) }
+                updateIframeData: viewModel.updateIFrameData,
+                onIframeEvent: { viewModel.send(.didReceiveAdEvent($0)) }
             )
             .frame(height: viewModel.preferredHeight)
-        } else {
-            // TODO: Remove after testing
-            Button(action: {
-                fullscreenCoverIsPresented = true
-            }) {
-                Text("Display fullscreenCover modal")
+            .onReceive(viewModel.$componentURL) { url in
+                componentURL = url
             }
-            .fullScreenCover(isPresented: $fullscreenCoverIsPresented) {
-                VStack {
-                    Text("This is a fullscreen modal")
-                    Button("Dismiss") {
-                        fullscreenCoverIsPresented = false
-                    }
-                }
+            .fullScreenCover(item: $componentURL) { url in
+                InterstitialAdView(
+                    url: url,
+                    onFinished: { componentURL = nil }
+                )
             }
         }
     }
+}
+
+extension URL: Identifiable {
+    public var id: String { absoluteString }
 }

@@ -20,10 +20,13 @@ final class InlineAdViewModel: ObservableObject {
     private var messages: [AdsMessage] = []
     private var cancellables: Set<AnyCancellable>
 
+    @Published private var bid: Bid?
     @Published private var iframeHeight: CGFloat
     @Published private var showIframe: Bool
-    @Published private(set) var iframeEvent: InlineAdEvent?
+
+    @Published private(set) var iframeEvent: AdEvent?
     @Published private(set) var url: URL?
+    @Published private(set) var componentURL: URL?
     @Published private(set) var preferredHeight: CGFloat
 
     var updateIFrameData: UpdateIFrameData {
@@ -71,7 +74,7 @@ final class InlineAdViewModel: ObservableObject {
 // MARK: Action
 extension InlineAdViewModel {
     enum Action {
-        case didReceiveAdEvent(InlineAdEvent)
+        case didReceiveAdEvent(AdEvent)
     }
 }
 
@@ -82,14 +85,14 @@ private extension InlineAdViewModel {
         let bid = sharedStorage
             .$bids
             .receive(on: RunLoop.main)
-            .map { $0.first { $0.code == self.code } }
+            .map { [weak self] bid in bid.first { $0.code == self?.code } }
             .combineLatest(
                 sharedStorage.$lastUserMessageId,
                 sharedStorage.$lastAssistantMessageId,
                 sharedStorage.$relevantAssistantMessageId
             )
-            .map { bid, lastUserMessageId, lastAssistantMessageId, relevantAssistantMessageId -> Bid? in
-                guard let bid else {
+            .map { [weak self] bid, lastUserMessageId, lastAssistantMessageId, relevantAssistantMessageId -> Bid? in
+                guard let self, let bid else {
                     return nil
                 }
 
@@ -105,11 +108,15 @@ private extension InlineAdViewModel {
                 }
             }
 
+        bid
+            .receive(on: RunLoop.main)
+            .assign(to: &$bid)
+
         // Generate URL for WebView frame
         bid
             .receive(on: RunLoop.main)
-            .map { bid -> URL? in
-                guard let bid else {
+            .map { [weak self] bid -> URL? in
+                guard let self, let bid else {
                     return nil
                 }
                 return self.adsServerAPI.frameURL(
@@ -130,7 +137,7 @@ private extension InlineAdViewModel {
 
 // MARK: Actions
 private extension InlineAdViewModel {
-    func onAdEventAction(adEvent: InlineAdEvent) {
+    func onAdEventAction(adEvent: AdEvent) {
         switch adEvent {
         case .initIframe:
             break // Handled by InlineAdWebView
@@ -163,7 +170,20 @@ private extension InlineAdViewModel {
             os_log(.error, "[InlineAd]: Error: \(message.message)")
             showIframe = false
             Task { await adsProviderActing.reset() }
-        case .unknown:
+
+        case .openComponentIframe(let data):
+            guard let bid else {
+                return
+            }
+
+            componentURL = adsServerAPI.componentURL(
+                messageId: messageId,
+                bidId: bid.bidId,
+                bidCode: bid.code,
+                component: data.component
+            )
+
+        default:
             break
         }
     }

@@ -1,5 +1,5 @@
 //
-//  InlineAdWebView.swift
+//  AdWebView.swift
 //  KontextSwiftSDK
 //
 
@@ -8,13 +8,13 @@ import SwiftUI
 import UIKit
 import WebKit
 
-// MARK: - InlineAdScriptMessageHandler
+// MARK: - AdScriptMessageHandler
 
-private final class InlineAdScriptMessageHandler: NSObject, WKScriptMessageHandler {
-    private weak var inlineAdWebView: InlineAdWebView?
+private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    private weak var adWebView: AdWebView?
 
-    init(inlineAdWebView: InlineAdWebView) {
-        self.inlineAdWebView = inlineAdWebView
+    init(adWebView: AdWebView) {
+        self.adWebView = adWebView
         super.init()
     }
 
@@ -24,35 +24,35 @@ private final class InlineAdScriptMessageHandler: NSObject, WKScriptMessageHandl
     ) {
         guard
             message.name == "iframeMessage",
-            let inlineAdWebView
+            let adWebView
         else {
             return
         }
 
         do {
-            let event = try InlineAdEvent(fromJSON: message.body)
-            inlineAdWebView.sendIframeEvent(event: event)
+            let event = try AdEvent(fromJSON: message.body)
+            adWebView.sendIframeEvent(event: event)
         } catch {
-            os_log(.error, "[InlineAd]: iframeMessage failed to decode with error: \(error)")
+            os_log(.error, "[Ad]: iframeMessage failed to decode with error: \(error)")
         }
     }
 }
 
-// MARK: - InlineAdWebView
+// MARK: - AdWebView
 
-final class InlineAdWebView: WKWebView {
+final class AdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
-    private let updateIFrameData: UpdateIFrameData
-    private let onIFrameEvent: (InlineAdEvent) -> Void
+    private let updateIframeData: UpdateIFrameData?
+    private let onIframeEvent: (AdEvent) -> Void
 
-    private var scriptHandler: InlineAdScriptMessageHandler?
+    private var scriptHandler: AdScriptMessageHandler?
 
     init(
         frame: CGRect = .zero,
-        updateFrameData: UpdateIFrameData,
-        onIFrameEvent: @escaping (InlineAdEvent) -> Void
+        updateIframeData: UpdateIFrameData?,
+        onIframeEvent: @escaping (AdEvent) -> Void
     ) {
-        self.onIFrameEvent = onIFrameEvent
+        self.onIframeEvent = onIframeEvent
 
         let js = """
         window.addEventListener('message', function(event) {
@@ -68,7 +68,7 @@ final class InlineAdWebView: WKWebView {
         let contentController = WKUserContentController()
         contentController.addUserScript(userScript)
 
-        updateIFrameData = updateFrameData
+        self.updateIframeData = updateIframeData
         webConfiguration.allowsInlineMediaPlayback = true
         webConfiguration.userContentController = contentController
 
@@ -77,7 +77,7 @@ final class InlineAdWebView: WKWebView {
         isOpaque = false
         backgroundColor = .clear
 
-        scriptHandler = InlineAdScriptMessageHandler(inlineAdWebView: self)
+        scriptHandler = AdScriptMessageHandler(adWebView: self)
         if let scriptHandler {
             configuration.userContentController.add(scriptHandler, name: "iframeMessage")
         }
@@ -103,23 +103,27 @@ final class InlineAdWebView: WKWebView {
 }
 
 // MARK: Private
-private extension InlineAdWebView {
-    func sendIframeEvent(event: InlineAdEvent) {
+private extension AdWebView {
+    func sendIframeEvent(event: AdEvent) {
         switch event {
         case .initIframe:
             sendUpdateIframe()
-        case .showIframe, .hideIframe, .viewIframe, .clickIframe, .resizeIframe, .errorIframe, .unknown:
+        default:
             break
         }
-        onIFrameEvent(event)
+        onIframeEvent(event)
     }
 
     func sendUpdateIframe() {
-        let dto = UpdateIFrameDTO(
-            data: UpdateIFrameDataDTO(from: updateIFrameData)
+        guard let updateIframeData else {
+            return
+        }
+
+        let updateIframe = UpdateIFrameDTO(
+            data: UpdateIFrameDataDTO(from: updateIframeData)
         )
         do {
-            let data = try JSONEncoder().encode(dto)
+            let data = try JSONEncoder().encode(updateIframe)
             guard let jsonString = String(data: data, encoding: .utf8) else {
                 throw EncodingError.invalidValue(
                     data,
@@ -133,7 +137,7 @@ private extension InlineAdWebView {
             let javascript = "window.postMessage(\(jsonString), '*');"
             evaluateJavaScript(javascript, completionHandler: nil)
         } catch {
-            os_log(.error, "[InlineAd]: Failed to postMessage \(dto.type.rawValue) with error: \(error)")
+            os_log(.error, "[Ad]: Failed to postMessage \(updateIframe.type.rawValue) with error: \(error)")
         }
     }
 }

@@ -44,10 +44,10 @@ private extension InlineAdUIView {
             return
         }
 
-        let adView = InlineAdWebView(
+        let adView = AdWebView(
             frame: .zero,
-            updateFrameData: viewModel.updateIFrameData,
-            onIFrameEvent: { [weak self] event in
+            updateIframeData: viewModel.updateIFrameData,
+            onIframeEvent: { [weak self] event in
                 self?.viewModel.send(.didReceiveAdEvent(event))
             }
         )
