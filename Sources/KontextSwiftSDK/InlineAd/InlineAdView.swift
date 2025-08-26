@@ -12,12 +12,11 @@ import SwiftUI
 /// - Until the ad is available, it will be an empty space.
 public struct InlineAdView: View {
     @Environment(\.openURL) private var openURL
-    @State var fullscreenCoverIsPresented = false
+    @State private var fullscreenCoverIsPresented = false
     @State private var adPresented = false
     @State private var previousUrl: URL?
 
     @StateObject private var viewModel: InlineAdViewModel
-    var didChangeSize: () -> Void
 
     /// SwiftUI view that represents an inline ad in the chat UI.
     /// It starts as EmptyView and when ad content is retrieved it will expand.
@@ -31,8 +30,7 @@ public struct InlineAdView: View {
         adsProvider: AdsProvider,
         code: String,
         messageId: String,
-        otherParams: [String: String],
-        didChangeSize: @escaping () -> Void
+        otherParams: [String: String]        
     ) {
         let viewModel = adsProvider.inlineAdViewModel(
             code: code,
@@ -40,7 +38,6 @@ public struct InlineAdView: View {
             otherParams: otherParams
         )
         _viewModel = StateObject(wrappedValue: viewModel)
-        self.didChangeSize = didChangeSize
     }
 
     public var body: some View {
