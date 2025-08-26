@@ -48,12 +48,6 @@ private extension InlineAdUIView {
             frame: .zero,
             updateFrameData: viewModel.updateIFrameData,
             onIFrameEvent: { [weak self] event in
-                if case .resizeIframe(let data) = event {
-                    DispatchQueue.main.async {
-                        self?.heightConstraint?.constant = data.height
-                    }
-                }
-
                 self?.viewModel.send(.didReceiveAdEvent(event))
             }
         )
@@ -80,6 +74,14 @@ private extension InlineAdUIView {
             .sink { [weak self] url in
                 self?.subviews.forEach { $0.removeFromSuperview() }
                 self?.setupUI(url)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$preferredHeight
+            .sink { [weak self] height in
+                Task { @MainActor in
+                    self?.heightConstraint?.constant = height
+                }
             }
             .store(in: &cancellables)
     }

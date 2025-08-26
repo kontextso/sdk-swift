@@ -19,11 +19,11 @@ final class InlineAdViewModel: ObservableObject {
 
     private var messages: [AdsMessage] = []
     private var cancellables: Set<AnyCancellable>
+    private var iframeHeight: CGFloat = 0
 
     @Published private(set) var iframeEvent: InlineAdEvent?
     @Published private(set) var url: URL?
     @Published private(set) var preferredHeight: CGFloat
-    @Published private(set) var showIFrame: Bool
 
     var updateIFrameData: UpdateIFrameData {
         UpdateIFrameData(
@@ -51,8 +51,7 @@ final class InlineAdViewModel: ObservableObject {
         self.otherParams = otherParams
         messages = []
         url = nil
-        preferredHeight = 0
-        showIFrame = false
+        preferredHeight = 0        
         cancellables = []
 
         bindData()
@@ -130,9 +129,11 @@ private extension InlineAdViewModel {
             if sharedStorage.lastAssistantMessageId == messageId {
                 sharedStorage.relevantAssistantMessageId = messageId
             }
-            showIFrame = true
+            preferredHeight = iframeHeight
+
         case .hideIframe:
-            showIFrame = false
+            preferredHeight = 0
+
         case .viewIframe(let viewData):
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
         case .clickIframe(let clickData):
@@ -144,10 +145,11 @@ private extension InlineAdViewModel {
                 UIApplication.shared.open(iframeClickedURL)
             }
         case .resizeIframe(let resizedData):
-            preferredHeight = resizedData.height
+            iframeHeight = resizedData.height
+
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message.message)")
-            showIFrame = false
+            preferredHeight = 0
             Task { await adsProviderActing.reset() }
         case .unknown:
             break
