@@ -46,6 +46,8 @@ public struct AdsProviderConfiguration: Sendable {
     /// URL of the server from which the ads are served.
     /// Defaults to https://server.megabrain.co/
     public let adServerUrl: URL
+    /// Information about regulatory requirements that apply.
+    public let regulatory: Regulatory?
 
     /// Initializes a new AdsProviderConfiguration to be later passed to the AdsProvider.
     ///
@@ -59,6 +61,7 @@ public struct AdsProviderConfiguration: Sendable {
     ///     - advertisingId: Device-specific identifier provided by the operating systems (IDFA).
     ///     - vendorId: Vendor-specific identifier provided by the operating systems (IDFV).
     ///     - adServerUrl: URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
+    ///     - regulatory: Information about regulatory requirements that apply.
     public init(
         publisherToken: String,
         userId: String,
@@ -68,7 +71,8 @@ public struct AdsProviderConfiguration: Sendable {
         variantId: String? = nil,
         advertisingId: String? = nil,
         vendorId: String? = nil,
-        adServerUrl: URL? = nil
+        adServerUrl: URL? = nil,
+        regulatory: Regulatory? = nil
     ) {
         self.publisherToken = publisherToken
         self.userId = userId
@@ -79,5 +83,7 @@ public struct AdsProviderConfiguration: Sendable {
         self.advertisingId = advertisingId
         self.vendorId = vendorId
         self.adServerUrl = adServerUrl ?? SDKInfo.defaultAdServerURL
+        self.regulatory = regulatory
+
     }
 }

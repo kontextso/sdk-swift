@@ -20,14 +20,28 @@ struct ChatView: View {
     @State private var messages: [ChatMessage] = []
 
     init() {
-        // 1. Create configuration with publisher token and relevant conversation data
+        // 1. Prepare Character information about the assistant (if any)
+        let character = Character(
+            id: "1",
+            name: "Assistant",
+            avatarUrl: URL(string: "https://example.com/avatar.png"),
+            isNsfw: false,
+            greeting: "Hello! How can I assist you today?",
+            persona: "Helpful smart polite assistant",
+            tags: ["friendly", "professional"]
+        )
+
+        // 2. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
             publisherToken: "nexus-dev",
             userId: "1",
             conversationId: "1",
-            enabledPlacementCodes: ["inlineAd"]
+            enabledPlacementCodes: ["inlineAd"],
+            character: character,
+            regulatory: Regulatory(gdpr: 1, coppa: nil)
         )
-        // 2. Create AdsProvider associated to this conversation
+
+        // 3. Create AdsProvider associated to this conversation
         // Multiple instances can be created, for each conversation one
         _adsProvider = State(initialValue: AdsProvider(
             configuration: configuration
@@ -44,7 +58,7 @@ struct ChatView: View {
                                 .padding()
                                 .background(message.role == .user ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
                                 .cornerRadius(8)
-                            // 3. Insert InlineAdView which will expand when ad is available
+                            // 4. Insert InlineAdView which will expand when ad is available
                             // If there is no respective ad for the message it will stay empty
                             InlineAdView(
                                 adsProvider: adsProvider,
