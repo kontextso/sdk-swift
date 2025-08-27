@@ -10,34 +10,10 @@ import UIKit
 
 @MainActor
 final class InlineAdViewModel: ObservableObject {
-    private let code: String
-    private let messageId: String
-    private let otherParams: [String: String]
-//    private let adsProviderActing: AdsProviderActing
+    let ad: Advertisment
 
-    private var messages: [AdsMessage] = []
-
-//    @Published private var iframeHeight: CGFloat
-//    @Published private var showIframe: Bool
-//    @Published private(set) var iframeEvent: InlineAdEvent?
-//    @Published private(set) var url: URL?
-//    @Published private(set) var preferredHeight: CGFloat
-
-    let ad: Ad
-
-    init(
-        ad: Ad
-    ) {
+    init(ad: Advertisment) {
         self.ad = ad
-        messages = []
-//        url = nil
-//        preferredHeight = 0
-//        iframeHeight = 0
-//        showIframe = false
-        code = ad.bid.code
-        messageId = ad.messageId
-        otherParams = [:] // Resolve other params if needed
-
     }
 }
 

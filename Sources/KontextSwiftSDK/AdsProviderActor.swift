@@ -40,7 +40,7 @@ actor AdsProviderActor: AdsProviderActing {
     /// Last messages to sent to BE
     private var messages: [AdsMessage]
     private var bids: [Bid]
-    private var states: [AdState]
+    private var states: [AdLoadingState]
 
     init(
         configuration: AdsProviderConfiguration,
@@ -142,17 +142,17 @@ actor AdsProviderActor: AdsProviderActing {
         // Insert new states for last message id
         let stateId: String = UUID().uuidString
         let newStates = uniqueBids.map {
-            AdState(
+            AdLoadingState(
                 id: stateId,
                 bid: $0,
                 messageId: lastMessageId,
+                show: true,
+                preferredHeight: nil, // Use default preferred height
                 webViewData: self.prepareWebViewData(
                     stateId: stateId,
                     messageId: lastMessageId,
                     bid: $0
-                ),
-                show: true,
-                preferredHeight: nil // Use default preferred height
+                )
             )
         }
         guard !newStates.isEmpty else { return }
@@ -167,8 +167,8 @@ actor AdsProviderActor: AdsProviderActing {
         )
     }
 
-    func prepareWebViewData(stateId: String, messageId: String, bid: Bid) -> Ad.WebViewData {
-        Ad.WebViewData(
+    func prepareWebViewData(stateId: String, messageId: String, bid: Bid) -> AdLoadingState.WebViewData {
+        AdLoadingState.WebViewData(
             url: self.adsServerAPI.frameURL(
                 messageId: messageId,
                 bidId: bid.bidId,
@@ -233,13 +233,12 @@ actor AdsProviderActor: AdsProviderActing {
         self.states = []
     }
 
-    func buildAd(for state: AdState) -> Ad {
-        Ad(
+    func buildAd(for state: AdLoadingState) -> Advertisment {
+        Advertisment(
             id: state.id,
             messageId: state.messageId,
             placementCode: state.bid.code,
             preferredHeight: state.preferredHeight ?? 0,
-            adsProviderActing: self,
             bid: state.bid,
             webViewData: state.webViewData
         )

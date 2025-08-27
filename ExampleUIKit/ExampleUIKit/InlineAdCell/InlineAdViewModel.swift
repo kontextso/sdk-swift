@@ -7,11 +7,11 @@ import KontextSwiftSDK
 
 final class InlineAdViewModel {
     let adsProvider: AdsProvider
-    let ad: Ad
+    let ad: Advertisment
 
     init(
         adsProvider: AdsProvider,
-        ad: Ad
+        ad: Advertisment
     ) {
         self.adsProvider = adsProvider
         self.ad = ad
