@@ -12,7 +12,7 @@ protocol AdsProviderActing: Sendable {
     func setDelegate(delegate: AdsProviderDelegate?) async
 
     func setDisabled(_ isDisabled: Bool) async
-    
+
     func setMessages(messages: [AdsMessage]) async throws
 
     func reset() async
@@ -31,7 +31,7 @@ actor AdsProviderActor: AdsProviderActing {
     private var lastPreloadUserMessageCount: Int
     /// Preload timeout in seconds.
     private var preloadTimeout: Int
-    
+
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
@@ -60,7 +60,7 @@ actor AdsProviderActor: AdsProviderActing {
         lastPreloadUserMessageCount = 0
         preloadTimeout = 60
     }
-    
+
     /// Enables or Disables the generation of ads.
     func setDisabled(_ isDisabled: Bool) {
         self.isDisabled = isDisabled
@@ -74,7 +74,7 @@ actor AdsProviderActor: AdsProviderActing {
         guard !isDisabled else {
             return
         }
-        
+
         let newUserMessages = messages.filter { $0.role == .user }
         let newAssistantMessages = messages.filter { $0.role == .assistant }
         let newUserMessageCount = newUserMessages.count
@@ -91,7 +91,7 @@ actor AdsProviderActor: AdsProviderActing {
         }
 
         self.lastPreloadUserMessageCount = newUserMessageCount
-        
+
         let preloadedData = try await preloadWithTimeout(
             timeout: preloadTimeout,
             sessionId: sessionId,
@@ -112,65 +112,41 @@ actor AdsProviderActor: AdsProviderActing {
     }
 
     func bindBidsToLastUserMessage() {
-        // Has not bind bids to last user message yet
-        guard !self.states.contains(where: { $0.bid.adDisplayPosition == .afterUserMessage })
-        else { return }
-        // Prepare last user message id
-        guard let lastUserMessageId = self.messages.filter { $0.role == .user }.last?.id
-        else { return }
-        // Find all bids that are associated with user message
-        let bids = self.bids.filter { $0.adDisplayPosition == .afterUserMessage }
-        // Only take one bid for each unique code
-        let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
-        // Insert new states for last user message id
-        let stateId: String = UUID().uuidString
-        let newStates = uniqueBids.map {
-            AdState(
-                id: stateId,
-                bid: $0,
-                messageId: lastUserMessageId,
-                webViewData: self.prepareWebViewData(
-                    stateId: stateId,
-                    messageId: lastUserMessageId,
-                    bid: $0
-                ),
-                show: true,
-                preferredHeight: nil // Use default preferred height
-            )
-        }
-        guard !newStates.isEmpty else { return }
-        self.states.append(contentsOf: newStates)
-        notifyDelegate()
+        bindBidsToLastMessage(forRole: .user, adDisplayPosition: .afterUserMessage)
     }
 
     func bindBidsToLastAssistantMessage() {
-        // Has not bind bids to last user message yet
-        guard !self.states.contains(where: { $0.bid.adDisplayPosition == .afterAssistantMessage })
+        bindBidsToLastMessage(forRole: .assistant, adDisplayPosition: .afterAssistantMessage)
+    }
+
+
+    private func bindBidsToLastMessage(forRole role: Role, adDisplayPosition: AdDisplayPosition) {
+        // Has not bind bids to last message yet
+        guard !self.states.contains(where: { $0.bid.adDisplayPosition == adDisplayPosition })
         else { return }
-        // Prepare last user message id
-        guard let lastAssistantMessageId = self.messages.filter { $0.role == .assistant }.last?.id
+        // Prepare last message id
+        guard let lastMessageId = self.messages.filter { $0.role == role }.last?.id
         else { return }
-        // Find all bids that are associated with user message
-        let bids = self.bids.filter { $0.adDisplayPosition == .afterAssistantMessage }
+        // Find all bids that are associated with the ad display position
+        let bids = self.bids.filter { $0.adDisplayPosition == adDisplayPosition }
         // Only take one bid for each unique code
         let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
-        // Insert new states for last user message id
+        // Insert new states for last message id
         let stateId: String = UUID().uuidString
         let newStates = uniqueBids.map {
             AdState(
                 id: stateId,
                 bid: $0,
-                messageId: lastAssistantMessageId,
+                messageId: lastMessageId,
                 webViewData: self.prepareWebViewData(
                     stateId: stateId,
-                    messageId: lastAssistantMessageId,
+                    messageId: lastMessageId,
                     bid: $0
                 ),
                 show: true,
                 preferredHeight: nil // Use default preferred height
             )
         }
-
         guard !newStates.isEmpty else { return }
         self.states.append(contentsOf: newStates)
         notifyDelegate()
@@ -285,11 +261,11 @@ private extension AdsProviderActor {
                     messages: messages
                 )
             }
-            
+
             guard let data = try await group.next() else {
                 throw CancellationError()
             }
-            
+
             group.cancelAll()
             return data
         }
