@@ -23,13 +23,20 @@ public final class AdsProvider: @unchecked Sendable {
     /// Dependency container that holds all dependencies used by AdsProvider.
     private let dependencies: DependencyContainer
 
+    /// Delegate to receive ads related events
+    ///
+    /// - Receives events on the main thread
+    /// - Information about newly available ads
+    /// - Information about height changes of ads
     public var delegate: AdsProviderDelegate?
 
     /// Initializes a new instance of `AdsProvider`.
     ///
     /// - Parameters:
-    ///     - configuration: The configuration of immutable setup of the AdsProvider. Can be later accessed through `configuration` property.
-    ///     - sessionId: Session ID representing the current user session. If not provided, a new session ID will be generated.
+///     - configuration: The configuration of immutable setup of the AdsProvider. Can be later accessed through `configuration` property.
+///     - sessionId: Session ID representing the current user session. If not provided, a new session ID will be generated.
+///     - isDisabled: If true, the ads generation will be disabled initially. Can be later enabled by calling `enable()`.
+///     - delegate: Delegate to receive ads related updates. Called on a main thread
     @MainActor
     public init(
         configuration: AdsProviderConfiguration,
@@ -90,7 +97,7 @@ public final class AdsProvider: @unchecked Sendable {
 extension AdsProvider: AdsProviderActingDelegate {
     func adsProviderActing(
         _ adsProviderActing: AdsProviderActing,
-        didChangeAvailableAdsTo ads: [Advertisment]
+        didChangeAvailableAdsTo ads: [Advertisement]
     ) {
         Task { @MainActor in
             self.delegate?.adsProvider(self, didChangeAvailableAdsTo: ads)
@@ -99,7 +106,7 @@ extension AdsProvider: AdsProviderActingDelegate {
 
     func adsProviderActing(
         _ adsProviderActing: AdsProviderActing,
-        didUpdateHeightForAd ad: Advertisment
+        didUpdateHeightForAd ad: Advertisement
     ) {
         Task { @MainActor in
             self.delegate?.adsProvider(self, didUpdateHeightForAd: ad)

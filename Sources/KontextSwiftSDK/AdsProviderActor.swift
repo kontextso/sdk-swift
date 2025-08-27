@@ -21,9 +21,9 @@ protocol AdsProviderActing: Sendable {
 // MARK: - AdsProviderActingDelegate
 
 protocol AdsProviderActingDelegate: class {
-    func adsProviderActing(_ adsProviderActing: AdsProviderActing, didChangeAvailableAdsTo ads: [Advertisment])
+    func adsProviderActing(_ adsProviderActing: AdsProviderActing, didChangeAvailableAdsTo ads: [Advertisement])
 
-    func adsProviderActing(_ adsProviderActing: AdsProviderActing, didUpdateHeightForAd ad: Advertisment)
+    func adsProviderActing(_ adsProviderActing: AdsProviderActing, didUpdateHeightForAd ad: Advertisement)
 }
 
 // MARK: - AdsProviderActor
@@ -242,8 +242,8 @@ actor AdsProviderActor: AdsProviderActing {
         self.states = []
     }
 
-    func buildAd(for state: AdLoadingState) -> Advertisment {
-        Advertisment(
+    func buildAd(for state: AdLoadingState) -> Advertisement {
+        Advertisement(
             id: state.id,
             messageId: state.messageId,
             placementCode: state.bid.code,

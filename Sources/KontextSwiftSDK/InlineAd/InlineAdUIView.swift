@@ -24,7 +24,7 @@ public final class InlineAdUIView: UIView {
     ///   - otherParams: Additional parameters to be sent to the ad server, for example theme.
     public init(
         adsProvider: AdsProvider,
-        ad: Advertisment
+        ad: Advertisement
     ) {
         viewModel = InlineAdViewModel(ad: ad)
         super.init(frame: .zero)

@@ -10,9 +10,9 @@ import UIKit
 
 @MainActor
 final class InlineAdViewModel: ObservableObject {
-    let ad: Advertisment
+    let ad: Advertisement
 
-    init(ad: Advertisment) {
+    init(ad: Advertisement) {
         self.ad = ad
     }
 }

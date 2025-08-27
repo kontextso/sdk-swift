@@ -9,7 +9,7 @@ import UIKit
 final class MyMessagesTableViewController: UITableViewController {
     private let adsProvider: AdsProvider
     private var messages: [MyMessage]
-    private var ads: [Advertisment] = []
+    private var ads: [Advertisement] = []
     private var viewModels: [CellViewModel]
 
     private let sendButton: UIButton = {
@@ -128,7 +128,7 @@ final class MyMessagesTableViewController: UITableViewController {
 extension MyMessagesTableViewController: AdsProviderDelegate {
     func adsProvider(
         _ adsProvider: KontextSwiftSDK.AdsProvider,
-        didChangeAvailableAdsTo ads: [KontextSwiftSDK.Advertisment]
+        didChangeAvailableAdsTo ads: [KontextSwiftSDK.Advertisement]
     ) {
         self.ads = ads
         self.prepareViewModels()
@@ -137,7 +137,7 @@ extension MyMessagesTableViewController: AdsProviderDelegate {
 
     func adsProvider(
         _ adsProvider: KontextSwiftSDK.AdsProvider,
-        didUpdateHeightForAd ad: KontextSwiftSDK.Advertisment
+        didUpdateHeightForAd ad: KontextSwiftSDK.Advertisement
     ) {
         self.tableView.beginUpdates()
         self.tableView.endUpdates()
