@@ -8,7 +8,6 @@ import KontextSwiftSDK
 
 final class InlineAdTableViewCell: UITableViewCell {
     private var inlineAdView: InlineAdUIView?
-    var onAction: ((InlineAdAction) -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -26,7 +25,10 @@ final class InlineAdTableViewCell: UITableViewCell {
         inlineAdView = nil
     }
 
-    func configure(with viewModel: InlineAdViewModel) {
+    func configure(
+        with viewModel: InlineAdViewModel,
+        onAction: ((InlineAdAction) -> Void)?
+    ) {
         inlineAdView?.removeFromSuperview()
 
         let inlineAdView = InlineAdUIView(
