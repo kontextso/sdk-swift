@@ -5,28 +5,55 @@
 
 import UIKit
 
+public struct Ad {
+    struct WebViewData {
+        let url: URL?
+        let updateData: UpdateIFrameData
+        let onIFrameEvent: (InlineAdEvent) -> Void
+    }
+
+    public let id: String
+    public let messageId: String
+    public let placementCode: String
+
+    let preferredHeight: CGFloat?
+    let adsProviderActing: AdsProviderActing
+    let bid: Bid
+    let webViewData: WebViewData
+    let webView: InlineAdWebView?
+
+    init(
+        id: String,
+        messageId: String,
+        placementCode: String,
+        preferredHeight: CGFloat?,
+        adsProviderActing: AdsProviderActing,
+        bid: Bid,
+        webViewData: WebViewData,
+        webView: InlineAdWebView?
+    ) {
+        self.id = id
+        self.messageId = messageId
+        self.placementCode = placementCode
+        self.preferredHeight = preferredHeight
+        self.adsProviderActing = adsProviderActing
+        self.bid = bid
+        self.webViewData = webViewData
+        self.webView = webView
+    }
+}
+
 public protocol AdsProviderDelegate: class {
-    func adsProvider(_ adsProvider: AdsProvider, didUpdateSizeOfAdAssociatedWith messageId: String)
+    func adsProvider(didChangeAvailableAdsTo ads: [Ad])
 }
 
-extension UITableViewController: AdsProviderDelegate {
-    public func adsProvider(_ adsProvider: AdsProvider, didUpdateSizeOfAdAssociatedWith messageId: String) {
-        UIView.animate(withDuration: 0.3) {
-            self.tableView.beginUpdates()
-            self.tableView.endUpdates()
-        }
-    }
-}
+struct AdState {
+    let id: String
+    let bid: Bid
+    let messageId: String
+    let webViewData: Ad.WebViewData
+    var show: Bool
+    var preferredHeight: CGFloat?
+    var webView: InlineAdWebView?
 
-extension UICollectionViewController: AdsProviderDelegate {
-    public func adsProvider(_ adsProvider: AdsProvider, didUpdateSizeOfAdAssociatedWith messageId: String) {
-        self.collectionView.collectionViewLayout.invalidateLayout()
-        self.collectionView.performBatchUpdates(nil, completion: nil)
-    }
-}
-
-final class DefaultAdsProviderDelegate: AdsProviderDelegate {
-    public func adsProvider(_ adsProvider: AdsProvider, didUpdateSizeOfAdAssociatedWith messageId: String) {
-        // No-op
-    }
 }

@@ -7,19 +7,13 @@ import KontextSwiftSDK
 
 final class InlineAdViewModel {
     let adsProvider: AdsProvider
-    let code: String
-    let messageId: String
-    let otherParams: [String: String]
+    let ad: Ad
 
     init(
         adsProvider: AdsProvider,
-        code: String,
-        messageId: String,
-        otherParams: [String : String]
+        ad: Ad
     ) {
         self.adsProvider = adsProvider
-        self.code = code
-        self.messageId = messageId
-        self.otherParams = otherParams
+        self.ad = ad
     }
 }

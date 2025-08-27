@@ -8,27 +8,25 @@ struct DependencyContainer: Sendable {
     let adsServerAPI: AdsServerAPI
     let sharedStorage: SharedStorage
     let adsProviderActing: AdsProviderActing
-    let adsProviderDelegate: AdsProviderDelegate
 
     init(
         networking: Networking,
         adsServerAPI: AdsServerAPI,
         sharedStorage: SharedStorage,
         adsProviderActing: AdsProviderActing,
-        adsProviderDelegate: AdsProviderDelegate
     ) {
         self.networking = networking
         self.adsServerAPI = adsServerAPI
         self.sharedStorage = sharedStorage
         self.adsProviderActing = adsProviderActing
-        self.adsProviderDelegate = adsProviderDelegate
     }
     
     @MainActor
     static func defaultContainer(
         configuration: AdsProviderConfiguration,
         sessionId: String?,
-        isDisabled: Bool
+        isDisabled: Bool,
+        delegate: AdsProviderDelegate? = nil
     ) -> DependencyContainer {
         let networking = Network()
         let adsServerAPI = BaseURLAdsServerAPI(
@@ -41,16 +39,14 @@ struct DependencyContainer: Sendable {
             sessionId: sessionId,
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI,
-            sharedStorage: sharedStorage
+            delegate: delegate
         )
-        let delegate = DefaultAdsProviderDelegate()
 
         return DependencyContainer(
             networking: networking,
             adsServerAPI: adsServerAPI,
             sharedStorage: sharedStorage,
-            adsProviderActing: providerActor,
-            adsProviderDelegate: delegate
+            adsProviderActing: providerActor
         )
     }
 }

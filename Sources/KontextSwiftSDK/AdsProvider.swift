@@ -23,7 +23,9 @@ public final class AdsProvider: @unchecked Sendable {
     /// Dependency container that holds all dependencies used by AdsProvider.
     private let dependencies: DependencyContainer
 
-    public var delegate: AdsProviderDelegate
+    public var delegate: AdsProviderDelegate? {
+        didSet { Task { await dependencies.adsProviderActing.setDelegate(delegate: delegate) } }
+    }
 
 
     /// Initializes a new instance of `AdsProvider`.
@@ -42,9 +44,10 @@ public final class AdsProvider: @unchecked Sendable {
         self.dependencies = DependencyContainer.defaultContainer(
             configuration: configuration,
             sessionId: sessionId,
-            isDisabled: isDisabled
+            isDisabled: isDisabled,
+            delegate: delegate
         )
-        self.delegate = delegate ?? self.dependencies.adsProviderDelegate
+        self.delegate = delegate
     }
 
     /// Sets messages to be used as context for ad generation.
@@ -87,26 +90,23 @@ public final class AdsProvider: @unchecked Sendable {
 
 // MARK: - Internal methods
 
-extension AdsProvider {
-    @MainActor
-    func inlineAdViewModel(
-        code: String,
-        messageId: String,
-        otherParams: [String: String]
-    ) -> InlineAdViewModel {
-        InlineAdViewModel(
-            sharedStorage: dependencies.sharedStorage,
-            adsServerAPI: dependencies.adsServerAPI,
-            adsProviderActing: dependencies.adsProviderActing,
-            code: code,
-            messageId: messageId,
-            otherParams: otherParams
-        ) { [weak self] in
-            guard let self else { return }
-            self.delegate.adsProvider(self, didUpdateSizeOfAdAssociatedWith: messageId)
-        }
-    }
-}
+//extension AdsProvider {
+//    @MainActor
+//    func inlineAdViewModel(
+//        code: String,
+//        messageId: String,
+//        otherParams: [String: String]
+//    ) -> InlineAdViewModel {
+//        InlineAdViewModel(
+//            sharedStorage: dependencies.sharedStorage,
+//            adsServerAPI: dependencies.adsServerAPI,
+//            adsProviderActing: dependencies.adsProviderActing,
+//            code: code,
+//            messageId: messageId,
+//            otherParams: otherParams
+//        )
+//    }
+//}
 
 // MARK: - Private methods
 

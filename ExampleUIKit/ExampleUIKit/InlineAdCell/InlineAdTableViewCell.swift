@@ -30,9 +30,7 @@ final class InlineAdTableViewCell: UITableViewCell {
 
         let inlineAdView = InlineAdUIView(
             adsProvider: viewModel.adsProvider,
-            code: viewModel.code,
-            messageId: viewModel.messageId,
-            otherParams: viewModel.otherParams
+            ad: viewModel.ad
         )
 
         self.inlineAdView = inlineAdView

@@ -9,7 +9,8 @@ import UIKit
 final class MyMessagesTableViewController: UITableViewController {
     private let adsProvider: AdsProvider
     private var messages: [MyMessage]
-    private var viewModels: [MyMessagesCollectionViewModel]
+    private var ads: [Ad] = []
+    private var viewModels: [CellViewModel]
 
     private let sendButton: UIButton = {
         let button = UIButton(type: .system)
@@ -88,7 +89,7 @@ final class MyMessagesTableViewController: UITableViewController {
         )
         messages.append(message)
         adsProvider.setMessages(messages)
-        addViewModels(for: message, includeAd: false)
+        self.prepareViewModels()
         tableView.reloadData()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
@@ -105,28 +106,31 @@ final class MyMessagesTableViewController: UITableViewController {
         )
         messages.append(assistantMessage)
         adsProvider.setMessages(messages)
-        addViewModels(for: assistantMessage, includeAd: true)
+        self.prepareViewModels()
         tableView.reloadData()
     }
 
-    private func addViewModels(for message: MyMessage, includeAd: Bool) {
-        viewModels.removeAll {
-            if case .ad = $0 {
-                return true
-            }
-            return false
-        }
-        viewModels.append(.message(MyMessageViewModel(message: message)))
 
-        if includeAd {
-            viewModels.append(.ad(
-                InlineAdViewModel(
-                    adsProvider: adsProvider,
-                    code: "inlineAd",
-                    messageId: message.id,
-                    otherParams: [:]
-                )
-            ))
+    private func prepareViewModels() {
+        var viewModels: [CellViewModel] = []
+        for message in messages {
+            viewModels.append(.message(MyMessageViewModel(message: message)))
+            if let ad = ads.first(where: { $0.messageId == message.id }) {
+                viewModels.append(.ad(InlineAdViewModel(
+                    adsProvider: adsProvider, ad: ad
+                )))
+            }
+        }
+        self.viewModels = viewModels
+    }
+}
+
+extension MyMessagesTableViewController: AdsProviderDelegate {
+    func adsProvider(didChangeAvailableAdsTo: [Ad]) {
+        Task { @MainActor in
+            self.ads = didChangeAvailableAdsTo
+            self.prepareViewModels()
+            self.tableView.reloadData()
         }
     }
 }
@@ -151,16 +155,10 @@ extension MyMessagesTableViewController {
         }
     }
 
-
     override func tableView(
         _ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath
     ) -> CGFloat {
-//        let viewModel = viewModels[indexPath.row]
-//        switch viewModel {
-//        case .ad: return 0
-//        case .message: return 40
-//        }
-        return 40
+        return 44
     }
 
     override func tableView(

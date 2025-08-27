@@ -23,44 +23,44 @@ public struct InlineAdView: View {
     ///   - code: Placement code of the ad to be displayed.
     ///   - messageId: The identifier of the message after which the ad should be displayed.
     ///   - otherParams: Additional parameters to be sent to the ad server, for example theme.
-    public init(
-        adsProvider: AdsProvider,
-        code: String,
-        messageId: String,
-        otherParams: [String: String]
-    ) {
-        let viewModel = adsProvider.inlineAdViewModel(
-            code: code,
-            messageId: messageId,
-            otherParams: otherParams
-        )
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
+//    public init(
+//        adsProvider: AdsProvider,
+//        code: String,
+//        messageId: String,
+//        otherParams: [String: String]
+//    ) {
+//        let viewModel = adsProvider.inlineAdViewModel(
+//            code: code,
+//            messageId: messageId,
+//            otherParams: otherParams
+//        )
+//        _viewModel = StateObject(wrappedValue: viewModel)
+//    }
 
     public var body: some View {
-        if let url = viewModel.url {
-            InlineAdWebViewRepresentable(
-                url: url,
-                updateIFrameData: viewModel.updateIFrameData,
-                onIFrameEvent: { viewModel.send(.didReceiveAdEvent($0)) }
-            )
-            .frame(height: viewModel.preferredHeight)
-            .onAppear(perform: self.viewModel.viewDidFinishSizeUpdate)
-        } else {
-            // TODO: Remove after testing
-            Button(action: {
-                fullscreenCoverIsPresented = true
-            }) {
-                Text("Display fullscreenCover modal")
-            }
-            .fullScreenCover(isPresented: $fullscreenCoverIsPresented) {
-                VStack {
-                    Text("This is a fullscreen modal")
-                    Button("Dismiss") {
-                        fullscreenCoverIsPresented = false
-                    }
-                }
-            }
-        }
+        EmptyView()
+//        if let url = viewModel.ad {
+//            InlineAdWebViewRepresentable(
+//                url: url,
+//                updateIFrameData: viewModel.updateIFrameData,
+//                onIFrameEvent: { viewModel.send(.didReceiveAdEvent($0)) }
+//            )
+//            .frame(height: viewModel.preferredHeight)
+//        } else {
+//            // TODO: Remove after testing
+//            Button(action: {
+//                fullscreenCoverIsPresented = true
+//            }) {
+//                Text("Display fullscreenCover modal")
+//            }
+//            .fullScreenCover(isPresented: $fullscreenCoverIsPresented) {
+//                VStack {
+//                    Text("This is a fullscreen modal")
+//                    Button("Dismiss") {
+//                        fullscreenCoverIsPresented = false
+//                    }
+//                }
+//            }
+//        }
     }
 }

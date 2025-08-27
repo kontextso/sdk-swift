@@ -26,19 +26,11 @@ public final class InlineAdUIView: UIView {
     ///   - otherParams: Additional parameters to be sent to the ad server, for example theme.
     public init(
         adsProvider: AdsProvider,
-        code: String,
-        messageId: String,
-        otherParams: [String: String]
+        ad: Ad
     ) {
-        viewModel = adsProvider.inlineAdViewModel(
-            code: code,
-            messageId: messageId,
-            otherParams: otherParams
-        )
-
+        viewModel = InlineAdViewModel(ad: ad)
         super.init(frame: .zero)
         self.setupUI()
-        observeChanges()
     }
 }
 
@@ -46,9 +38,9 @@ private extension InlineAdUIView {
     func setupUI() {
         let adWebView = InlineAdWebView(
             frame: .zero,
-            updateFrameData: viewModel.updateIFrameData,
+            updateFrameData: viewModel.ad.webViewData.updateData,
             onIFrameEvent: { [weak self] event in
-                self?.viewModel.send(.didReceiveAdEvent(event))
+
             }
         )
         addSubview(adWebView)
@@ -56,7 +48,7 @@ private extension InlineAdUIView {
 
         adWebView.translatesAutoresizingMaskIntoConstraints = false
 
-        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.preferredHeight)
+        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.ad.preferredHeight ?? 20)
         heightConstraint.priority = .defaultHigh
         self.heightConstraint = heightConstraint
 
@@ -67,24 +59,9 @@ private extension InlineAdUIView {
             adWebView.bottomAnchor.constraint(equalTo: bottomAnchor),
             heightConstraint
         ])
-    }
 
-    func observeChanges() {
-        viewModel.$url
-            .first(where: { $0 != nil })
-            .sink { [weak self] url in
-                guard let url else { return }
-                self?.adWebView?.loadAd(from: url)
-            }
-            .store(in: &cancellables)
-
-        viewModel.$preferredHeight
-            .receive(on: RunLoop.main)
-            .sink { [weak self] height in
-                guard let self else { return }
-                self.heightConstraint?.constant = height
-                self.viewModel.viewDidFinishSizeUpdate()
-            }
-            .store(in: &cancellables)
+        if let url = viewModel.ad.webViewData.url {
+            adWebView.load(URLRequest(url: url))
+        }
     }
 }
