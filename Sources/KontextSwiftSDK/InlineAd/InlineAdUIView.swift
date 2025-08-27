@@ -9,9 +9,7 @@ import SwiftUI
 
 public final class InlineAdUIView: UIView {
     private var viewModel: InlineAdViewModel
-    private var cancellables: Set<AnyCancellable> = []
     private var heightConstraint: NSLayoutConstraint?
-    private var onAdHeightChange: ((CGFloat) -> Void)?
 
     private var adWebView: InlineAdWebView?
 
@@ -36,11 +34,17 @@ public final class InlineAdUIView: UIView {
 
 private extension InlineAdUIView {
     func setupUI() {
+        let shouldLoadAd = viewModel.ad.webView == nil
         let adWebView = InlineAdWebView(
             frame: .zero,
             updateFrameData: viewModel.ad.webViewData.updateData,
             onIFrameEvent: { [weak self] event in
-
+                guard let self else { return }
+                guard let webView = self.adWebView else { return }
+                self.viewModel.ad.webViewData.onIFrameEvent(webView, event)
+                if case .resizeIframe(let resizeIframeData) = event {
+                    self.heightConstraint?.constant = resizeIframeData.height
+                }
             }
         )
         addSubview(adWebView)
@@ -48,11 +52,13 @@ private extension InlineAdUIView {
 
         adWebView.translatesAutoresizingMaskIntoConstraints = false
 
-        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.ad.preferredHeight ?? 20)
+        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.ad.preferredHeight ?? 0)
         heightConstraint.priority = .defaultHigh
+        
         self.heightConstraint = heightConstraint
 
         NSLayoutConstraint.activate([
+//            adWebView.heightAnchor.constraint(greaterThanOrEqualToConstant: 20),
             adWebView.topAnchor.constraint(equalTo: topAnchor),
             adWebView.leadingAnchor.constraint(equalTo: leadingAnchor),
             adWebView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -60,7 +66,7 @@ private extension InlineAdUIView {
             heightConstraint
         ])
 
-        if let url = viewModel.ad.webViewData.url {
+        if shouldLoadAd, let url = viewModel.ad.webViewData.url {
             adWebView.load(URLRequest(url: url))
         }
     }

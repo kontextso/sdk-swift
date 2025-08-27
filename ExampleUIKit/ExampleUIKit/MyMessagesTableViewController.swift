@@ -133,6 +133,13 @@ extension MyMessagesTableViewController: AdsProviderDelegate {
             self.tableView.reloadData()
         }
     }
+
+    func adsProvider(didUpdateHeightForAd: Ad) {
+        Task { @MainActor in
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        }
+    }
 }
 
 extension MyMessagesTableViewController {

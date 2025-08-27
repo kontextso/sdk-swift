@@ -84,9 +84,9 @@ actor AdsProviderActor: AdsProviderActing {
 
         if shouldPreload {
             reset()
+            notifyDelegate()
         } else {
             bindBidsToLastAssistantMessage()
-            notifyDelegate()
             return
         }
 
@@ -109,7 +109,6 @@ actor AdsProviderActor: AdsProviderActing {
         sessionId = preloadedData.sessionId
         bindBidsToLastUserMessage()
         bindBidsToLastAssistantMessage()
-        notifyDelegate()
     }
 
     func bindBidsToLastUserMessage() {
@@ -125,22 +124,23 @@ actor AdsProviderActor: AdsProviderActing {
         let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
         // Insert new states for last user message id
         let stateId: String = UUID().uuidString
-        self.states.append(
-            contentsOf: uniqueBids.map {
-                AdState(
-                    id: stateId,
-                    bid: $0,
+        let newStates = uniqueBids.map {
+            AdState(
+                id: stateId,
+                bid: $0,
+                messageId: lastUserMessageId,
+                webViewData: self.prepareWebViewData(
+                    stateId: stateId,
                     messageId: lastUserMessageId,
-                    webViewData: self.prepareWebViewData(
-                        stateId: stateId,
-                        messageId: lastUserMessageId,
-                        bid: $0
-                    ),
-                    show: false,
-                    preferredHeight: nil // Use default preferred height
-                )
-            }
-        )
+                    bid: $0
+                ),
+                show: true,
+                preferredHeight: nil // Use default preferred height
+            )
+        }
+        guard !newStates.isEmpty else { return }
+        self.states.append(contentsOf: newStates)
+        notifyDelegate()
     }
 
     func bindBidsToLastAssistantMessage() {
@@ -156,42 +156,32 @@ actor AdsProviderActor: AdsProviderActing {
         let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
         // Insert new states for last user message id
         let stateId: String = UUID().uuidString
-        self.states.append(
-            contentsOf: uniqueBids.map {
-                AdState(
-                    id: stateId,
-                    bid: $0,
+        let newStates = uniqueBids.map {
+            AdState(
+                id: stateId,
+                bid: $0,
+                messageId: lastAssistantMessageId,
+                webViewData: self.prepareWebViewData(
+                    stateId: stateId,
                     messageId: lastAssistantMessageId,
-                    webViewData: self.prepareWebViewData(
-                        stateId: stateId,
-                        messageId: lastAssistantMessageId,
-                        bid: $0
-                    ),
-                    show: false,
-                    preferredHeight: nil // Use default preferred height
-                )
-            }
-        )
+                    bid: $0
+                ),
+                show: true,
+                preferredHeight: nil // Use default preferred height
+            )
+        }
+
+        guard !newStates.isEmpty else { return }
+        self.states.append(contentsOf: newStates)
+        notifyDelegate()
     }
 
     func notifyDelegate() {
         self.delegate?.adsProvider(didChangeAvailableAdsTo: self.states
-//            .filter { $0.show }
-            .map { state in
-                Ad(
-                    id: state.id,
-                    messageId: state.messageId,
-                    placementCode: state.bid.code,
-                    preferredHeight: state.preferredHeight,
-                    adsProviderActing: self,
-                    bid: state.bid,
-                    webViewData: state.webViewData,
-                    webView: nil
-                )
-            }
+            .filter { $0.show }
+            .map { self.buildAd(for: $0) }
         )
     }
-
 
     func prepareWebViewData(stateId: String, messageId: String, bid: Bid) -> Ad.WebViewData {
         Ad.WebViewData(
@@ -207,13 +197,13 @@ actor AdsProviderActor: AdsProviderActing {
                 messages: messages.suffix(10).map { MessageDTO (from: $0) },
                 otherParams: [:] // Resolve other params
             ),
-            onIFrameEvent: { event in
-                self.handleIFrameEvent(event: event, stateId: stateId)
+            onIFrameEvent: { webView, event in
+                self.handleIFrameEvent(on: webView, event: event, stateId: stateId)
             }
         )
     }
 
-    func handleIFrameEvent(event: InlineAdEvent, stateId: String) {
+    func handleIFrameEvent(on webView: InlineAdWebView, event: InlineAdEvent, stateId: String) {
         guard let stateIndex = self.states.firstIndex(where: { $0.id == stateId }) else {
             return
         }
@@ -221,11 +211,12 @@ actor AdsProviderActor: AdsProviderActing {
 
         switch event {
         case .initIframe:
-            break // Handled by InlineAdWebView
+            // Handled by InlineAdWebView
+            newState.webView = webView
+            self.states[stateIndex] = newState
         case .showIframe:
             newState.show = true
             self.states[stateIndex] = newState
-            notifyDelegate()
         case .hideIframe:
             newState.show = false
             self.states[stateIndex] = newState
@@ -241,9 +232,10 @@ actor AdsProviderActor: AdsProviderActing {
                 UIApplication.shared.open(iframeClickedURL)
             }
         case .resizeIframe(let resizedData):
+            guard resizedData.height != newState.preferredHeight else { return }
             newState.preferredHeight = resizedData.height
             self.states[stateIndex] = newState
-            notifyDelegate()
+            self.delegate?.adsProvider(didUpdateHeightForAd: self.buildAd(for: newState))
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message.message)")
             self.reset()
@@ -257,7 +249,19 @@ actor AdsProviderActor: AdsProviderActing {
         // Remove all WebView handlers if possible
         self.bids = []
         self.states = []
-        self.messages = []
+    }
+
+    func buildAd(for state: AdState) -> Ad {
+        Ad(
+            id: state.id,
+            messageId: state.messageId,
+            placementCode: state.bid.code,
+            preferredHeight: state.preferredHeight,
+            adsProviderActing: self,
+            bid: state.bid,
+            webViewData: state.webViewData,
+            webView: state.webView
+        )
     }
 }
 
