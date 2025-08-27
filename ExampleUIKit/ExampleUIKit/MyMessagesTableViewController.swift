@@ -157,17 +157,7 @@ extension MyMessagesTableViewController {
     }
 
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let viewModel = viewModels[indexPath.row]
-        switch viewModel {
-        case .ad: return UITableView.automaticDimension
-        case .message: return UITableView.automaticDimension
-        }
-    }
-
-    override func tableView(
-        _ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath
-    ) -> CGFloat {
-        return 44
+        UITableView.automaticDimension
     }
 
     override func tableView(
