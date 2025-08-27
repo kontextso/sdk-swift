@@ -2,7 +2,7 @@
 
 The official Swift SDK for integrating Kontext.so ads into your mobile application.
 
-KontextSwiftSDK is a Swift package that provides an easy way to integrate Kontext.so ads into your iOS application. It manages ad loading, placement and errors with minimalist API. There is no need for complex state management, just iniatlize it and pass it messages whenever they change. The SDK will take care of the rest.
+KontextSwiftSDK is a Swift package that provides an easy way to integrate Kontext.so ads into your iOS application. It manages ad loading, placement and errors with minimalist API. There is no need for complex state management, just initialize it and pass it messages whenever they change. The SDK will take care of the rest.
 
 ## Requirements
 
@@ -29,7 +29,7 @@ Alternatively you can use Xcode's UI: `File > Add Package Dependencies ...` and 
 
 ### CocoaPods
 
-If you prefer Cococapods instead.
+If you prefer CocoaPods instead.
 
 Add the following line to your `Podfile`:
 
@@ -163,7 +163,7 @@ adsProvider.setMessages(messages)
 Lastly, provide place for the Ads to manifest into. This is done by placing `InlineAdView` into View hierarchy just after the associated message. It will stay empty until an ad linked to the respective message is retrieved.
 
 ```swift
-ForEach(messages, id: \.uuid.uuidString) { message in
+ForEach(messages, id: \.id) { message in
 	VStack {
 		MyChatMessageView(message)
 		InlineAdView(
