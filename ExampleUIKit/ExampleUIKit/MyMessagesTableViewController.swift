@@ -82,7 +82,7 @@ final class MyMessagesTableViewController: UITableViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "kontextso ad_format:INTERSTITIAL_REWARDED",
+            content: TestEvent.characterRewarded.rawValue,
             createdAt: Date()
         )
         messages.append(message)

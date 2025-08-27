@@ -95,7 +95,7 @@ final class MyMessagesCollectionViewController: UICollectionViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "kontextso ad_format:INTERSTITIAL",
+            content: TestEvent.characterRewarded.rawValue,
             createdAt: Date()
         )
 
