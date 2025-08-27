@@ -40,7 +40,7 @@ private extension InlineAdUIView {
             onIFrameEvent: { [weak self] event in
                 guard let self else { return }
                 guard let webView = self.adWebView else { return }
-                self.viewModel.ad.webViewData.onIFrameEvent(webView, event)
+                self.viewModel.ad.webViewData.onIFrameEvent(event)
                 if case .resizeIframe(let resizeIframeData) = event {
                     self.heightConstraint?.constant = resizeIframeData.height
                 }

@@ -181,13 +181,13 @@ actor AdsProviderActor: AdsProviderActing {
                 messages: messages.suffix(10).map { MessageDTO (from: $0) },
                 otherParams: [:] // Resolve other params
             ),
-            onIFrameEvent: { webView, event in
-                self.handleIFrameEvent(on: webView, event: event, stateId: stateId)
+            onIFrameEvent: { event in
+                self.handleIFrameEvent(event: event, stateId: stateId)
             }
         )
     }
 
-    func handleIFrameEvent(on webView: InlineAdWebView, event: InlineAdEvent, stateId: String) {
+    func handleIFrameEvent(event: InlineAdEvent, stateId: String) {
         guard let stateIndex = self.states.firstIndex(where: { $0.id == stateId }) else {
             return
         }
@@ -195,9 +195,7 @@ actor AdsProviderActor: AdsProviderActing {
 
         switch event {
         case .initIframe:
-            // Handled by InlineAdWebView
-            newState.webView = webView
-            self.states[stateIndex] = newState
+            break // Handled by InlineAdWebView
         case .showIframe:
             newState.show = true
             self.states[stateIndex] = newState

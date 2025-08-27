@@ -9,7 +9,7 @@ public struct Ad {
     struct WebViewData {
         let url: URL?
         let updateData: UpdateIFrameData
-        let onIFrameEvent: (InlineAdWebView, InlineAdEvent) -> Void
+        let onIFrameEvent: (InlineAdEvent) -> Void
     }
 
     public let id: String
