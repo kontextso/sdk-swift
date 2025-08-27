@@ -28,7 +28,7 @@ actor AdsProviderActor: AdsProviderActing {
     /// Indicates whether the ads provider is disabled.
     private var isDisabled: Bool
 
-    private var lastPreloadUserMessageCount: Int
+    private var lastPreloadUserMessageId: String
     /// Preload timeout in seconds.
     private var preloadTimeout: Int
 
@@ -57,7 +57,7 @@ actor AdsProviderActor: AdsProviderActing {
         messages = []
         bids = []
         states = []
-        lastPreloadUserMessageCount = 0
+        lastPreloadUserMessageId = ""
         preloadTimeout = 60
     }
 
@@ -76,10 +76,12 @@ actor AdsProviderActor: AdsProviderActing {
         }
 
         let newUserMessages = messages.filter { $0.role == .user }
-        let newAssistantMessages = messages.filter { $0.role == .assistant }
-        let newUserMessageCount = newUserMessages.count
         let messagesToSend = Array(messages.suffix(10))
-        let shouldPreload = lastPreloadUserMessageCount < newUserMessageCount
+        guard let lastUserMessage = newUserMessages.last else {
+            return
+        }
+
+        let shouldPreload = lastPreloadUserMessageId != lastUserMessage.id
         self.messages = messages
 
         if shouldPreload {
@@ -90,8 +92,7 @@ actor AdsProviderActor: AdsProviderActing {
             return
         }
 
-        self.lastPreloadUserMessageCount = newUserMessageCount
-
+        lastPreloadUserMessageId = lastUserMessage.id
         let preloadedData = try await preloadWithTimeout(
             timeout: preloadTimeout,
             sessionId: sessionId,
@@ -121,11 +122,18 @@ actor AdsProviderActor: AdsProviderActing {
 
 
     private func bindBidsToLastMessage(forRole role: Role, adDisplayPosition: AdDisplayPosition) {
+        // Messages have to be after the last preload user message
+        guard let lastPreloadUserMessageIndex = self.messages
+            .firstIndex(where: { $0.id == lastPreloadUserMessageId })
+        else {
+            return
+        }
+        let latestMessages = self.messages.suffix(from: lastPreloadUserMessageIndex)
         // Has not bind bids to last message yet
         guard !self.states.contains(where: { $0.bid.adDisplayPosition == adDisplayPosition })
         else { return }
         // Prepare last message id
-        guard let lastMessageId = self.messages.filter { $0.role == role }.last?.id
+        guard let lastMessageId = latestMessages.filter { $0.role == role }.last?.id
         else { return }
         // Find all bids that are associated with the ad display position
         let bids = self.bids.filter { $0.adDisplayPosition == adDisplayPosition }
@@ -232,11 +240,10 @@ actor AdsProviderActor: AdsProviderActing {
             id: state.id,
             messageId: state.messageId,
             placementCode: state.bid.code,
-            preferredHeight: state.preferredHeight,
+            preferredHeight: state.preferredHeight ?? 0,
             adsProviderActing: self,
             bid: state.bid,
-            webViewData: state.webViewData,
-            webView: state.webView
+            webViewData: state.webViewData
         )
     }
 }

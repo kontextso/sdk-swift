@@ -16,21 +16,19 @@ public struct Ad {
     public let messageId: String
     public let placementCode: String
 
-    let preferredHeight: CGFloat?
+    let preferredHeight: CGFloat
     let adsProviderActing: AdsProviderActing
     let bid: Bid
     let webViewData: WebViewData
-    let webView: InlineAdWebView?
 
     init(
         id: String,
         messageId: String,
         placementCode: String,
-        preferredHeight: CGFloat?,
+        preferredHeight: CGFloat,
         adsProviderActing: AdsProviderActing,
         bid: Bid,
-        webViewData: WebViewData,
-        webView: InlineAdWebView?
+        webViewData: WebViewData
     ) {
         self.id = id
         self.messageId = messageId
@@ -39,7 +37,6 @@ public struct Ad {
         self.adsProviderActing = adsProviderActing
         self.bid = bid
         self.webViewData = webViewData
-        self.webView = webView
     }
 }
 

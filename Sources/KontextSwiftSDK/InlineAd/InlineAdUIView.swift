@@ -34,7 +34,6 @@ public final class InlineAdUIView: UIView {
 
 private extension InlineAdUIView {
     func setupUI() {
-        let shouldLoadAd = viewModel.ad.webView == nil
         let adWebView = InlineAdWebView(
             frame: .zero,
             updateFrameData: viewModel.ad.webViewData.updateData,
@@ -52,13 +51,12 @@ private extension InlineAdUIView {
 
         adWebView.translatesAutoresizingMaskIntoConstraints = false
 
-        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.ad.preferredHeight ?? 0)
+        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.ad.preferredHeight)
         heightConstraint.priority = .defaultHigh
         
         self.heightConstraint = heightConstraint
 
         NSLayoutConstraint.activate([
-//            adWebView.heightAnchor.constraint(greaterThanOrEqualToConstant: 20),
             adWebView.topAnchor.constraint(equalTo: topAnchor),
             adWebView.leadingAnchor.constraint(equalTo: leadingAnchor),
             adWebView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -66,7 +64,7 @@ private extension InlineAdUIView {
             heightConstraint
         ])
 
-        if shouldLoadAd, let url = viewModel.ad.webViewData.url {
+        if let url = viewModel.ad.webViewData.url {
             adWebView.load(URLRequest(url: url))
         }
     }
