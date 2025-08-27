@@ -16,6 +16,7 @@ final class InlineAdViewModel: ObservableObject {
     private let sharedStorage: SharedStorage
     private let adsServerAPI: AdsServerAPI
     private let adsProviderActing: AdsProviderActing
+    private let viewDidUpdateSize: () -> Void
 
     private var messages: [AdsMessage] = []
     private var cancellables: Set<AnyCancellable>
@@ -42,7 +43,8 @@ final class InlineAdViewModel: ObservableObject {
         adsProviderActing: AdsProviderActing,
         code: String,
         messageId: String,
-        otherParams: [String: String] = [:]
+        otherParams: [String: String] = [:],
+        viewDidUpdateSize: @escaping () -> Void
     ) {
         self.sharedStorage = sharedStorage
         self.adsServerAPI = adsServerAPI
@@ -50,6 +52,7 @@ final class InlineAdViewModel: ObservableObject {
         self.code = code
         self.messageId = messageId
         self.otherParams = otherParams
+        self.viewDidUpdateSize = viewDidUpdateSize
         messages = []
         url = nil
         preferredHeight = 0
@@ -65,6 +68,10 @@ final class InlineAdViewModel: ObservableObject {
         case .didReceiveAdEvent(let inlineAdEvent):
             onAdEventAction(adEvent: inlineAdEvent)
         }
+    }
+
+    func viewDidFinishSizeUpdate() {
+        self.viewDidUpdateSize()
     }
 }
 

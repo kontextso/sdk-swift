@@ -6,6 +6,7 @@
 import Foundation
 import OSLog
 import SwiftUI
+import Combine
 
 /// Main component of Kontext Swift SDK that loads ads based on the messages provided through setMessages.
 ///
@@ -22,6 +23,9 @@ public final class AdsProvider: @unchecked Sendable {
     /// Dependency container that holds all dependencies used by AdsProvider.
     private let dependencies: DependencyContainer
 
+    public var delegate: AdsProviderDelegate
+
+
     /// Initializes a new instance of `AdsProvider`.
     ///
     /// - Parameters:
@@ -31,7 +35,8 @@ public final class AdsProvider: @unchecked Sendable {
     public init(
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
-        isDisabled: Bool = false
+        isDisabled: Bool = false,
+        delegate: AdsProviderDelegate? = nil
     ) {
         self.configuration = configuration
         self.dependencies = DependencyContainer.defaultContainer(
@@ -39,6 +44,7 @@ public final class AdsProvider: @unchecked Sendable {
             sessionId: sessionId,
             isDisabled: isDisabled
         )
+        self.delegate = delegate ?? self.dependencies.adsProviderDelegate
     }
 
     /// Sets messages to be used as context for ad generation.
@@ -95,7 +101,10 @@ extension AdsProvider {
             code: code,
             messageId: messageId,
             otherParams: otherParams
-        )
+        ) { [weak self] in
+            guard let self else { return }
+            self.delegate.adsProvider(self, didUpdateSizeOfAdAssociatedWith: messageId)
+        }
     }
 }
 

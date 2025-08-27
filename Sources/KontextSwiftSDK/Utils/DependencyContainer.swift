@@ -8,17 +8,20 @@ struct DependencyContainer: Sendable {
     let adsServerAPI: AdsServerAPI
     let sharedStorage: SharedStorage
     let adsProviderActing: AdsProviderActing
-    
+    let adsProviderDelegate: AdsProviderDelegate
+
     init(
         networking: Networking,
         adsServerAPI: AdsServerAPI,
         sharedStorage: SharedStorage,
-        adsProviderActing: AdsProviderActing
+        adsProviderActing: AdsProviderActing,
+        adsProviderDelegate: AdsProviderDelegate
     ) {
         self.networking = networking
         self.adsServerAPI = adsServerAPI
         self.sharedStorage = sharedStorage
         self.adsProviderActing = adsProviderActing
+        self.adsProviderDelegate = adsProviderDelegate
     }
     
     @MainActor
@@ -40,12 +43,14 @@ struct DependencyContainer: Sendable {
             adsServerAPI: adsServerAPI,
             sharedStorage: sharedStorage
         )
-        
+        let delegate = DefaultAdsProviderDelegate()
+
         return DependencyContainer(
             networking: networking,
             adsServerAPI: adsServerAPI,
             sharedStorage: sharedStorage,
-            adsProviderActing: providerActor
+            adsProviderActing: providerActor,
+            adsProviderDelegate: delegate
         )
     }
 }

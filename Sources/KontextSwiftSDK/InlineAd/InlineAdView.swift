@@ -45,6 +45,7 @@ public struct InlineAdView: View {
                 onIFrameEvent: { viewModel.send(.didReceiveAdEvent($0)) }
             )
             .frame(height: viewModel.preferredHeight)
+            .onAppear(perform: self.viewModel.viewDidFinishSizeUpdate)
         } else {
             // TODO: Remove after testing
             Button(action: {

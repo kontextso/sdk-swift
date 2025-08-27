@@ -62,8 +62,8 @@ final class MyMessagesCollectionViewController: UICollectionViewController {
         adsProvider = AdsProvider(
             configuration: configuration
         )
-
         super.init(collectionViewLayout: layout)
+        adsProvider.delegate = self
     }
 
     override func viewDidLoad() {

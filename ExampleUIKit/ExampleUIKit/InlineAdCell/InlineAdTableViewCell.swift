@@ -8,7 +8,6 @@ import KontextSwiftSDK
 
 final class InlineAdTableViewCell: UITableViewCell {
     private var inlineAdView: InlineAdUIView?
-    var onAdHeightChange: ((CGFloat) -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -33,10 +32,7 @@ final class InlineAdTableViewCell: UITableViewCell {
             adsProvider: viewModel.adsProvider,
             code: viewModel.code,
             messageId: viewModel.messageId,
-            otherParams: viewModel.otherParams,
-            onAdHeightChange: { [weak self] height in
-                self?.onAdHeightChange?(height)
-            }
+            otherParams: viewModel.otherParams
         )
 
         self.inlineAdView = inlineAdView

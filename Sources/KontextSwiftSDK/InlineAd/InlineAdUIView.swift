@@ -13,6 +13,8 @@ public final class InlineAdUIView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var onAdHeightChange: ((CGFloat) -> Void)?
 
+    private var adWebView: InlineAdWebView?
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -26,10 +28,8 @@ public final class InlineAdUIView: UIView {
         adsProvider: AdsProvider,
         code: String,
         messageId: String,
-        otherParams: [String: String],
-        onAdHeightChange: ((CGFloat) -> Void)? = nil
+        otherParams: [String: String]
     ) {
-        self.onAdHeightChange = onAdHeightChange
         viewModel = adsProvider.inlineAdViewModel(
             code: code,
             messageId: messageId,
@@ -37,36 +37,34 @@ public final class InlineAdUIView: UIView {
         )
 
         super.init(frame: .zero)
+        self.setupUI()
         observeChanges()
     }
 }
 
 private extension InlineAdUIView {
-    func setupUI(_ url: URL?) {
-        guard let url else {
-            return
-        }
-
-        let adView = InlineAdWebView(
+    func setupUI() {
+        let adWebView = InlineAdWebView(
             frame: .zero,
             updateFrameData: viewModel.updateIFrameData,
             onIFrameEvent: { [weak self] event in
                 self?.viewModel.send(.didReceiveAdEvent(event))
             }
         )
-        adView.loadAd(from: url)
-        addSubview(adView)
+        addSubview(adWebView)
+        self.adWebView = adWebView
 
-        translatesAutoresizingMaskIntoConstraints = false
-        adView.translatesAutoresizingMaskIntoConstraints = false
+        adWebView.translatesAutoresizingMaskIntoConstraints = false
 
-        let heightConstraint = adView.heightAnchor.constraint(equalTo: heightAnchor)
+        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.preferredHeight)
+        heightConstraint.priority = .defaultHigh
         self.heightConstraint = heightConstraint
 
         NSLayoutConstraint.activate([
-            adView.topAnchor.constraint(equalTo: topAnchor),
-            adView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            adView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            adWebView.topAnchor.constraint(equalTo: topAnchor),
+            adWebView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            adWebView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            adWebView.bottomAnchor.constraint(equalTo: bottomAnchor),
             heightConstraint
         ])
     }
@@ -75,23 +73,17 @@ private extension InlineAdUIView {
         viewModel.$url
             .first(where: { $0 != nil })
             .sink { [weak self] url in
-                self?.subviews.forEach { $0.removeFromSuperview() }
-                self?.setupUI(url)
+                guard let url else { return }
+                self?.adWebView?.loadAd(from: url)
             }
             .store(in: &cancellables)
 
         viewModel.$preferredHeight
+            .receive(on: RunLoop.main)
             .sink { [weak self] height in
                 guard let self else { return }
-                self.onAdHeightChange?(height)
-
-                Task { @MainActor in
-                    self.heightConstraint?.constant = height
-                    self.setNeedsUpdateConstraints()
-                    self.updateConstraintsIfNeeded()
-                    self.setNeedsLayout()
-                    self.layoutIfNeeded()
-                }
+                self.heightConstraint?.constant = height
+                self.viewModel.viewDidFinishSizeUpdate()
             }
             .store(in: &cancellables)
     }

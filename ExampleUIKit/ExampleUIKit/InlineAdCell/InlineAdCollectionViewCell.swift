@@ -37,7 +37,6 @@ final class InlineAdCollectionViewCell: UICollectionViewCell {
         self.inlineAdView = inlineAdView
 
         contentView.addSubview(inlineAdView)
-
         inlineAdView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
