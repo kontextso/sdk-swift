@@ -80,6 +80,11 @@ final class MyMessagesTableViewController: UITableViewController {
         sendButton.addTarget(self, action: #selector(addMessage), for: .touchUpInside)
     }
 
+}
+
+// MARK: - Mock message sending
+
+extension MyMessagesTableViewController {
     @objc private func addMessage() {
         let message = MyMessage(
             id: UUID().uuidString,
@@ -125,6 +130,8 @@ final class MyMessagesTableViewController: UITableViewController {
     }
 }
 
+// MARK: - AdsProviderDelegate
+
 extension MyMessagesTableViewController: AdsProviderDelegate {
     func adsProvider(
         _ adsProvider: KontextSwiftSDK.AdsProvider,
@@ -143,6 +150,8 @@ extension MyMessagesTableViewController: AdsProviderDelegate {
         self.tableView.endUpdates()
     }
 }
+
+// MARK: - Table view data source
 
 extension MyMessagesTableViewController {
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -173,6 +182,8 @@ extension MyMessagesTableViewController {
         }
     }
 }
+
+// MARK: - Cell Creation
 
 private extension MyMessagesTableViewController {
     func createMessageCell(

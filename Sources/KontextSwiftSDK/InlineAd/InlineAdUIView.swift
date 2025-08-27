@@ -7,10 +7,13 @@ import Combine
 import UIKit
 import SwiftUI
 
+/// A UIView that displays an inline advertisement using a web view.
 public final class InlineAdUIView: UIView {
+    /// The view model that manages the ad data and interactions.
     private var viewModel: InlineAdViewModel
+    /// The height constraint for the web view, allowing dynamic resizing.
     private var heightConstraint: NSLayoutConstraint?
-
+    /// The web view that loads and displays the ad content.
     private var adWebView: InlineAdWebView?
 
     required init?(coder: NSCoder) {
@@ -19,9 +22,7 @@ public final class InlineAdUIView: UIView {
 
     /// - Parameters:
     ///   - adsProvider: The AdsProvider instance that manages the ad content.
-    ///   - code: Placement code of the ad to be displayed.
-    ///   - messageId: The identifier of the message after which the ad should be displayed.
-    ///   - otherParams: Additional parameters to be sent to the ad server, for example theme.
+    ///   - ad: Advertisement to be displayed.
     public init(
         adsProvider: AdsProvider,
         ad: Advertisement
