@@ -163,7 +163,7 @@ extension MyMessagesCollectionViewController {
         numberOfItemsInSection section: Int
     ) -> Int {
         viewModels.count
-    }
+    }    
 
     override func collectionView(
         _ collectionView: UICollectionView,
