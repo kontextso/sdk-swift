@@ -200,15 +200,15 @@ private extension MyMessagesTableViewController {
         ) as? InlineAdTableViewCell else {
             fatalError("Could not dequeue InlineAdTableViewCell")
         }
-        cell.configure(with: viewModel, onAction: handleAction)
+        cell.configure(with: viewModel, onEvent: handleEvent)
         return cell
     }
 }
 
 // MARK: Actions
 private extension MyMessagesTableViewController {
-    func handleAction(action: InlineAdAction) {
-        switch action {
+    func handleEvent(event: InlineAdUIViewEvent) {
+        switch event {
         case .didChangeHeight(let height):
             adHeight = height
 

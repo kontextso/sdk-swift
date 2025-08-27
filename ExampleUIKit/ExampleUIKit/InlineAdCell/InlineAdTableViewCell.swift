@@ -27,7 +27,7 @@ final class InlineAdTableViewCell: UITableViewCell {
 
     func configure(
         with viewModel: InlineAdViewModel,
-        onAction: ((InlineAdAction) -> Void)?
+        onEvent: ((InlineAdUIViewEvent) -> Void)?
     ) {
         inlineAdView?.removeFromSuperview()
 
@@ -36,7 +36,7 @@ final class InlineAdTableViewCell: UITableViewCell {
             code: viewModel.code,
             messageId: viewModel.messageId,
             otherParams: viewModel.otherParams,
-            onAction: onAction
+            onEvent: onEvent
         )
 
         self.inlineAdView = inlineAdView

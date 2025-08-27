@@ -7,7 +7,7 @@ import Combine
 import UIKit
 import SwiftUI
 
-public enum InlineAdAction {
+public enum InlineAdUIViewEvent {
     /// Reports new view height after iframe gets rendered
     case didChangeHeight(CGFloat)
 }
@@ -16,7 +16,7 @@ public final class InlineAdUIView: UIView {
     private var viewModel: InlineAdViewModel
     private var cancellables: Set<AnyCancellable> = []
     private var heightConstraint: NSLayoutConstraint?
-    private var onAction: ((InlineAdAction) -> Void)?
+    private var onEvent: ((InlineAdUIViewEvent) -> Void)?
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -32,9 +32,9 @@ public final class InlineAdUIView: UIView {
         code: String,
         messageId: String,
         otherParams: [String: String],
-        onAction: ((InlineAdAction) -> Void)? = nil
+        onEvent: ((InlineAdUIViewEvent) -> Void)? = nil
     ) {
-        self.onAction = onAction
+        self.onEvent = onEvent
         viewModel = adsProvider.inlineAdViewModel(
             code: code,
             messageId: messageId,
@@ -88,7 +88,7 @@ private extension InlineAdUIView {
         viewModel.$preferredHeight
             .sink { [weak self] height in
                 guard let self else { return }
-                self.onAction?(.didChangeHeight(height))
+                self.onEvent?(.didChangeHeight(height))
 
                 Task { @MainActor in
                     self.heightConstraint?.constant = height
