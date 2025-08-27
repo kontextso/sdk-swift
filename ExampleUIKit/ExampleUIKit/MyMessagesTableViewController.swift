@@ -200,8 +200,7 @@ private extension MyMessagesTableViewController {
         ) as? InlineAdTableViewCell else {
             fatalError("Could not dequeue InlineAdTableViewCell")
         }
-        cell.configure(with: viewModel)
-        cell.onAction = handleAction
+        cell.configure(with: viewModel, onAction: handleAction)
         return cell
     }
 }
