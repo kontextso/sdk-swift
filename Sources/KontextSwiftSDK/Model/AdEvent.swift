@@ -42,7 +42,7 @@ enum AdEvent: Decodable {
     case errorComponentIframe(ComponentIframeData)
 
     /// Close component request event to close component iframe
-    case closeComponentIframe(ComponentIframeData)
+    case closeComponentIframe(ComponentIframeData)    
 
     /// Unknown event type
     case unknown(UnknownData)
@@ -89,7 +89,7 @@ struct UpdateIFrameData: Decodable {
 struct OpenComponentIframeData: Decodable {
     let code: String
     let component: String
-    let timeout: CGFloat
+    let timeout: TimeInterval // ms
 }
 
 /// Data for general component iframe events

@@ -18,16 +18,16 @@ final class InlineAdViewModel: ObservableObject {
     private let adsProviderActing: AdsProviderActing
 
     private var messages: [AdsMessage] = []
-    private var cancellables: Set<AnyCancellable>
+    private var cancellables: Set<AnyCancellable> = []
 
     @Published private var bid: Bid?
-    @Published private var iframeHeight: CGFloat
-    @Published private var showIframe: Bool
+    @Published private var iframeHeight: CGFloat = 0
+    @Published private var showIframe: Bool = false
 
     @Published private(set) var iframeEvent: AdEvent?
     @Published private(set) var url: URL?
-    @Published private(set) var componentURL: URL?
-    @Published private(set) var preferredHeight: CGFloat
+    @Published private(set) var interstitialInput: InterstitialAdViewModel.Input?
+    @Published private(set) var preferredHeight: CGFloat = 0
 
     var updateIFrameData: UpdateIFrameData {
         UpdateIFrameData(
@@ -53,12 +53,6 @@ final class InlineAdViewModel: ObservableObject {
         self.code = code
         self.messageId = messageId
         self.otherParams = otherParams
-        messages = []
-        url = nil
-        preferredHeight = 0
-        iframeHeight = 0
-        showIframe = false
-        cancellables = []
 
         bindData()
     }
@@ -68,13 +62,6 @@ final class InlineAdViewModel: ObservableObject {
         case .didReceiveAdEvent(let inlineAdEvent):
             onAdEventAction(adEvent: inlineAdEvent)
         }
-    }
-}
-
-// MARK: Action
-extension InlineAdViewModel {
-    enum Action {
-        case didReceiveAdEvent(AdEvent)
     }
 }
 
@@ -108,21 +95,18 @@ private extension InlineAdViewModel {
                 }
             }
 
-        bid
-            .receive(on: RunLoop.main)
-            .assign(to: &$bid)
+        bid.assign(to: &$bid)
 
         // Generate URL for WebView frame
-        bid
-            .receive(on: RunLoop.main)
-            .map { [weak self] bid -> URL? in
+        bid.map { [weak self] bid -> URL? in
                 guard let self, let bid else {
                     return nil
                 }
                 return self.adsServerAPI.frameURL(
                     messageId: self.messageId,
                     bidId: bid.bidId,
-                    bidCode: bid.code
+                    bidCode: bid.code,
+                    otherParams: otherParams
                 )
             }
             .assign(to: &$url)
@@ -135,7 +119,14 @@ private extension InlineAdViewModel {
     }
 }
 
-// MARK: Actions
+// MARK: Action
+extension InlineAdViewModel {
+    enum Action {
+        case didReceiveAdEvent(AdEvent)
+    }
+}
+
+// MARK: Action handler
 private extension InlineAdViewModel {
     func onAdEventAction(adEvent: AdEvent) {
         switch adEvent {
@@ -176,15 +167,26 @@ private extension InlineAdViewModel {
                 return
             }
 
-            componentURL = adsServerAPI.componentURL(
+            interstitialInput = .init(
+                id: bid.bidId,
+                code: bid.code,
                 messageId: messageId,
-                bidId: bid.bidId,
-                bidCode: bid.code,
-                component: data.component
+                component: data.component,
+                timeoutInMilliseconds: data.timeout,
+                otherParams: otherParams,
+                adsServerAPI: adsServerAPI,
+                onEvent: onInterstitialEvent
             )
 
         default:
             break
+        }
+    }
+
+    func onInterstitialEvent(_ event: InterstitialAdViewModel.Event) {
+        switch event {
+        case .didFinishAd:
+            interstitialInput = nil
         }
     }
 }

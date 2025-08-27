@@ -22,7 +22,7 @@ struct ChatView: View {
     init() {
         // 1. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
-            publisherToken: "nexus-dev",
+            publisherToken: "polybuzz-dev",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"]
@@ -70,7 +70,7 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "kontextso ad_format:INTERSTITIAL"
+            content: "kontextso ad_format:INTERSTITIAL_REWARDED"
         )
 
         messages.append(userMessage)

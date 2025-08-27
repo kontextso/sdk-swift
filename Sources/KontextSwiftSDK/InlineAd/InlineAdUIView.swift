@@ -99,5 +99,24 @@ private extension InlineAdUIView {
                 }
             }
             .store(in: &cancellables)
+
+        viewModel.$interstitialInput
+            .dropFirst()
+            .sink { [weak self] input in
+                guard let self else { return }
+                let presentationController = self.topMostViewController
+
+                if let input {
+                    let controller = UIHostingController(rootView: InterstitialAdView(input: input))
+                    controller.modalPresentationStyle = .fullScreen
+                    presentationController?.present(
+                        controller,
+                        animated: true
+                    )
+                } else {
+                    presentationController?.dismiss(animated: true)
+                }
+            }
+            .store(in: &cancellables)
     }
 }

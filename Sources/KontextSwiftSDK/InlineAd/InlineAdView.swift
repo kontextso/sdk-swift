@@ -13,7 +13,7 @@ import SwiftUI
 public struct InlineAdView: View {
     @StateObject private var viewModel: InlineAdViewModel
 
-    @State private var componentURL: URL? = nil
+    @State private var interstitialInput: InterstitialAdViewModel.Input? = nil
 
     /// SwiftUI view that represents an inline ad in the chat UI.
     /// It starts as EmptyView and when ad content is retrieved it will expand.
@@ -45,19 +45,12 @@ public struct InlineAdView: View {
                 onIframeEvent: { viewModel.send(.didReceiveAdEvent($0)) }
             )
             .frame(height: viewModel.preferredHeight)
-            .onReceive(viewModel.$componentURL) { url in
-                componentURL = url
+            .onReceive(viewModel.$interstitialInput) { input in
+                interstitialInput = input
             }
-            .fullScreenCover(item: $componentURL) { url in
-                InterstitialAdView(
-                    url: url,
-                    onFinished: { componentURL = nil }
-                )
+            .fullScreenCover(item: $interstitialInput) { input in
+                InterstitialAdView(input: input)
             }
         }
     }
-}
-
-extension URL: Identifiable {
-    public var id: String { absoluteString }
 }

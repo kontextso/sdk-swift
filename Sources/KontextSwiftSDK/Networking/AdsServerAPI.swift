@@ -17,14 +17,16 @@ protocol AdsServerAPI: Sendable {
     func frameURL(
         messageId: String,
         bidId: String,
-        bidCode: String
+        bidCode: String,
+        otherParams: [String: String]
     ) -> URL?
 
     func componentURL(
         messageId: String,
         bidId: String,
         bidCode: String,
-        component: String
+        component: String,
+        otherParams: [String: String]
     ) -> URL?
 
     func redirectURL(relativeURL: URL) -> URL
@@ -82,7 +84,12 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         return responseDTO.preloadedData
     }
     
-    func frameURL(messageId: String, bidId: String, bidCode: String) -> URL? {
+    func frameURL(
+        messageId: String,
+        bidId: String,
+        bidCode: String,
+        otherParams: [String: String]
+    ) -> URL? {
         BaseURLConvertible(
             baseURL: baseURL,
             pathComponents: ["api", "frame", bidId],
@@ -90,9 +97,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
                 URLQueryItem(name: "messageId", value: messageId),
                 URLQueryItem(name: "code", value: bidCode),
                 URLQueryItem(name: "sdk", value: SDKInfo.name),
-                // TODO: Theme
-                URLQueryItem(name: "theme", value: "dark")
-            ]
+            ] + otherParams.map { URLQueryItem(name: $0.key, value: $0.value)}
         ).asURL()
     }
 
@@ -100,15 +105,17 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         messageId: String,
         bidId: String,
         bidCode: String,
-        component: String
+        component: String,
+        otherParams: [String: String]
     ) -> URL? {
         BaseURLConvertible(
             baseURL: baseURL,
             pathComponents: ["api", component, bidId],
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
-                URLQueryItem(name: "code", value: bidCode)
-            ]
+                URLQueryItem(name: "code", value: bidCode),
+                URLQueryItem(name: "sdk", value: SDKInfo.name),
+            ] + otherParams.map { URLQueryItem(name: $0.key, value: $0.value)}
         ).asURL()
     }
 
