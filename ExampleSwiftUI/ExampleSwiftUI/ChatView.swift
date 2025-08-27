@@ -22,7 +22,7 @@ struct ChatView: View {
     init() {
         // 1. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
-            publisherToken: "polybuzz-dev",
+            publisherToken: "nexus-dev",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"]
