@@ -126,19 +126,21 @@ final class MyMessagesTableViewController: UITableViewController {
 }
 
 extension MyMessagesTableViewController: AdsProviderDelegate {
-    func adsProvider(didChangeAvailableAdsTo: [Advertisment]) {
-        Task { @MainActor in
-            self.ads = didChangeAvailableAdsTo
-            self.prepareViewModels()
-            self.tableView.reloadData()
-        }
+    func adsProvider(
+        _ adsProvider: KontextSwiftSDK.AdsProvider,
+        didChangeAvailableAdsTo ads: [KontextSwiftSDK.Advertisment]
+    ) {
+        self.ads = ads
+        self.prepareViewModels()
+        self.tableView.reloadData()
     }
 
-    func adsProvider(didUpdateHeightForAd: Advertisment) {
-        Task { @MainActor in
-            self.tableView.beginUpdates()
-            self.tableView.endUpdates()
-        }
+    func adsProvider(
+        _ adsProvider: KontextSwiftSDK.AdsProvider,
+        didUpdateHeightForAd ad: KontextSwiftSDK.Advertisment
+    ) {
+        self.tableView.beginUpdates()
+        self.tableView.endUpdates()
     }
 }
 

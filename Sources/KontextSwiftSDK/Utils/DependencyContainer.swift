@@ -25,8 +25,7 @@ struct DependencyContainer: Sendable {
     static func defaultContainer(
         configuration: AdsProviderConfiguration,
         sessionId: String?,
-        isDisabled: Bool,
-        delegate: AdsProviderDelegate? = nil
+        isDisabled: Bool
     ) -> DependencyContainer {
         let networking = Network()
         let adsServerAPI = BaseURLAdsServerAPI(
@@ -38,8 +37,7 @@ struct DependencyContainer: Sendable {
             configuration: configuration,
             sessionId: sessionId,
             isDisabled: isDisabled,
-            adsServerAPI: adsServerAPI,
-            delegate: delegate
+            adsServerAPI: adsServerAPI
         )
 
         return DependencyContainer(

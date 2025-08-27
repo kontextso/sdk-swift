@@ -9,13 +9,21 @@ import OSLog
 // MARK: - AdsProviderActing
 
 protocol AdsProviderActing: Sendable {
-    func setDelegate(delegate: AdsProviderDelegate?) async
+    func setDelegate(delegate: AdsProviderActingDelegate?) async
 
     func setDisabled(_ isDisabled: Bool) async
 
     func setMessages(messages: [AdsMessage]) async throws
 
     func reset() async
+}
+
+// MARK: - AdsProviderActingDelegate
+
+protocol AdsProviderActingDelegate: class {
+    func adsProviderActing(_ adsProviderActing: AdsProviderActing, didChangeAvailableAdsTo ads: [Advertisment])
+
+    func adsProviderActing(_ adsProviderActing: AdsProviderActing, didUpdateHeightForAd ad: Advertisment)
 }
 
 // MARK: - AdsProviderActor
@@ -35,7 +43,7 @@ actor AdsProviderActor: AdsProviderActing {
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
-    private var delegate: AdsProviderDelegate?
+    private weak var delegate: AdsProviderActingDelegate?
 
     /// Last messages to sent to BE
     private var messages: [AdsMessage]
@@ -46,14 +54,13 @@ actor AdsProviderActor: AdsProviderActing {
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
         isDisabled: Bool,
-        adsServerAPI: AdsServerAPI,
-        delegate: AdsProviderDelegate?
+        adsServerAPI: AdsServerAPI
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
         self.isDisabled = isDisabled
         self.adsServerAPI = adsServerAPI
-        self.delegate = delegate
+        delegate = nil
         messages = []
         bids = []
         states = []
@@ -66,7 +73,7 @@ actor AdsProviderActor: AdsProviderActing {
         self.isDisabled = isDisabled
     }
 
-    func setDelegate(delegate: (any AdsProviderDelegate)?) async {
+    func setDelegate(delegate: AdsProviderActingDelegate?) async {
         self.delegate = delegate
     }
 
@@ -161,9 +168,11 @@ actor AdsProviderActor: AdsProviderActing {
     }
 
     func notifyDelegate() {
-        self.delegate?.adsProvider(didChangeAvailableAdsTo: self.states
-            .filter { $0.show }
-            .map { self.buildAd(for: $0) }
+        self.delegate?.adsProviderActing(
+            self,
+            didChangeAvailableAdsTo: self.states
+                .filter { $0.show }
+                .map { self.buildAd(for: $0) }
         )
     }
 
@@ -217,7 +226,7 @@ actor AdsProviderActor: AdsProviderActing {
             guard resizedData.height != newState.preferredHeight else { return }
             newState.preferredHeight = resizedData.height
             self.states[stateIndex] = newState
-            self.delegate?.adsProvider(didUpdateHeightForAd: self.buildAd(for: newState))
+            self.delegate?.adsProviderActing(self, didUpdateHeightForAd: self.buildAd(for: newState))
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message.message)")
             self.reset()

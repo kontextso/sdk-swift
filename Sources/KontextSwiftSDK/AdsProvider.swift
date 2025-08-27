@@ -23,10 +23,7 @@ public final class AdsProvider: @unchecked Sendable {
     /// Dependency container that holds all dependencies used by AdsProvider.
     private let dependencies: DependencyContainer
 
-    public var delegate: AdsProviderDelegate? {
-        didSet { Task { await dependencies.adsProviderActing.setDelegate(delegate: delegate) } }
-    }
-
+    public var delegate: AdsProviderDelegate?
 
     /// Initializes a new instance of `AdsProvider`.
     ///
@@ -44,10 +41,10 @@ public final class AdsProvider: @unchecked Sendable {
         self.dependencies = DependencyContainer.defaultContainer(
             configuration: configuration,
             sessionId: sessionId,
-            isDisabled: isDisabled,
-            delegate: delegate
+            isDisabled: isDisabled
         )
         self.delegate = delegate
+        Task { await  self.dependencies.adsProviderActing.setDelegate(delegate: self) }
     }
 
     /// Sets messages to be used as context for ad generation.
@@ -90,23 +87,25 @@ public final class AdsProvider: @unchecked Sendable {
 
 // MARK: - Internal methods
 
-//extension AdsProvider {
-//    @MainActor
-//    func inlineAdViewModel(
-//        code: String,
-//        messageId: String,
-//        otherParams: [String: String]
-//    ) -> InlineAdViewModel {
-//        InlineAdViewModel(
-//            sharedStorage: dependencies.sharedStorage,
-//            adsServerAPI: dependencies.adsServerAPI,
-//            adsProviderActing: dependencies.adsProviderActing,
-//            code: code,
-//            messageId: messageId,
-//            otherParams: otherParams
-//        )
-//    }
-//}
+extension AdsProvider: AdsProviderActingDelegate {
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didChangeAvailableAdsTo ads: [Advertisment]
+    ) {
+        Task { @MainActor in
+            self.delegate?.adsProvider(self, didChangeAvailableAdsTo: ads)
+        }
+    }
+
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didUpdateHeightForAd ad: Advertisment
+    ) {
+        Task { @MainActor in
+            self.delegate?.adsProvider(self, didUpdateHeightForAd: ad)
+        }
+    }
+}
 
 // MARK: - Private methods
 
