@@ -178,6 +178,8 @@ ZStack {
 
 ```
 
+For usage with UIKit please use `InlineAdUIView` instead and refer to the ExampleUIKit app.
+
 Now you are set up and ready to go 🎉
 
 ## Documentation
