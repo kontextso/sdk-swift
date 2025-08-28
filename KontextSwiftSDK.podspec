@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |spec|
     spec.name                 = 'KontextSwiftSDK'
-    spec.version              = '1.0.2'
+    spec.version              = '1.0.3'
     spec.summary              = 'Kontext.so Swift SDK'
     spec.description          = <<-DESC
     The official Swift SDK for integrating Kontext.so ads into your mobile application.

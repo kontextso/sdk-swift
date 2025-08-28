@@ -6,7 +6,7 @@ struct DependencyContainer: Sendable {
     init(
         networking: Networking,
         adsServerAPI: AdsServerAPI,
-        adsProviderActing: AdsProviderActing,
+        adsProviderActing: AdsProviderActing
     ) {
         self.networking = networking
         self.adsServerAPI = adsServerAPI
