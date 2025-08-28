@@ -1,8 +1,3 @@
-//
-//  SDKInfo.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 final class SDKInfo  {

@@ -101,8 +101,8 @@ extension Device {
         }
         
         // Detect sound status
-        let soundOn = !isVolumeMuted()
-        
+        let soundOn = AVAudioSession.sharedInstance().outputVolume != 0
+
         // Additional device info
         var additionalInfo: [String: String] = [:]
         additionalInfo["deviceModel"] = deviceModel
@@ -132,9 +132,4 @@ extension Device {
             additionalInfo: additionalInfo
         )
     }
-}
-
-func isVolumeMuted() -> Bool {
-    let volume = AVAudioSession.sharedInstance().outputVolume
-    return volume == 0
 }

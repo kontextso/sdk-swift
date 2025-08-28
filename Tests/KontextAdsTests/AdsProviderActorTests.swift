@@ -1,8 +1,3 @@
-//
-//  AdsProviderActorTests.swift
-//  KontextSwiftSDK
-//
-
 import Testing
 @testable import KontextSwiftSDK
 
@@ -12,12 +7,11 @@ struct AdsProviderActorTests {
     @Test
     func testInitaillyDisabled() async throws {
         let adsServerAPI = MockAdsServerAPI()
-        let provider = await AdsProviderActor(
+        let provider = AdsProviderActor(
             configuration: .minimal,
             sessionId: nil,
             isDisabled: true,
-            adsServerAPI: adsServerAPI,
-            sharedStorage: SharedStorage()
+            adsServerAPI: adsServerAPI
         )
 
         try await provider.setMessages(messages: AdsMessage.variation1)
@@ -27,12 +21,11 @@ struct AdsProviderActorTests {
     @Test
     func testSetDisabedSet() async throws {
         let adsServerAPI = MockAdsServerAPI()
-        let provider = await AdsProviderActor(
+        let provider = AdsProviderActor(
             configuration: .minimal,
             sessionId: nil,
             isDisabled: false,
-            adsServerAPI: adsServerAPI,
-            sharedStorage: SharedStorage()
+            adsServerAPI: adsServerAPI
         )
 
         await provider.setDisabled(true)
@@ -43,12 +36,11 @@ struct AdsProviderActorTests {
     @Test
     func testInitallyEnabled() async throws {
         let adsServerAPI = MockAdsServerAPI()
-        let provider = await AdsProviderActor(
+        let provider = AdsProviderActor(
             configuration: .minimal,
             sessionId: nil,
             isDisabled: false,
-            adsServerAPI: adsServerAPI,
-            sharedStorage: SharedStorage()
+            adsServerAPI: adsServerAPI
         )
 
         try await provider.setMessages(messages: AdsMessage.variation1)
@@ -58,12 +50,11 @@ struct AdsProviderActorTests {
     @Test
     func testSetEnabled() async throws {
         let adsServerAPI = MockAdsServerAPI()
-        let provider = await AdsProviderActor(
+        let provider = AdsProviderActor(
             configuration: .minimal,
             sessionId: nil,
             isDisabled: true,
-            adsServerAPI: adsServerAPI,
-            sharedStorage: SharedStorage()
+            adsServerAPI: adsServerAPI
         )
 
         await provider.setDisabled(false)

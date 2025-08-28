@@ -17,7 +17,8 @@ protocol AdsServerAPI: Sendable {
     func frameURL(
         messageId: String,
         bidId: String,
-        bidCode: String
+        bidCode: String,
+        otherParams: [String: String]
     ) -> URL?
     
     func redirectURL(relativeURL: URL) -> URL
@@ -75,14 +76,20 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         return responseDTO.preloadedData
     }
     
-    func frameURL(messageId: String, bidId: String, bidCode: String) -> URL? {
+    func frameURL(
+        messageId: String,
+        bidId: String,
+        bidCode: String,
+        otherParams: [String: String]
+    ) -> URL? {
         BaseURLConvertible(
             baseURL: baseURL,
             pathComponents: ["api", "frame", bidId],
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
-                URLQueryItem(name: "code", value: bidCode)
-            ]
+                URLQueryItem(name: "code", value: bidCode),
+                URLQueryItem(name: "sdk", value: SDKInfo.name)
+            ] + otherParams.map { URLQueryItem(name: $0.key, value: $0.value) }
         ).asURL()
     }
     

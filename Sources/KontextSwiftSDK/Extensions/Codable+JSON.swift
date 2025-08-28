@@ -1,8 +1,3 @@
-//
-//  Encodable+JSON.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 extension Encodable {

@@ -1,86 +1,112 @@
-//
-//  AdsProviderActor.swift
-//  KontextSwiftSDK
-//
+@preconcurrency import Combine
+import OSLog
+import UIKit
 
 // MARK: - AdsProviderActing
 
 protocol AdsProviderActing: Sendable {
+    func setDelegate(delegate: AdsProviderActingDelegate?) async
+
     func setDisabled(_ isDisabled: Bool) async
-    
+
     func setMessages(messages: [AdsMessage]) async throws
 
     func reset() async
 }
 
+// MARK: - AdsProviderActingDelegate
+
+protocol AdsProviderActingDelegate: AnyObject, Sendable {
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didChangeAvailableAdsTo ads: [Advertisement]
+    )
+
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didUpdateHeightForAd ad: Advertisement
+    )
+}
+
 // MARK: - AdsProviderActor
 
-actor AdsProviderActor: AdsProviderActing {
+actor AdsProviderActor {
+    private let numberOfRelevantMessages = 10
     /// Represents a single session of interaction within a conversation.
     /// A new sessionId is generated each time the SDK is initialized—typically when the user opens or reloads the app.
     /// This helps us track discrete usage periods, even within the same ongoing conversation.
     private var sessionId: String?
     /// Indicates whether the ads provider is disabled.
     private var isDisabled: Bool
-    /// Last messages to sent to BE
-    private var messages: [AdsMessage]
-    private var lastPreloadUserMessageCount: Int
+
+    private var lastPreloadUserMessageId: String
     /// Preload timeout in seconds.
     private var preloadTimeout: Int
-    
+
+    /// Last messages to sent to BE
+    private var messages: [AdsMessage]
+    private var bids: [Bid]
+    private var states: [AdLoadingState]
+
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
-    private let sharedStorage: SharedStorage
-    
+    private weak var delegate: AdsProviderActingDelegate?
+
     init(
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
         isDisabled: Bool,
-        adsServerAPI: AdsServerAPI,
-        sharedStorage: SharedStorage
+        adsServerAPI: AdsServerAPI
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
         self.isDisabled = isDisabled
         self.adsServerAPI = adsServerAPI
-        self.sharedStorage = sharedStorage
+        delegate = nil
         messages = []
-        lastPreloadUserMessageCount = 0
+        bids = []
+        states = []
+        lastPreloadUserMessageId = ""
         preloadTimeout = 60
     }
-    
+}
+
+// MARK: Implementation
+extension AdsProviderActor: AdsProviderActing {
     /// Enables or Disables the generation of ads.
     func setDisabled(_ isDisabled: Bool) {
         self.isDisabled = isDisabled
     }
-    
+
+    func setDelegate(delegate: AdsProviderActingDelegate?) async {
+        self.delegate = delegate
+    }
+
     func setMessages(messages: [AdsMessage]) async throws {
         guard !isDisabled else {
             return
         }
-        
+
         let newUserMessages = messages.filter { $0.role == .user }
-        let newUserMessageCount = newUserMessages.count
-        let messagesToSend = Array(messages.suffix(10))
-        let shouldPreload = lastPreloadUserMessageCount < newUserMessageCount
-        self.messages = messages
-        
-        await MainActor.run {
-            if shouldPreload { sharedStorage.bids = [] }
-            sharedStorage.messages = messagesToSend
-            sharedStorage.lastUserMessageId = messagesToSend
-                .last(where: { $0.role == .user })?.id
-            sharedStorage.lastAssistantMessageId = messagesToSend
-                .last(where: { $0.role == .assistant })?.id
-        }
-        
-        guard shouldPreload else {
+        let messagesToSend = Array(messages.suffix(numberOfRelevantMessages))
+
+        guard let lastUserMessage = newUserMessages.last else {
             return
         }
-        
-        self.lastPreloadUserMessageCount = newUserMessageCount
-        
+
+        let shouldPreload = lastPreloadUserMessageId != lastUserMessage.id
+        self.messages = messages
+
+        if shouldPreload {
+            reset()
+            notifyAboutAdChanges()
+        } else {
+            bindBidsToLastAssistantMessage()
+            return
+        }
+
+        lastPreloadUserMessageId = lastUserMessage.id
         let preloadedData = try await preloadWithTimeout(
             timeout: preloadTimeout,
             sessionId: sessionId,
@@ -88,26 +114,175 @@ actor AdsProviderActor: AdsProviderActing {
             api: adsServerAPI,
             messages: messagesToSend
         )
-        
+
         if preloadedData.permanentError == true {
             isDisabled = true
+            reset()
         }
-        
+
+        bids = preloadedData.bids ?? []
         sessionId = preloadedData.sessionId
-        
-        await MainActor.run {
-            sharedStorage.bids = preloadedData.bids ?? []
-            sharedStorage.relevantAssistantMessageId = nil
-        }
+        bindBidsToLastUserMessage()
+        bindBidsToLastAssistantMessage()
     }
 
-    func reset() async {
-        await MainActor.run {
-            sharedStorage.bids = []
-            sharedStorage.messages = []
-            sharedStorage.lastUserMessageId = nil
-            sharedStorage.lastAssistantMessageId = nil
-            sharedStorage.relevantAssistantMessageId = nil
+    func reset() {
+        bids = []
+        states = []
+    }
+}
+
+private extension AdsProviderActor {
+    func bindBidsToLastUserMessage() {
+        bindBidsToLastMessage(forRole: .user, adDisplayPosition: .afterUserMessage)
+    }
+
+    func bindBidsToLastAssistantMessage() {
+        bindBidsToLastMessage(forRole: .assistant, adDisplayPosition: .afterAssistantMessage)
+    }
+
+    func bindBidsToLastMessage(
+        forRole role: Role,
+        adDisplayPosition: AdDisplayPosition
+    ) {
+        // Messages have to be after the last preload user message
+        guard let lastPreloadUserMessageIndex = messages.firstIndex(where: {
+            $0.id == lastPreloadUserMessageId
+        }) else {
+            return
+        }
+
+        // Has not bind bids to last message yet
+        guard !states.contains(where: {
+            $0.bid.adDisplayPosition == adDisplayPosition
+        }) else {
+            return
+        }
+
+        let latestMessages = messages.suffix(from: lastPreloadUserMessageIndex)
+        // Prepare last message id
+        guard let lastMessageId = latestMessages.filter({ $0.role == role }).last?.id else {
+            return
+        }
+
+        // Find all bids that are associated with the ad display position
+        let bids = self.bids.filter { $0.adDisplayPosition == adDisplayPosition }
+        // Only take one bid for each unique code
+        let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
+        // Insert new states for last message id
+        let stateId = UUID()
+        let newStates = uniqueBids.map { bid in
+            AdLoadingState(
+                id: stateId,
+                bid: bid,
+                messageId: lastMessageId,
+                show: true,
+                preferredHeight: nil, // Use default preferred height
+                webViewData: prepareWebViewData(
+                    stateId: stateId,
+                    messageId: lastMessageId,
+                    bid: bid
+                )
+            )
+        }
+
+        guard !newStates.isEmpty else {
+            return
+        }
+
+        states.append(contentsOf: newStates)
+        notifyAboutAdChanges()
+    }
+
+    func notifyAboutAdChanges() {
+        let ads = states.filter { $0.show }.map { $0.toModel() }
+        delegate?.adsProviderActing(
+            self,
+            didChangeAvailableAdsTo: ads
+        )
+    }
+
+    func prepareWebViewData(
+        stateId: UUID,
+        messageId: String,
+        bid: Bid
+    ) -> AdLoadingState.WebViewData {
+        AdLoadingState.WebViewData(
+            url: adsServerAPI.frameURL(
+                messageId: messageId,
+                bidId: bid.bidId,
+                bidCode: bid.code,
+                otherParams: configuration.otherParams
+            ),
+            updateData:  UpdateIFrameData(
+                sdk: SDKInfo.name,
+                code: bid.code,
+                messageId: messageId,
+                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
+                otherParams: configuration.otherParams
+            ),
+            onIFrameEvent: { [weak self] event in
+                Task {
+                    await self?.handleIFrameEvent(event: event, stateId: stateId)
+                }
+            }
+        )
+    }
+
+    func handleIFrameEvent(event: InlineAdEvent, stateId: UUID) {
+        guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
+            return
+        }
+        var newState = states[stateIndex]
+
+        switch event {
+        case .initIframe:
+            break // Handled by InlineAdWebView
+
+        case .showIframe:
+            if !newState.show {
+                newState.show = true
+                states[stateIndex] = newState
+                notifyAboutAdChanges()
+            }
+
+        case .hideIframe:
+            if newState.show {
+                newState.show = false
+                states[stateIndex] = newState
+                notifyAboutAdChanges()
+            }
+
+        case .viewIframe(let viewData):
+            os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
+
+        case .clickIframe(let clickData):
+            if let iframeClickedURL = if let clickDataURL = clickData.url {
+                adsServerAPI.redirectURL(relativeURL: clickDataURL)
+            } else {
+                newState.webViewData.url
+            } {
+                Task { @MainActor in
+                    UIApplication.shared.open(iframeClickedURL)
+                }
+            }
+
+        case .resizeIframe(let resizedData):
+            guard resizedData.height != newState.preferredHeight else {
+                return
+            }
+
+            newState.preferredHeight = resizedData.height
+            states[stateIndex] = newState
+            delegate?.adsProviderActing(self, didUpdateHeightForAd: newState.toModel())
+
+        case .errorIframe(let message):
+            os_log(.error, "[InlineAd]: Error: \(message.message)")
+            reset()
+            notifyAboutAdChanges()
+
+        case .unknown:
+            break
         }
     }
 }
@@ -122,9 +297,10 @@ private extension AdsProviderActor {
     ) async throws -> PreloadedData {
         try await withThrowingTaskGroup(of: PreloadedData.self) { group in
             group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(timeout) * 1_000_000_000)
+                try await Task.sleep(seconds: TimeInterval(timeout))
                 throw CancellationError()
             }
+
             group.addTask {
                 try await api.preload(
                     sessionId: sessionId,
@@ -132,11 +308,11 @@ private extension AdsProviderActor {
                     messages: messages
                 )
             }
-            
+
             guard let data = try await group.next() else {
                 throw CancellationError()
             }
-            
+
             group.cancelAll()
             return data
         }
