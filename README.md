@@ -74,8 +74,21 @@ let character = Character(
 Secondly, prepare information about regulations.
 
 ```swift
-/// Prepare regulatory compliance object, see documentation for details.
-let regulatory = Regulatory(...)
+// Prepare regulatory compliance object
+let regulatory = Regulatory(
+	// Flag that indicates whether or not the request is subject to GDPR regulations (0 = No, 1 = Yes, null = Unknown).
+	gdpr: 0,
+	// Transparency and Consent Framework's Consent String data structure
+	gdprConsent: "<gdpr-consent>",
+	// Flag whether the request is subject to COPPA (0 = No, 1 = Yes, null = Unknown).
+	coppa: 0,
+	// Global Privacy Platform (GPP) consent string
+	gpp: "<gpp>",
+	// List of the section(s) of the GPP string which should be applied for this transaction
+	gppSid: [1, 2],
+	// Communicates signals regarding consumer privacy under US privacy regulation under CCPA and LSPA
+	usPrivacy: "<us-privacy>"
+)
 ```
 
 ### 3. AdsProviderConfiguration
