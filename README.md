@@ -73,7 +73,7 @@ let character = Character(
 
 Secondly, prepare information about regulations.
 
-```
+```swift
 /// Prepare regulatory compliance object, see documentation for details.
 let regulatory = Regulatory(...)
 ```
