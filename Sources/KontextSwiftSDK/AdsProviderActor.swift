@@ -321,15 +321,15 @@ private extension AdsProviderActor {
 // MARK: Present actions
 private extension AdsProviderActor {
     func openURL(from data: ClickIframeData, fallbackURL: URL?) {
-//        if let iframeClickedURL = if let clickDataURL = data.url {
-//            adsServerAPI.redirectURL(relativeURL: clickDataURL)
-//        } else {
-//            fallbackURL
-//        } {
-//            Task { @MainActor in
-//                UIApplication.shared.open(iframeClickedURL)
-//            }
-//        }
+        if let iframeClickedURL = if let clickDataURL = data.url {
+            adsServerAPI.redirectURL(relativeURL: clickDataURL)
+        } else {
+            fallbackURL
+        } {
+            Task { @MainActor in
+                UIApplication.shared.open(iframeClickedURL)
+            }
+        }
     }
 
     func presentInterstitialAd(
