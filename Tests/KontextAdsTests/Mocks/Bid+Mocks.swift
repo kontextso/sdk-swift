@@ -1,7 +1,3 @@
-//
-//  Bid+Mocks.swift
-//  KontextSwiftSDK
-
 @testable import KontextSwiftSDK
 
 extension Bid {

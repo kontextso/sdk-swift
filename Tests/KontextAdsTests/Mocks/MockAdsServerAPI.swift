@@ -1,9 +1,3 @@
-//
-//  MockAdsServerAPI.swift
-//  KontextSwiftSDK
-//
-
-
 import Foundation
 @testable import KontextSwiftSDK
 

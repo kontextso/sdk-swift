@@ -1,12 +1,7 @@
-//
-//  AdLoadingState.swift
-//  KontextSwiftSDK
-//
-
 import UIKit
 
 struct AdLoadingState {
-    let id: String
+    let id: UUID
     let bid: Bid
     let messageId: String
     var show: Bool
@@ -15,9 +10,31 @@ struct AdLoadingState {
 }
 
 extension AdLoadingState {
-    struct WebViewData {
+    struct WebViewData: Sendable, Hashable {
         let url: URL?
         let updateData: UpdateIFrameData
-        let onIFrameEvent: (InlineAdEvent) -> Void
+        let onIFrameEvent: @Sendable (InlineAdEvent) -> Void
+
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(url)
+            hasher.combine(updateData)
+        }
+
+        static func ==(lhs: WebViewData, rhs: WebViewData) -> Bool {
+            lhs.url == rhs.url && lhs.updateData == rhs.updateData
+        }
+    }
+}
+
+extension AdLoadingState {
+    func toModel() -> Advertisement {
+        Advertisement(
+            id: id,
+            messageId: messageId,
+            placementCode: bid.code,
+            preferredHeight: preferredHeight ?? 0,
+            bid: bid,
+            webViewData: webViewData
+        )
     }
 }

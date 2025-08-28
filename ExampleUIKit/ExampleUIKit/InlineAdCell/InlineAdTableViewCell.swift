@@ -28,11 +28,7 @@ final class InlineAdTableViewCell: UITableViewCell {
     func configure(with viewModel: InlineAdViewModel) {
         inlineAdView?.removeFromSuperview()
 
-        let inlineAdView = InlineAdUIView(
-            adsProvider: viewModel.adsProvider,
-            ad: viewModel.ad
-        )
-
+        let inlineAdView = InlineAdUIView(ad: viewModel.ad)
         self.inlineAdView = inlineAdView
 
         contentView.addSubview(inlineAdView)

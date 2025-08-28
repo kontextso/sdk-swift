@@ -1,8 +1,3 @@
-//
-//  Regulatory.swift
-//  KontextSwiftSDK
-//
-
 /// Information about regulatory requirements that apply to the request.
 public struct Regulatory: Sendable {
     /// Flag that indicates whether or not the request is subject to GDPR regulations (0 = No, 1 = Yes, null = Unknown).

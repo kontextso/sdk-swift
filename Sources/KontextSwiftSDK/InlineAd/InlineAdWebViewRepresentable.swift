@@ -1,8 +1,3 @@
-//
-//  InlineAdView.swift
-//  KontextSwiftSDK
-//
-
 import SwiftUI
 import UIKit
 
@@ -23,7 +18,6 @@ struct InlineAdWebViewRepresentable: UIViewRepresentable {
     
     func makeUIView(context: Context) -> InlineAdWebView {
         let view = InlineAdWebView(
-            frame: .zero,
             updateFrameData: updateIFrameData,
             onIFrameEvent: onIFrameEvent
         )

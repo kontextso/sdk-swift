@@ -1,8 +1,3 @@
-//
-//  AdsProviderActorTests.swift
-//  KontextSwiftSDK
-//
-
 import Testing
 @testable import KontextSwiftSDK
 

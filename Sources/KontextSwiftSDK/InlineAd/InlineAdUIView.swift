@@ -1,8 +1,3 @@
-//
-//  InlineAdUIView.swift
-//  KontextSwiftSDK
-//
-
 import Combine
 import UIKit
 import SwiftUI
@@ -16,17 +11,14 @@ public final class InlineAdUIView: UIView {
     /// The web view that loads and displays the ad content.
     private var adWebView: InlineAdWebView?
 
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     /// - Parameters:
-    ///   - adsProvider: The AdsProvider instance that manages the ad content.
     ///   - ad: Advertisement to be displayed.
-    public init(
-        adsProvider: AdsProvider,
-        ad: Advertisement
-    ) {
+    public init(ad: Advertisement) {
         viewModel = InlineAdViewModel(ad: ad)
         super.init(frame: .zero)
         self.setupUI()
@@ -36,12 +28,14 @@ public final class InlineAdUIView: UIView {
 private extension InlineAdUIView {
     func setupUI() {
         let adWebView = InlineAdWebView(
-            frame: .zero,
             updateFrameData: viewModel.ad.webViewData.updateData,
             onIFrameEvent: { [weak self] event in
-                guard let self else { return }
-                guard let webView = self.adWebView else { return }
+                guard let self else {
+                    return
+                }
+
                 self.viewModel.ad.webViewData.onIFrameEvent(event)
+
                 if case .resizeIframe(let resizeIframeData) = event {
                     self.heightConstraint?.constant = resizeIframeData.height
                 }
@@ -52,7 +46,9 @@ private extension InlineAdUIView {
 
         adWebView.translatesAutoresizingMaskIntoConstraints = false
 
-        let heightConstraint = adWebView.heightAnchor.constraint(equalToConstant: viewModel.ad.preferredHeight)
+        let heightConstraint = adWebView.heightAnchor.constraint(
+            equalToConstant: viewModel.ad.preferredHeight
+        )
         heightConstraint.priority = .defaultHigh
         
         self.heightConstraint = heightConstraint

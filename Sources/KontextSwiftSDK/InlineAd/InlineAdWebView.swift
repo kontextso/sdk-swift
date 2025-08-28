@@ -1,8 +1,3 @@
-//
-//  InlineAdWebView.swift
-//  KontextSwiftSDK
-//
-
 import OSLog
 import SwiftUI
 import UIKit

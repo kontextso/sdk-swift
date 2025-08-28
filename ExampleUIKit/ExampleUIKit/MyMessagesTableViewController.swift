@@ -29,13 +29,13 @@ final class MyMessagesTableViewController: UITableViewController {
     init() {
         messages = []
         viewModels = []
-        let configuration = AdsProviderConfiguration(
+        adsProvider = AdsProvider(configuration: AdsProviderConfiguration(
             publisherToken: "nexus-dev",
             userId: "1",
             conversationId: "1",
-            enabledPlacementCodes: ["inlineAd"]
-        )
-        adsProvider = AdsProvider(configuration: configuration)
+            enabledPlacementCodes: ["inlineAd"],
+            otherParams: ["theme": "dark"]
+        ))
         super.init(style: .plain)
         adsProvider.delegate = self
     }
@@ -84,8 +84,8 @@ final class MyMessagesTableViewController: UITableViewController {
 
 // MARK: - Mock message sending
 
-extension MyMessagesTableViewController {
-    @objc private func addMessage() {
+private extension MyMessagesTableViewController {
+    @objc func addMessage() {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
@@ -102,7 +102,7 @@ extension MyMessagesTableViewController {
         }
     }
 
-    private func handleAssistantResponse() {
+    func handleAssistantResponse() {
         let assistantMessage = MyMessage(
             id: UUID().uuidString,
             role: .assistant,
@@ -116,7 +116,7 @@ extension MyMessagesTableViewController {
     }
 
 
-    private func prepareViewModels() {
+    func prepareViewModels() {
         var viewModels: [CellViewModel] = []
         for message in messages {
             viewModels.append(.message(MyMessageViewModel(message: message)))
