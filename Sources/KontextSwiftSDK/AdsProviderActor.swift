@@ -1,42 +1,7 @@
 @preconcurrency import Combine
 import OSLog
 import UIKit
-
-// MARK: - AdsProviderActing
-
-protocol AdsProviderActing: Sendable {
-    var eventPublisher: AnyPublisher<AdsProviderEvent, Never> { get }
-
-    func setDelegate(delegate: AdsProviderActingDelegate?) async
-
-    func setDisabled(_ isDisabled: Bool) async
-
-    func setMessages(messages: [AdsMessage]) async throws
-
-    func reset() async
-}
-
-// MARK: - AdsProviderActingDelegate
-
-protocol AdsProviderActingDelegate: AnyObject, Sendable {
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didChangeAvailableAdsTo ads: [Advertisement]
-    )
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didUpdateHeightForAd ad: Advertisement
-    )
-}
-
-
-// MARK: - Event
-
-public enum AdsProviderEvent {
-    case didChangeAvailableAdsTo([Advertisement])
-    case didUpdateHeightForAd(Advertisement)
-}
+import SwiftUI
 
 // MARK: - AdsProviderActor
 
@@ -151,6 +116,7 @@ extension AdsProviderActor: AdsProviderActing {
     }
 }
 
+// MARK: Data processing
 private extension AdsProviderActor {
     func bindBidsToLastUserMessage() {
         bindBidsToLastMessage(forRole: .user, adDisplayPosition: .afterUserMessage)
@@ -235,7 +201,7 @@ private extension AdsProviderActor {
                 bidCode: bid.code,
                 otherParams: configuration.otherParams
             ),
-            updateData:  UpdateIFrameData(
+            updateData: UpdateIFrameData(
                 sdk: SDKInfo.name,
                 code: bid.code,
                 messageId: messageId,
@@ -244,13 +210,49 @@ private extension AdsProviderActor {
             ),
             onIFrameEvent: { [weak self] event in
                 Task {
-                    await self?.handleIFrameEvent(event: event, stateId: stateId)
+                    await self?.handleInlineIframeEvent(event: event, stateId: stateId)
                 }
             }
         )
     }
+}
 
-    func handleIFrameEvent(event: InlineAdEvent, stateId: UUID) {
+// MARK: Preload
+private extension AdsProviderActor {
+    func preloadWithTimeout(
+        timeout: Int,
+        sessionId: String?,
+        configuration: AdsProviderConfiguration,
+        api: AdsServerAPI,
+        messages: [AdsMessage]
+    ) async throws -> PreloadedData {
+        try await withThrowingTaskGroup(of: PreloadedData.self) { group in
+            group.addTask {
+                try await Task.sleep(seconds: TimeInterval(timeout))
+                throw CancellationError()
+            }
+
+            group.addTask {
+                try await api.preload(
+                    sessionId: sessionId,
+                    configuration: configuration,
+                    messages: messages
+                )
+            }
+
+            guard let data = try await group.next() else {
+                throw CancellationError()
+            }
+
+            group.cancelAll()
+            return data
+        }
+    }
+}
+
+// MARK: iFrame events
+private extension AdsProviderActor {
+    func handleInlineIframeEvent(event: AdEvent, stateId: UUID) {
         guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
             return
         }
@@ -303,40 +305,47 @@ private extension AdsProviderActor {
             reset()
             notifyAboutAdChanges()
 
-        case .unknown:
+        case .openComponentIframe(let data):
+            Task { @MainActor in
+                let url = adsServerAPI.componentURL(
+                    messageId: newState.messageId,
+                    bidId: newState.bid.bidId,
+                    bidCode: newState.bid.code,
+                    component: data.component,
+                    otherParams: configuration.otherParams
+                )
+                let viewController = UIHostingController(
+                    rootView: InterstitialAdView(
+                        url: url,
+                        onIFrameEvent: { [weak self] event in
+                            Task {
+                                await self?.handleInterstitialIframeEvent(event: event)
+                            }
+                        }
+                    )
+                )
+                viewController.modalPresentationStyle = .fullScreen
+                UIApplication.shared.present(viewController)
+            }
+
+        default:
             break
         }
     }
-}
 
-private extension AdsProviderActor {
-    func preloadWithTimeout(
-        timeout: Int,
-        sessionId: String?,
-        configuration: AdsProviderConfiguration,
-        api: AdsServerAPI,
-        messages: [AdsMessage]
-    ) async throws -> PreloadedData {
-        try await withThrowingTaskGroup(of: PreloadedData.self) { group in
-            group.addTask {
-                try await Task.sleep(seconds: TimeInterval(timeout))
-                throw CancellationError()
-            }
+    func handleInterstitialIframeEvent(event: AdEvent) {
+        switch event {
+        case .initComponentIframe:
+            break
 
-            group.addTask {
-                try await api.preload(
-                    sessionId: sessionId,
-                    configuration: configuration,
-                    messages: messages
-                )
-            }
+        case .closeComponentIframe:
+            break
 
-            guard let data = try await group.next() else {
-                throw CancellationError()
-            }
+        case .errorComponentIframe:
+            break
 
-            group.cancelAll()
-            return data
+        default:
+            break
         }
     }
 }

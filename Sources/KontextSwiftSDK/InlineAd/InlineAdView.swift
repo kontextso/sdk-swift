@@ -15,7 +15,7 @@ public struct InlineAdView: View {
     public var body: some View {
         Group {
             if let url = viewModel.ad.webViewData.url {
-                InlineAdWebViewRepresentable(
+                AdWebViewRepresentable(
                     url: url,
                     updateIFrameData: viewModel.ad.webViewData.updateData,
                     onIFrameEvent: { event in

@@ -13,7 +13,7 @@ extension AdLoadingState {
     struct WebViewData: Sendable, Hashable {
         let url: URL?
         let updateData: UpdateIFrameData
-        let onIFrameEvent: @Sendable (InlineAdEvent) -> Void
+        let onIFrameEvent: @Sendable (AdEvent) -> Void
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(url)

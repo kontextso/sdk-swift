@@ -9,7 +9,7 @@ public final class InlineAdUIView: UIView {
     /// The height constraint for the web view, allowing dynamic resizing.
     private var heightConstraint: NSLayoutConstraint?
     /// The web view that loads and displays the ad content.
-    private var adWebView: InlineAdWebView?
+    private var adWebView: AdWebView?
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
@@ -27,8 +27,8 @@ public final class InlineAdUIView: UIView {
 
 private extension InlineAdUIView {
     func setupUI() {
-        let adWebView = InlineAdWebView(
-            updateFrameData: viewModel.ad.webViewData.updateData,
+        let adWebView = AdWebView(
+            updateIframeData: viewModel.ad.webViewData.updateData,
             onIFrameEvent: { [weak self] event in
                 guard let self else {
                     return
