@@ -26,7 +26,7 @@ extension UIApplication {
         return topController
     }
 
-    func present(
+    func presentOverContent(
         _ viewControllerToPresent: UIViewController,
         animated: Bool = true,
         completion: (() -> Void)? = nil
@@ -40,7 +40,7 @@ extension UIApplication {
         )
     }
 
-    func dismiss(
+    func dismissTopMostViewController(
         animated: Bool = true,
         completion: (() -> Void)? = nil
     ) {

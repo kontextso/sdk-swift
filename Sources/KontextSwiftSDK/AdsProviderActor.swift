@@ -306,7 +306,7 @@ private extension AdsProviderActor {
 
         case .closeComponentIframe, .errorComponentIframe:
             Task { @MainActor in
-                UIApplication.shared.dismiss()
+                UIApplication.shared.dismissTopMostViewController()
             }
 
         case .clickIframe(let clickData):
@@ -360,7 +360,7 @@ private extension AdsProviderActor {
                 )
             )
             viewController.modalPresentationStyle = .fullScreen
-            UIApplication.shared.present(viewController)
+            UIApplication.shared.presentOverContent(viewController)
         }
 
         Task {
@@ -373,7 +373,7 @@ private extension AdsProviderActor {
                     return
                 }
 
-                UIApplication.shared.dismiss()
+                UIApplication.shared.dismissTopMostViewController()
             }
         }
     }
