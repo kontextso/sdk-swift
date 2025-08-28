@@ -71,6 +71,9 @@ let character = Character(
 
 ### 2. Regulatory
 
+Secondly, prepare information about regulations.
+
+```
 /// Prepare regulatory compliance object, see documentation for details.
 let regulatory = Regulatory(...)
 ```
