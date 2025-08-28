@@ -4,8 +4,6 @@ import Foundation
 // MARK: - AdsProviderActing
 
 protocol AdsProviderActing: Sendable {
-    var eventPublisher: AnyPublisher<AdsProviderEvent, Never> { get }
-
     func setDelegate(delegate: AdsProviderActingDelegate?) async
 
     func setDisabled(_ isDisabled: Bool) async
@@ -27,12 +25,4 @@ protocol AdsProviderActingDelegate: AnyObject, Sendable {
         _ adsProviderActing: AdsProviderActing,
         didUpdateHeightForAd ad: Advertisement
     )
-}
-
-
-// MARK: - Event
-
-public enum AdsProviderEvent {
-    case didChangeAvailableAdsTo([Advertisement])
-    case didUpdateHeightForAd(Advertisement)
 }

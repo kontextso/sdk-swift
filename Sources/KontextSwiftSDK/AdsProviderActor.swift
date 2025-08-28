@@ -23,8 +23,9 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
-    /// Events publisher
-    private let eventSubject = PassthroughSubject<AdsProviderEvent, Never>()
+    /// Events published to interstitial component
+    private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
+    private var interstitialTimeoutTask: Task<Void, Never>?
 
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
@@ -52,12 +53,6 @@ actor AdsProviderActor {
 
 // MARK: Implementation
 extension AdsProviderActor: AdsProviderActing {
-    nonisolated var eventPublisher: AnyPublisher<AdsProviderEvent, Never> {
-        eventSubject
-            .receive(on: RunLoop.main)
-            .eraseToAnyPublisher()
-    }
-    
     /// Enables or Disables the generation of ads.
     func setDisabled(_ isDisabled: Bool) {
         self.isDisabled = isDisabled
@@ -181,8 +176,6 @@ private extension AdsProviderActor {
 
     func notifyAboutAdChanges() {
         let ads = states.filter { $0.show }.map { $0.toModel() }
-
-        eventSubject.send(.didChangeAvailableAdsTo(ads))
         delegate?.adsProviderActing(
             self,
             didChangeAvailableAdsTo: ads
@@ -280,15 +273,7 @@ private extension AdsProviderActor {
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .clickIframe(let clickData):
-            if let iframeClickedURL = if let clickDataURL = clickData.url {
-                adsServerAPI.redirectURL(relativeURL: clickDataURL)
-            } else {
-                newState.webViewData.url
-            } {
-                Task { @MainActor in
-                    UIApplication.shared.open(iframeClickedURL)
-                }
-            }
+            openURL(from: clickData, fallbackURL: newState.webViewData.url)
 
         case .resizeIframe(let resizedData):
             guard resizedData.height != newState.preferredHeight else {
@@ -297,7 +282,6 @@ private extension AdsProviderActor {
 
             newState.preferredHeight = resizedData.height
             states[stateIndex] = newState
-            eventSubject.send(.didUpdateHeightForAd(newState.toModel()))
             delegate?.adsProviderActing(self, didUpdateHeightForAd: newState.toModel())
 
         case .errorIframe(let message):
@@ -306,46 +290,91 @@ private extension AdsProviderActor {
             notifyAboutAdChanges()
 
         case .openComponentIframe(let data):
-            Task { @MainActor in
-                let url = adsServerAPI.componentURL(
-                    messageId: newState.messageId,
-                    bidId: newState.bid.bidId,
-                    bidCode: newState.bid.code,
-                    component: data.component,
-                    otherParams: configuration.otherParams
-                )
-                let viewController = UIHostingController(
-                    rootView: InterstitialAdView(
-                        url: url,
-                        onIFrameEvent: { [weak self] event in
-                            Task {
-                                await self?.handleInterstitialIframeEvent(event: event)
-                            }
-                        }
-                    )
-                )
-                viewController.modalPresentationStyle = .fullScreen
-                UIApplication.shared.present(viewController)
-            }
+            presentInterstitialAd(data, state: newState)
 
         default:
             break
         }
     }
 
-    func handleInterstitialIframeEvent(event: AdEvent) {
+    func handleInterstitialIframeEvent(event: AdEvent, state: AdLoadingState) {
         switch event {
         case .initComponentIframe:
-            break
+            interstitialEventSubject.send(.didChangeDisplay(true))
+            interstitialTimeoutTask?.cancel()
+            interstitialTimeoutTask = nil
 
-        case .closeComponentIframe:
-            break
+        case .closeComponentIframe, .errorComponentIframe:
+            Task { @MainActor in
+                UIApplication.shared.dismiss()
+            }
 
-        case .errorComponentIframe:
-            break
+        case .clickIframe(let clickData):
+            openURL(from: clickData, fallbackURL: state.webViewData.url)
 
         default:
             break
+        }
+    }
+}
+
+// MARK: Present actions
+private extension AdsProviderActor {
+    func openURL(from data: ClickIframeData, fallbackURL: URL?) {
+//        if let iframeClickedURL = if let clickDataURL = data.url {
+//            adsServerAPI.redirectURL(relativeURL: clickDataURL)
+//        } else {
+//            fallbackURL
+//        } {
+//            Task { @MainActor in
+//                UIApplication.shared.open(iframeClickedURL)
+//            }
+//        }
+    }
+
+    func presentInterstitialAd(
+        _ data: OpenComponentIframeData,
+        state: AdLoadingState
+    ) {
+        let url = adsServerAPI.componentURL(
+            messageId: state.messageId,
+            bidId: state.bid.bidId,
+            bidCode: state.bid.code,
+            component: data.component,
+            otherParams: configuration.otherParams
+        )
+
+        Task { @MainActor in
+            let viewController = UIHostingController(
+                rootView: InterstitialAdView(
+                    url: url,
+                    events: interstitialEventSubject.eraseToAnyPublisher(),
+                    onIFrameEvent: { [weak self] event in
+                        Task {
+                            await self?.handleInterstitialIframeEvent(
+                                event: event,
+                                state: state
+                            )
+                        }
+                    }
+                )
+            )
+            viewController.modalPresentationStyle = .fullScreen
+            UIApplication.shared.present(viewController)
+        }
+
+        Task {
+            // Close interstitial ad if it init component does not
+            // arrive within timeout interval.
+            interstitialTimeoutTask = Task { @MainActor in
+                try? await Task.sleep(milliseconds: data.timeout + 500) // Add buffer time for displaying.
+
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                UIApplication.shared.dismiss()
+            }
         }
     }
 }

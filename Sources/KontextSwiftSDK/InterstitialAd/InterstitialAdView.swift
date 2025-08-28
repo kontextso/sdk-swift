@@ -1,34 +1,43 @@
+import Combine
 import SwiftUI
 
+enum InterstitialAdEvent {
+    case didChangeDisplay(Bool)
+}
+
 struct InterstitialAdView: View {
-    @State private var url: URL?
+    @StateObject private var viewModel: InterstitialAdViewModel
     private var onIFrameEvent: (AdEvent) -> Void
 
     init(
         url: URL?,
+        events: AnyPublisher<InterstitialAdEvent, Never>,
         onIFrameEvent: @escaping (AdEvent) -> Void
     ) {
-        _url = State(initialValue: url)
+        _viewModel = StateObject(
+            wrappedValue: InterstitialAdViewModel(
+                url: url,
+                events: events
+            )
+        )
         self.onIFrameEvent = onIFrameEvent
     }
 
     var body: some View {
         ZStack {
-            if let url {
+            if let url = viewModel.url {
                 AdWebViewRepresentable(
                     url: url,
                     updateIFrameData: nil,
-                    onIFrameEvent: { _ in  }
+                    onIFrameEvent: { onIFrameEvent($0) }
                 )
-//                .opacity(viewModel.showIframe ? 1 : 0)
+                .opacity(viewModel.showIframe ? 1 : 0)
                 .ignoresSafeArea()
-            } else {
-                ProgressView()
             }
 
-//            if !viewModel.showIframe {
-//                ProgressView()
-//            }
+            if !viewModel.showIframe {
+                ProgressView()
+            }
         }
     }
 }

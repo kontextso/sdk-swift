@@ -121,9 +121,7 @@ private extension MyMessagesTableViewController {
         for message in messages {
             viewModels.append(.message(MyMessageViewModel(message: message)))
             if let ad = ads.first(where: { $0.messageId == message.id }) {
-                viewModels.append(.ad(InlineAdViewModel(
-                    adsProvider: adsProvider, ad: ad
-                )))
+                viewModels.append(.ad(InlineAdViewModel(ad: ad)))
             }
         }
         self.viewModels = viewModels

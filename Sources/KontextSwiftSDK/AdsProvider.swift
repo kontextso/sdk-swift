@@ -31,8 +31,11 @@ public final class AdsProvider: @unchecked Sendable {
     /// - Information about newly available ads
     /// - Information about height changes of ads
     public var eventPublisher: AnyPublisher<AdsProviderEvent, Never> {
-        dependencies.adsProviderActing.eventPublisher
+        self.eventSubject.eraseToAnyPublisher()
     }
+
+    /// Passthrough subject that is used to implement eventPublisher
+    private let eventSubject: PassthroughSubject<AdsProviderEvent, Never>
 
     /// Initializes a new instance of `AdsProvider`.
     ///
@@ -54,6 +57,7 @@ public final class AdsProvider: @unchecked Sendable {
             isDisabled: isDisabled
         )
         self.delegate = delegate
+        self.eventSubject = PassthroughSubject<AdsProviderEvent, Never>()
 
         Task {
             await dependencies.adsProviderActing.setDelegate(delegate: self)
@@ -111,6 +115,7 @@ extension AdsProvider: AdsProviderActingDelegate {
     ) {
         Task { @MainActor in
             self.delegate?.adsProvider(self, didChangeAvailableAdsTo: ads)
+            self.eventSubject.send(.didChangeAvailableAdsTo(ads))
         }
     }
 
@@ -120,6 +125,7 @@ extension AdsProvider: AdsProviderActingDelegate {
     ) {
         Task { @MainActor in
             self.delegate?.adsProvider(self, didUpdateHeightForAd: ad)
+            self.eventSubject.send(.didUpdateHeightForAd(ad))
         }
     }
 }
