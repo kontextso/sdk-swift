@@ -12,7 +12,8 @@ extension AdsProviderConfiguration {
             variantId: nil,
             advertisingId: nil,
             vendorId: nil,
-            adServerUrl: URL(string: "https://example.com")
+            adServerUrl: URL(string: "https://example.com"),
+            otherParams: [:]
         )
     }
 }

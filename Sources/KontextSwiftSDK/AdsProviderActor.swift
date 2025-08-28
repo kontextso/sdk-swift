@@ -48,9 +48,6 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
-    /// Events publisher
-    private let eventSubject = PassthroughSubject<AdsProviderEvent, Never>()
-
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
@@ -77,12 +74,6 @@ actor AdsProviderActor {
 
 // MARK: Implementation
 extension AdsProviderActor: AdsProviderActing {
-    nonisolated var eventPublisher: AnyPublisher<AdsProviderEvent, Never> {
-        eventSubject
-            .receive(on: RunLoop.main)
-            .eraseToAnyPublisher()
-    }
-    
     /// Enables or Disables the generation of ads.
     func setDisabled(_ isDisabled: Bool) {
         self.isDisabled = isDisabled
@@ -205,8 +196,6 @@ private extension AdsProviderActor {
 
     func notifyAboutAdChanges() {
         let ads = states.filter { $0.show }.map { $0.toModel() }
-
-        eventSubject.send(.didChangeAvailableAdsTo(ads))
         delegate?.adsProviderActing(
             self,
             didChangeAvailableAdsTo: ads
@@ -285,7 +274,6 @@ private extension AdsProviderActor {
 
             newState.preferredHeight = resizedData.height
             states[stateIndex] = newState
-            eventSubject.send(.didUpdateHeightForAd(newState.toModel()))
             delegate?.adsProviderActing(self, didUpdateHeightForAd: newState.toModel())
 
         case .errorIframe(let message):

@@ -33,6 +33,7 @@ public final class AdsProvider: @unchecked Sendable {
     public var eventPublisher: AnyPublisher<AdsProviderEvent, Never> {
         self.eventSubject.eraseToAnyPublisher()
     }
+
     /// Passthrough subject that is used to implement eventPublisher
     private let eventSubject: PassthroughSubject<AdsProviderEvent, Never>
 
