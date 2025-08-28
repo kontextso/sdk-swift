@@ -1,8 +1,4 @@
-//
-//  AdsProvider.swift
-//  KontextSwiftSDK
-//
-
+import Combine
 import Foundation
 import OSLog
 import SwiftUI
@@ -18,21 +14,41 @@ public final class AdsProvider: @unchecked Sendable {
     /// - Configuration always represents one chat conversation.
     /// - Multiple instance do not interfere with each other and have completely separate ads.
     public let configuration: AdsProviderConfiguration
-    
+
     /// Dependency container that holds all dependencies used by AdsProvider.
     private let dependencies: DependencyContainer
 
+    /// Delegate to receive ads related events
+    ///
+    /// - Receives events on the main thread
+    /// - Information about newly available ads
+    /// - Information about height changes of ads
+    public var delegate: AdsProviderDelegate?
+
+    /// Combine publisher that publishes ads related events
+    ///
+    /// - Publishes events on the main thread
+    /// - Information about newly available ads
+    /// - Information about height changes of ads
+    public var eventPublisher: AnyPublisher<AdsProviderEvent, Never> {
+        self.eventSubject.eraseToAnyPublisher()
+    }
+
+    /// Passthrough subject that is used to implement eventPublisher
+    private let eventSubject: PassthroughSubject<AdsProviderEvent, Never>
 
     /// Initializes a new instance of `AdsProvider`.
     ///
     /// - Parameters:
-    ///     - configuration: The configuration od immutable setup of the AdsProvider. Can be later accessd through `configuration` property.
+    ///     - configuration: The configuration of immutable setup of the AdsProvider. Can be later accessed through `configuration` property.
     ///     - sessionId: Session ID representing the current user session. If not provided, a new session ID will be generated.
-    @MainActor
+    ///     - isDisabled: If true, the ads generation will be disabled initially. Can be later enabled by calling `enable()`.
+    ///     - delegate: Delegate to receive ads related updates. Called on a main thread.
     public init(
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
-        isDisabled: Bool = false
+        isDisabled: Bool = false,
+        delegate: AdsProviderDelegate? = nil
     ) {
         self.configuration = configuration
         self.dependencies = DependencyContainer.defaultContainer(
@@ -40,6 +56,12 @@ public final class AdsProvider: @unchecked Sendable {
             sessionId: sessionId,
             isDisabled: isDisabled
         )
+        self.delegate = delegate
+        self.eventSubject = PassthroughSubject<AdsProviderEvent, Never>()
+
+        Task {
+            await dependencies.adsProviderActing.setDelegate(delegate: self)
+        }
     }
 
     /// Sets messages to be used as context for ad generation.
@@ -50,7 +72,7 @@ public final class AdsProvider: @unchecked Sendable {
         Task {
             do {
                 try await dependencies.adsProviderActing
-                    .setMessages(messages: mapMessageRepresentables(messages))
+                    .setMessages(messages: messages.map { $0.toModel() })
             } catch {
                 os_log(.error, "[AdsProvider] setMessages error: \(error)")
             }
@@ -69,50 +91,41 @@ public final class AdsProvider: @unchecked Sendable {
     ///
     /// Does not **start**  ads generation for messages from previous calls to `setMessages`
     public func enable() {
-        Task { await dependencies.adsProviderActing.setDisabled(false) }
+        Task {
+            await dependencies.adsProviderActing.setDisabled(false)
+        }
     }
-    
+
     /// Disables generation of ads
     ///
     /// Does not **stop**  ads generation for messages from previous calls to `setMessages`
     public func disable() {
-        Task { await dependencies.adsProviderActing.setDisabled(true) }
+        Task {
+            await dependencies.adsProviderActing.setDisabled(true)
+        }
     }
 }
 
 // MARK: - Internal methods
 
-extension AdsProvider {
-    @MainActor
-    func inlineAdViewModel(
-        code: String,
-        messageId: String,
-        otherParams: [String: String]
-    ) -> InlineAdViewModel {
-        InlineAdViewModel(
-            sharedStorage: dependencies.sharedStorage,
-            adsServerAPI: dependencies.adsServerAPI,
-            adsProviderActing: dependencies.adsProviderActing,
-            code: code,
-            messageId: messageId,
-            otherParams: otherParams
-        )
+extension AdsProvider: AdsProviderActingDelegate {
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didChangeAvailableAdsTo ads: [Advertisement]
+    ) {
+        Task { @MainActor in
+            self.delegate?.adsProvider(self, didChangeAvailableAdsTo: ads)
+            self.eventSubject.send(.didChangeAvailableAdsTo(ads))
+        }
     }
-}
 
-// MARK: - Private methods
-
-private extension AdsProvider {
-    func mapMessageRepresentables(
-        _ messagesRepresentables: [MessageRepresentable]
-    ) -> [AdsMessage] {
-        messagesRepresentables.map { representable in
-            AdsMessage(
-                id: representable.id,
-                role: representable.role,
-                content: representable.content,
-                createdAt: representable.createdAt
-            )
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didUpdateHeightForAd ad: Advertisement
+    ) {
+        Task { @MainActor in
+            self.delegate?.adsProvider(self, didUpdateHeightForAd: ad)
+            self.eventSubject.send(.didUpdateHeightForAd(ad))
         }
     }
 }

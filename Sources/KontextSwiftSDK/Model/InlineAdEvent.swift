@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Event Data Objects
 
 /// Data for view-iframe events
-struct ViewIframeData: Decodable {
+struct ViewIframeData: Decodable, Hashable {
     let id: String
     let content: String
     let messageId: String
@@ -11,7 +11,7 @@ struct ViewIframeData: Decodable {
 }
 
 /// Data for click-iframe events
-struct ClickIframeData: Decodable {
+struct ClickIframeData: Decodable, Hashable {
     let id: String
     let content: String
     let messageId: String
@@ -19,17 +19,17 @@ struct ClickIframeData: Decodable {
 }
 
 /// Data for resize-iframe events
-struct ResizeIframeData: Decodable {
+struct ResizeIframeData: Decodable, Hashable {
     let height: CGFloat
 }
 
 /// Data for error events
-struct ErrorData: Decodable {
+struct ErrorData: Decodable, Hashable {
     let message: String
 }
 
 /// Data for update-iframe events
-struct UpdateIFrameData: Decodable {
+struct UpdateIFrameData: Decodable, Hashable {
     let sdk: String
     let code: String
     let messageId: String
@@ -37,13 +37,8 @@ struct UpdateIFrameData: Decodable {
     let otherParams: [String: String]?
 }
 
-/// Data for unknown events
-struct UnknownData: Decodable {
-    let type: String
-}
-
 /// Represents different types of events that can be received from the InlineAd iframe
-enum InlineAdEvent: Decodable {
+enum InlineAdEvent: Decodable, Sendable, Hashable {
     enum CodingKeys: CodingKey {
         case type
         case data
@@ -71,7 +66,7 @@ enum InlineAdEvent: Decodable {
     case errorIframe(ErrorData)
     
     /// Unknown event type
-    case unknown(UnknownData)
+    case unknown(String)
 }
 
 // MARK: - Event Parsing
@@ -84,7 +79,7 @@ extension InlineAdEvent {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(String.self, forKey: .type)
-        
+
         switch type {
         case "init-iframe":
             self = .initIframe
@@ -101,7 +96,7 @@ extension InlineAdEvent {
         case "error-iframe":
             self = .errorIframe(try container.decode(ErrorData.self, forKey: .data))
         default:
-            self = .unknown(try container.decode(UnknownData.self, forKey: .data))
+            self = .unknown(type)
         }
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-struct Bid: Decodable, Sendable {
+struct Bid: Decodable, Sendable, Hashable {
     /// ID of the bid
     let bidId: String
     /// Placement code

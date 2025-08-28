@@ -1,8 +1,3 @@
-//
-//  AdDisplayPosition.swift
-//  KontextSwiftSDK
-//
-
 enum AdDisplayPosition: String, Decodable, Sendable {
     /// Ad will be rendered after the assistant’s message
     case afterAssistantMessage

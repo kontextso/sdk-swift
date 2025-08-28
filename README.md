@@ -2,7 +2,7 @@
 
 The official Swift SDK for integrating Kontext.so ads into your mobile application.
 
-KontextSwiftSDK is a Swift package that provides an easy way to integrate Kontext.so ads into your iOS application. It manages ad loading, placement and errors with minimalist API. There is no need for complex state management, just iniatlize it and pass it messages whenever they change. The SDK will take care of the rest.
+KontextSwiftSDK is a Swift package that provides an easy way to integrate Kontext.so ads into your iOS application. It manages ad loading, placement and errors with minimalist API. The SDK provides an ad data source and UI components that render ads while remaining flexible on layout.
 
 ## Requirements
 
@@ -29,7 +29,7 @@ Alternatively you can use Xcode's UI: `File > Add Package Dependencies ...` and 
 
 ### CocoaPods
 
-If you prefer Cococapods instead.
+If you prefer CocoaPods instead.
 
 Add the following line to your `Podfile`:
 
@@ -71,9 +71,7 @@ let character = Character(
 
 ### 2. Regulatory
 
-Secondly, prepare regulatory compliance object. More information about its properties can be found as documentation of the object in the code.
-
-```
+/// Prepare regulatory compliance object, see documentation for details.
 let regulatory = Regulatory(...)
 ```
 
@@ -98,9 +96,11 @@ let configuration = AdsProviderConfiguration(
 	// An alphanumeric string that uniquely identifies a device to the app’s vendor (IDFV).
 	vendorId: UIDevice.current.identifierForVendor,
 	// URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
-	adServerUrl: nil
+	adServerUrl: nil,
 	/// Information about regulatory requirements that apply
-	regulatory: regulatory
+	regulatory: regulatory,
+    // May contain arbitrary key-value pairs. Used to pass publisher-specific information to Kontext. Contents will be discussed with your account manager if needed.   
+    otherParams: ["theme": "v1-dark"]
 )
 ```
 
@@ -160,22 +160,25 @@ adsProvider.setMessages(messages)
 
 ### 6. Insert InlineAdView into view hierarchy
 
-Lastly, provide place for the Ads to manifest into. This is done by placing `InlineAdView` into View hierarchy just after the associated message. It will stay empty until an ad linked to the respective message is retrieved.
+The last thing remaining is to provide place for the Ads to manifest into. This is done by placing `InlineAdView` into View hierarchy just after the associated message. The view will take care of loading the ad.
 
 ```swift
-ForEach(messages, id: \.uuid.uuidString) { message in
-	VStack {
-		MyChatMessageView(message)
-		InlineAdView(
-			adsProvider: adsProvider,
-			code: "inlineAd",
-			messageId: message.id,
-			otherParams: [:] // May contain arbitrary key-value pairs. Used to pass publisher-specific information to Kontext. Contents will be discussed with your account manager if needed.
-		)
-	}
+ZStack {
+    ForEach(messages, id: \.uuid.uuidString) { message in
+        VStack {
+            MyChatMessageView(message)
+      
+            let ad = // Retrieve ad for message
+            InlineAdView(ad: ad)
+        }
+    }
+}.onReceive(adsProvider.eventPublisher) { event in
+   // React to adsProvider events
 }
 
 ```
+
+For usage with UIKit please use `InlineAdUIView` instead and refer to the ExampleUIKit app.
 
 Now you are set up and ready to go 🎉
 
@@ -186,4 +189,3 @@ For advanced usage, supported formats, and configuration details, see the docs: 
 ## License
 
 KontextSwiftSDK is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
-

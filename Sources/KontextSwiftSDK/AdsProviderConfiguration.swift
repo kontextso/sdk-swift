@@ -1,8 +1,3 @@
-//
-//  AdsProviderConfiguration.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 /// Configuration for the AdsProvider.
@@ -48,6 +43,9 @@ public struct AdsProviderConfiguration: Sendable {
     public let adServerUrl: URL
     /// Information about regulatory requirements that apply.
     public let regulatory: Regulatory?
+    ///   An arbitrary key-value collection of values that the publisher can send.
+    ///   It varies per publisher, but all publishers provide at least the theme parameter.
+    public let otherParams: [String: String]
 
     /// Initializes a new AdsProviderConfiguration to be later passed to the AdsProvider.
     ///
@@ -62,6 +60,7 @@ public struct AdsProviderConfiguration: Sendable {
     ///     - vendorId: Vendor-specific identifier provided by the operating systems (IDFV).
     ///     - adServerUrl: URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
     ///     - regulatory: Information about regulatory requirements that apply.
+    ///     - otherParams: An arbitrary key-value collection of values that the publisher can send. It varies per publisher, but all publishers provide at least the theme parameter.
     public init(
         publisherToken: String,
         userId: String,
@@ -72,7 +71,8 @@ public struct AdsProviderConfiguration: Sendable {
         advertisingId: String? = nil,
         vendorId: String? = nil,
         adServerUrl: URL? = nil,
-        regulatory: Regulatory? = nil
+        regulatory: Regulatory? = nil,
+        otherParams: [String: String]
     ) {
         self.publisherToken = publisherToken
         self.userId = userId
@@ -84,6 +84,6 @@ public struct AdsProviderConfiguration: Sendable {
         self.vendorId = vendorId
         self.adServerUrl = adServerUrl ?? SDKInfo.defaultAdServerURL
         self.regulatory = regulatory
-
+        self.otherParams = otherParams
     }
 }

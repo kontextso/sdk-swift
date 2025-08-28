@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct MessageDTO: Codable {
+struct MessageDTO: Codable, Hashable {
     /// Unique ID of the message
     let id: String
     /// Role of the author of the message (user or assistant)

@@ -1,9 +1,3 @@
-//
-//  MockAdsServerAPI.swift
-//  KontextSwiftSDK
-//
-
-
 import Foundation
 @testable import KontextSwiftSDK
 
@@ -45,7 +39,8 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     func frameURL(
         messageId: String,
         bidId: String,
-        bidCode: String
+        bidCode: String,
+        otherParams: [String : String]
     ) -> URL? {
         frameURLCalls.append((messageId, bidId, bidCode))
         return frameURLReturnValue

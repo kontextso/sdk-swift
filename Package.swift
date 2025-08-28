@@ -13,7 +13,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "KontextSwiftSDK"
+            name: "KontextSwiftSDK",
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
+            ]
         ),
         .testTarget(
             name: "KontextSwiftSDKTests",

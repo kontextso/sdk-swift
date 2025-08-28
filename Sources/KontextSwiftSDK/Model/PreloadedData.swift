@@ -1,8 +1,3 @@
-//
-//  PreloadedData.swift
-//  KontextSwiftSDK
-//
-
 struct PreloadedData {
     /// Unique identifier for the session.
     let sessionId: String?

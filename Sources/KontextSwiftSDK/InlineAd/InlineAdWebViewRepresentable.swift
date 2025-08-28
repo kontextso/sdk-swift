@@ -1,31 +1,25 @@
-//
-//  InlineAdView.swift
-//  KontextSwiftSDK
-//
-
 import SwiftUI
 import UIKit
 
 struct InlineAdWebViewRepresentable: UIViewRepresentable {
     private let url: URL
     private let updateIFrameData: UpdateIFrameData
-    @Binding private var iframeEvent: InlineAdEvent?
+    private let onIFrameEvent: (InlineAdEvent) -> Void
     
     init(
         url: URL,
         updateIFrameData: UpdateIFrameData,
-        iframeEvent: Binding<InlineAdEvent?>
+        onIFrameEvent: @escaping (InlineAdEvent) -> Void
     ) {
         self.url = url
         self.updateIFrameData = updateIFrameData
-        self._iframeEvent = iframeEvent
+        self.onIFrameEvent = onIFrameEvent
     }
     
     func makeUIView(context: Context) -> InlineAdWebView {
         let view = InlineAdWebView(
-            frame: .zero,
             updateFrameData: updateIFrameData,
-            iframeEvent: $iframeEvent
+            onIFrameEvent: onIFrameEvent
         )
         view.loadAd(from: url)
         return view

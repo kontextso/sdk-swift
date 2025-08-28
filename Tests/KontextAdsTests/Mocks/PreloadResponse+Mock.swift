@@ -1,8 +1,3 @@
-//
-//  PreloadResponse+Mock.swift
-//  KontextSwiftSDK
-//
-
 @testable import KontextSwiftSDK
 
 extension PreloadedData {

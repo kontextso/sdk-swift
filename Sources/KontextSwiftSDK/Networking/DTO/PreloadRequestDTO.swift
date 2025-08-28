@@ -10,6 +10,7 @@ struct PreloadRequestDTO: Encodable {
     let messages: [MessageDTO]
     let variantId: String?
     let character: CharacterDTO?
+    let enabledPlacementCodes: [String]?
     let advertisingId: String?
     let vendorId: String?
     let sessionId: String?
@@ -17,6 +18,7 @@ struct PreloadRequestDTO: Encodable {
     let sdk: String
     let sdkVersion: String
     let regulatory: RegulatoryDTO?
+    
 
     init(
         sessionId: String?,
@@ -30,6 +32,7 @@ struct PreloadRequestDTO: Encodable {
         conversationId = configuration.conversationId
         userId = configuration.userId
         self.messages = messages.map(MessageDTO.init)
+        self.enabledPlacementCodes = configuration.enabledPlacementCodes
         variantId = configuration.variantId
         character = CharacterDTO(from: configuration.character)
         advertisingId = configuration.advertisingId

@@ -18,6 +18,7 @@ struct ChatMessage: Identifiable, MessageRepresentable {
 struct ChatView: View {
     @State private var adsProvider: AdsProvider
     @State private var messages: [ChatMessage] = []
+    @State private var ads: [Advertisement] = []
 
     init() {
         // 1. Prepare Character information about the assistant (if any)
@@ -38,7 +39,8 @@ struct ChatView: View {
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
             character: character,
-            regulatory: Regulatory(gdpr: 1, coppa: nil)
+            regulatory: Regulatory(gdpr: 1, coppa: nil),
+            otherParams: ["theme": "dark"]
         )
 
         // 3. Create AdsProvider associated to this conversation
@@ -58,14 +60,10 @@ struct ChatView: View {
                                 .padding()
                                 .background(message.role == .user ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
                                 .cornerRadius(8)
-                            // 4. Insert InlineAdView which will expand when ad is available
-                            // If there is no respective ad for the message it will stay empty
-                            InlineAdView(
-                                adsProvider: adsProvider,
-                                code: "inlineAd",
-                                messageId: message.id,
-                                otherParams: [:]
-                            )
+
+                            if let ad = ads.first, ad.messageId == message.id {
+                                InlineAdView(ad: ad)
+                            }
                         }
                     }
                 }
@@ -77,6 +75,18 @@ struct ChatView: View {
             }
             .padding()
         }
+        .onReceive(adsProvider.eventPublisher) { event in
+            switch event {
+            case .didChangeAvailableAdsTo(let newAds):
+                ads = newAds
+            case .didUpdateHeightForAd(let newAd):
+                guard let index = ads.firstIndex(where: { $0.id == newAd.id }) else {
+                    return
+                }
+
+                ads[index] = newAd                
+            }
+        }
     }
 
     private func sendMessage() {
@@ -84,9 +94,8 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello, how are you?"
+            content: "kontextso ad_format:IMAGE"
         )
-
 
         messages.append(userMessage)
         adsProvider.setMessages(messages)
