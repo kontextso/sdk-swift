@@ -37,11 +37,6 @@ struct UpdateIFrameData: Decodable, Hashable {
     let otherParams: [String: String]?
 }
 
-/// Data for unknown events
-struct UnknownData: Decodable, Hashable {
-    let type: String
-}
-
 /// Represents different types of events that can be received from the InlineAd iframe
 enum InlineAdEvent: Decodable, Sendable, Hashable {
     enum CodingKeys: CodingKey {
@@ -71,7 +66,7 @@ enum InlineAdEvent: Decodable, Sendable, Hashable {
     case errorIframe(ErrorData)
     
     /// Unknown event type
-    case unknown(UnknownData)
+    case unknown(String)
 }
 
 // MARK: - Event Parsing
@@ -101,7 +96,7 @@ extension InlineAdEvent {
         case "error-iframe":
             self = .errorIframe(try container.decode(ErrorData.self, forKey: .data))
         default:
-            self = .unknown(try container.decode(UnknownData.self, forKey: .data))
+            self = .unknown(type)
         }
     }
 }
