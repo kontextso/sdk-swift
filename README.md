@@ -21,7 +21,7 @@ The [Swift Package Manager](https://swift.org/package-manager/) is integrated to
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/kontextso/sdk-swift", .upToNextMajor(from: "1.0.1"))
+    .package(url: "https://github.com/kontextso/sdk-swift", .upToNextMajor(from: "1.0.3"))
 ]
 ```
 
@@ -94,12 +94,10 @@ let configuration = AdsProviderConfiguration(
 	enabledPlacementCodes: ["<code>"],
 	// The character object used in this conversation
 	character: character,
-	// Advertising identifier (IDFA) or GAID, when allowed by user, otherwise nil
+	// Advertising identifier (IDFA), when allowed by user, otherwise nil
 	advertisingId: ASIdentifierManager.shared().advertisingIdentifier,
 	// An alphanumeric string that uniquely identifies a device to the app’s vendor (IDFV).
 	vendorId: UIDevice.current.identifierForVendor,
-	// URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
-	adServerUrl: nil,
 	/// Information about regulatory requirements that apply
 	regulatory: regulatory,
     // May contain arbitrary key-value pairs. Used to pass publisher-specific information to Kontext. Contents will be discussed with your account manager if needed.   
@@ -187,7 +185,7 @@ Now you are set up and ready to go 🎉
 
 ## Documentation
 
-For advanced usage, supported formats, and configuration details, see the docs: [https://docs.kontext.so/sdk/ios](https://docs.kontext.so/sdk/ios)
+ For more information, see the documentation: [https://docs.kontext.so/sdk/ios](https://docs.kontext.so/sdk/ios)
 
 ## License
 
