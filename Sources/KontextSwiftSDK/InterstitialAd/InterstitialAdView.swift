@@ -6,21 +6,24 @@ enum InterstitialAdEvent {
 }
 
 struct InterstitialAdView: View {
+    struct Params: Identifiable {
+        var id: String { url?.absoluteString ?? UUID().uuidString }
+        let url: URL?
+        let events: AnyPublisher<InterstitialAdEvent, Never>
+        let onIFrameEvent: (AdEvent) -> Void
+    }
+
     @StateObject private var viewModel: InterstitialAdViewModel
     private var onIFrameEvent: (AdEvent) -> Void
 
-    init(
-        url: URL?,
-        events: AnyPublisher<InterstitialAdEvent, Never>,
-        onIFrameEvent: @escaping (AdEvent) -> Void
-    ) {
+    init(params: Params) {
         _viewModel = StateObject(
             wrappedValue: InterstitialAdViewModel(
-                url: url,
-                events: events
+                url: params.url,
+                events: params.events
             )
         )
-        self.onIFrameEvent = onIFrameEvent
+        self.onIFrameEvent = params.onIFrameEvent
     }
 
     var body: some View {

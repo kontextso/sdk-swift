@@ -6,7 +6,6 @@ import SwiftUI
 // MARK: - AdsProviderActor
 
 actor AdsProviderActor {
-    private let numberOfRelevantMessages = 10
     /// Represents a single session of interaction within a conversation.
     /// A new sessionId is generated each time the SDK is initialized—typically when the user opens or reloads the app.
     /// This helps us track discrete usage periods, even within the same ongoing conversation.
@@ -23,7 +22,9 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
-    /// Events published to interstitial component
+    private let numberOfRelevantMessages = 10
+    /// Events published to interstitial and inline components
+    private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
     private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
     private var interstitialTimeoutTask: Task<Void, Never>?
 
@@ -205,7 +206,8 @@ private extension AdsProviderActor {
                 Task {
                     await self?.handleInlineIframeEvent(event: event, stateId: stateId)
                 }
-            }
+            },
+            events: inlineEventSubject.eraseToAnyPublisher()
         )
     }
 }
@@ -300,13 +302,15 @@ private extension AdsProviderActor {
     func handleInterstitialIframeEvent(event: AdEvent, state: AdLoadingState) {
         switch event {
         case .initComponentIframe:
-            interstitialEventSubject.send(.didChangeDisplay(true))
+            Task { @MainActor in
+                interstitialEventSubject.send(.didChangeDisplay(true))
+            }
             interstitialTimeoutTask?.cancel()
             interstitialTimeoutTask = nil
 
         case .closeComponentIframe, .errorComponentIframe:
             Task { @MainActor in
-                UIApplication.shared.dismissTopMostViewController()
+                inlineEventSubject.send(.didFinishInterstitialAd)
             }
 
         case .clickIframe(let clickData):
@@ -345,36 +349,31 @@ private extension AdsProviderActor {
         )
 
         Task { @MainActor in
-            let viewController = UIHostingController(
-                rootView: InterstitialAdView(
-                    url: url,
-                    events: interstitialEventSubject.eraseToAnyPublisher(),
-                    onIFrameEvent: { [weak self] event in
-                        Task {
-                            await self?.handleInterstitialIframeEvent(
-                                event: event,
-                                state: state
-                            )
-                        }
+            let params = InterstitialAdView.Params(
+                url: url,
+                events: interstitialEventSubject.eraseToAnyPublisher(),
+                onIFrameEvent: { [weak self] event in
+                    Task {
+                        await self?.handleInterstitialIframeEvent(
+                            event: event,
+                            state: state
+                        )
                     }
-                )
+                }
             )
-            viewController.modalPresentationStyle = .fullScreen
-            UIApplication.shared.presentOverContent(viewController)
+            inlineEventSubject.send(.didRequestInterstitialAd(params))
         }
 
-        Task {
-            // Close interstitial ad if it init component does not
-            // arrive within timeout interval.
-            interstitialTimeoutTask = Task { @MainActor in
-                try? await Task.sleep(milliseconds: data.timeout + 500) // Add buffer time for displaying.
+        // Close interstitial ad if it init component does not
+        // arrive within timeout interval.
+        interstitialTimeoutTask = Task { @MainActor in
+            try? await Task.sleep(milliseconds: data.timeout + 500) // Add buffer time for displaying.
 
-                guard !Task.isCancelled else {
-                    return
-                }
-
-                UIApplication.shared.dismissTopMostViewController()
+            guard !Task.isCancelled else {
+                return
             }
+
+            inlineEventSubject.send(.didFinishInterstitialAd)
         }
     }
 }

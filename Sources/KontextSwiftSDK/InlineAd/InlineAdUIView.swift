@@ -4,12 +4,15 @@ import SwiftUI
 
 /// A UIView that displays an inline advertisement using a web view.
 public final class InlineAdUIView: UIView {
+    private var cancellables: Set<AnyCancellable> = []
     /// The view model that manages the ad data and interactions.
     private var viewModel: InlineAdViewModel
     /// The height constraint for the web view, allowing dynamic resizing.
     private var heightConstraint: NSLayoutConstraint?
     /// The web view that loads and displays the ad content.
     private var adWebView: AdWebView?
+    /// Presented interstitial view controller.
+    private weak var interstitialViewController: UIViewController?
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
@@ -21,7 +24,8 @@ public final class InlineAdUIView: UIView {
     public init(ad: Advertisement) {
         viewModel = InlineAdViewModel(ad: ad)
         super.init(frame: .zero)
-        self.setupUI()
+        observeEvents()
+        setupUI()
     }
 }
 
@@ -64,5 +68,41 @@ private extension InlineAdUIView {
         if let url = viewModel.ad.webViewData.url {
             adWebView.load(URLRequest(url: url))
         }
+    }
+
+    func observeEvents() {
+        viewModel.ad.webViewData.events
+            .sink { [weak self] event in
+                guard let self else {
+                    return
+                }
+
+                switch event {
+                case .didRequestInterstitialAd(let params, let mode):
+                    self.presentInterstitialAd(params: params, presentationMode: mode)
+
+                case .didFinishInterstitialAd:
+                    self.dismissInterstitialAd()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func presentInterstitialAd(
+        params: InterstitialAdView.Params,
+        presentationMode: UIModalPresentationStyle
+    ) {
+        let presentationController = topMostViewController
+        let viewController = UIHostingController(
+            rootView: InterstitialAdView(params: params)
+        )
+        interstitialViewController = viewController
+        viewController.modalPresentationStyle = presentationMode
+        presentationController?.present(viewController, animated: true)
+    }
+
+    func dismissInterstitialAd() {
+        interstitialViewController?.dismiss(animated: true)
+        interstitialViewController = nil
     }
 }
