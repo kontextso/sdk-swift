@@ -287,7 +287,7 @@ private extension AdsProviderActor {
             delegate?.adsProviderActing(self, didUpdateHeightForAd: newState.toModel())
 
         case .errorIframe(let message):
-            os_log(.error, "[InlineAd]: Error: \(message.message)")
+            os_log(.error, "[InlineAd]: Error: \(message?.message ?? "unknown")")
             reset()
             notifyAboutAdChanges()
 

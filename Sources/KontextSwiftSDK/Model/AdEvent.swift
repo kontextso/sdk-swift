@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 /// Represents different types of events that can be received from the InlineAd iframe
 enum AdEvent: Decodable, Hashable {
@@ -26,7 +27,7 @@ enum AdEvent: Decodable, Hashable {
     case resizeIframe(ResizeIframeData)
 
     /// Error event from the iframe
-    case errorIframe(ErrorData)
+    case errorIframe(ErrorData?)
 
     /// Open component request event to display component iframe
     case openComponentIframe(OpenComponentIframeData)
@@ -41,7 +42,7 @@ enum AdEvent: Decodable, Hashable {
     case closeComponentIframe(ComponentIframeData)
 
     /// Unknown event type
-    case unknown(UnknownData)
+    case unknown(String)
 }
 
 // MARK: - Event Data Objects
@@ -109,7 +110,7 @@ extension AdEvent {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(String.self, forKey: .type)
-        print(type)
+
         switch type {
         case "init-iframe":
             self = .initIframe
@@ -124,7 +125,7 @@ extension AdEvent {
         case "resize-iframe":
             self = .resizeIframe(try container.decode(ResizeIframeData.self, forKey: .data))
         case "error-iframe":
-            self = .errorIframe(try container.decode(ErrorData.self, forKey: .data))
+            self = .errorIframe(try? container.decode(ErrorData.self, forKey: .data))
         case "open-component-iframe":
             self = .openComponentIframe(try container.decode(OpenComponentIframeData.self, forKey: .data))
         case "close-component-iframe":
@@ -134,7 +135,7 @@ extension AdEvent {
         case "error-component-iframe":
             self = .errorComponentIframe(try container.decode(ComponentIframeData.self, forKey: .data))
         default:
-            self = .unknown(try container.decode(UnknownData.self, forKey: .data))
+            self = .unknown(type)
         }
     }
 }
