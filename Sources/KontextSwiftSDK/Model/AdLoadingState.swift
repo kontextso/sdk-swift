@@ -1,3 +1,4 @@
+import Combine
 import UIKit
 
 struct AdLoadingState {
@@ -13,7 +14,8 @@ extension AdLoadingState {
     struct WebViewData: Sendable, Hashable {
         let url: URL?
         let updateData: UpdateIFrameData
-        let onIFrameEvent: @Sendable (InlineAdEvent) -> Void
+        let onIFrameEvent: @Sendable (AdEvent) -> Void
+        let events: AnyPublisher<InlineAdEvent, Never>
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(url)
