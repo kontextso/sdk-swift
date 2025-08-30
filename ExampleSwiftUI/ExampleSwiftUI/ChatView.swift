@@ -7,6 +7,14 @@ import Foundation
 import KontextSwiftSDK
 import SwiftUI
 
+enum TestEvent: String {
+    case text = "kontextso ad_format:INLINE"
+    case image = "kontextso ad_format:IMAGE"
+    case video = "kontextso ad_format:VIDEO"
+    case character = "kontextso ad_format:INTERSTITIAL"
+    case characterRewarded = "kontextso ad_format:INTERSTITIAL_REWARDED"
+}
+
 struct ChatMessage: Identifiable, MessageRepresentable {
     let id: String
     let role: Role
@@ -94,7 +102,7 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "kontextso ad_format:IMAGE"
+            content: TestEvent.characterRewarded.rawValue
         )
 
         messages.append(userMessage)
