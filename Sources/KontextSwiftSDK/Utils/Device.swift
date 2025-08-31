@@ -24,15 +24,23 @@ struct Device: Codable, Sendable {
     let soundOn: Bool
     /// Device locale identifier (e.g., "en_US")
     let locale: String
+    /// Device timezone identifierIANA, e.g. "Europe/Prague"
+    let timezone: String
     /// Device screen width size
     let screenWidth: CGFloat
     /// Device screen height size
     let screenHeight: CGFloat
+    /// Device orientation: "portrait" or "landscape"
+    let orientation: String?
     /// Device dark mode status (true if dark mode is on, false if light mode is on)
     let isDarkMode: Bool
+    /// Device boot time (seconds since 1970)
+    let bootTime: Double
     /// Additional device information
     let additionalInfo: [String: String]
-    
+    /// True if an SD card is available, false otherwise (always false for iOS devices)
+    let sdCardAvailable: Bool = false
+
     init(
         os: String,
         systemVersion: String,
@@ -44,10 +52,13 @@ struct Device: Codable, Sendable {
         appStoreUrl: String? = nil,
         soundOn: Bool = true,
         locale: String,
+        timezone: String,
         screenWidth: CGFloat,
         screenHeight: CGFloat,
+        orientation: String?,
         isDarkMode: Bool,
-        additionalInfo: [String: String] = [:]
+        additionalInfo: [String: String] = [:],
+        bootTime: Double
     ) {
         self.os = os
         self.systemVersion = systemVersion
@@ -59,10 +70,14 @@ struct Device: Codable, Sendable {
         self.appStoreUrl = appStoreUrl
         self.soundOn = soundOn
         self.locale = locale
+        self.timezone = timezone
         self.screenWidth = screenWidth
         self.screenHeight = screenHeight
+        self.orientation = orientation
         self.isDarkMode = isDarkMode
         self.additionalInfo = additionalInfo
+        self.bootTime = bootTime
+        self.orientation = orientation
     }
 }
 
@@ -75,7 +90,7 @@ extension Device {
         let os = "ios"
         let systemVersion = UIDevice.current.systemVersion
         let brand = "Apple"
-        
+
         // Determine device type
         let deviceType: String
         switch UIDevice.current.userInterfaceIdiom {
@@ -86,11 +101,11 @@ extension Device {
         default:
             deviceType = "other"
         }
-        
+
         // Get app information
         let appBundleId = Bundle.main.bundleIdentifier ?? "unknown"
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-        
+
         // Get device model identifier
         var systemInfo = utsname()
         uname(&systemInfo)
@@ -99,7 +114,7 @@ extension Device {
             guard let value = element.value as? Int8, value != 0 else { return identifier }
             return identifier + String(UnicodeScalar(UInt8(value)))
         }
-        
+
         // Detect sound status
         let soundOn = AVAudioSession.sharedInstance().outputVolume != 0
 
@@ -110,10 +125,24 @@ extension Device {
         additionalInfo["screenHeight"] = "\(UIScreen.main.bounds.height)"
         additionalInfo["scale"] = "\(UIScreen.main.scale)"
 
+        let orientation: String?
+        switch UIDevice.current.orientation {
+        case .portrait, .portraitUpsideDown:
+            orientation = "portrait"
+        case .landscapeLeft, .landscapeRight:
+            orientation = "landscape"
+        default:
+            orientation = nil
+        }
+
         let locale = Locale.current.identifier
+        let timezone = TimeZone.current.identifier
         let screenWidth = UIScreen.main.bounds.width
         let screenHeight = UIScreen.main.bounds.height
         let isDarkMode = UITraitCollection.current.userInterfaceStyle == .dark
+        let uptime = ProcessInfo.processInfo.systemUptime
+        let now = Date()
+        let bootTime = now.addingTimeInterval(-uptime).timeIntervalSince1970
 
         return Device(
             os: os,
@@ -126,10 +155,13 @@ extension Device {
             appStoreUrl: nil,
             soundOn: soundOn,
             locale: locale,
+            timezone: timezone,
             screenWidth: screenWidth,
             screenHeight: screenHeight,
+            orientation: orientation,
             isDarkMode: isDarkMode,
-            additionalInfo: additionalInfo
+            additionalInfo: additionalInfo,
+            bootTime: bootTime
         )
     }
 }

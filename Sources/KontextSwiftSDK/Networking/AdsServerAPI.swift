@@ -68,9 +68,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
                 sessionId: sessionId,
                 configuration: configuration,
                 device: await Device.current(),
-                messages: messages,
-                sdk: SDKInfo.name,
-                sdkVersion: SDKInfo.version
+                messages: messages
             )
         )
         return responseDTO.preloadedData

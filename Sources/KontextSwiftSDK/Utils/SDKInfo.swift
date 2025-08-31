@@ -16,4 +16,6 @@ final class SDKInfo  {
         Self.bundle
             .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
+
+    static let platform = "ios"
 }
