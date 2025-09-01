@@ -3,11 +3,21 @@
 //  KontextSwiftSDK
 //
 
+enum ScreenOrientation: String, Encodable {
+    case portrait
+    case landscape
+}
+
 struct ScreenDTO: Encodable {
-    let width: Double           // px
-    let height: Double          // px
-    let dpr: Double             // DPR, e.g. 3.0
-    let orientation?: String
+    /// Width in pixels
+    let width: Double
+    /// Height in pixels
+    let height: Double
+    /// Device pixel ratio, DPR, e.g. 3.0
+    let dpr: Double
+    /// Orientation of the device, e.g. "portrait" or "landscape", can be nil
+    let orientation: ScreenOrientation?
+    /// Whether the device is in dark mode
     let darkMode: Bool
 
     init(from device: Device) {

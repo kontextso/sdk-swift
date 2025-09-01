@@ -3,11 +3,12 @@
 //  KontextSwiftSDK
 //
 
+import Foundation
 
 final class AppInfo  {
     private static var bundle: Bundle { Bundle.main }
 
-    static var bundleID: String {
+    static var bundleId: String? {
         Self.bundle.bundleIdentifier
     }
 
@@ -23,48 +24,36 @@ final class AppInfo  {
             .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
 
-    static var storeURL: String {
-       "https://apps.apple.com/app/id\(Bundle.main.bundleIdentifier)")
+    static var storeUrl: String? {
+        guard let bundleIdentifier = Self.bundleId else { return nil }
+        return "https://apps.apple.com/app/id\(bundleIdentifier)"
     }
 
     static let platform = "ios"
 
-    func appInstallTime() -> Double? {
+    static var installTime: Double? {
         // Get path to the app's Documents directory
         if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
             if let attributes = try? FileManager.default.attributesOfItem(atPath: documentsURL.path),
                let creationDate = attributes[.creationDate] as? Date {
-                return creationDate?.timeIntervalSince1970
+                return creationDate.timeIntervalSince1970
             }
         }
         return nil
     }
 
-    func appUpdateTime() -> Double? {
+    static var updateTime: Double? {
         let bundleURL = Bundle.main.bundleURL
         if let attributes = try? FileManager.default.attributesOfItem(atPath: bundleURL.path),
            let modificationDate = attributes[.modificationDate] as? Date {
-            return modificationDate?.timeIntervalSince1970
+            return modificationDate.timeIntervalSince1970
         }
         return nil
     }
 
-    func appStartTime() -> Double {
+    static var startTime: Double {
         let uptime = ProcessInfo.processInfo.systemUptime
         let now = Date()
         return now.addingTimeInterval(-uptime).timeIntervalSince1970
-    }
-}
-
-extension AppInfo {
-    var asDTO: AppDTO {
-        AppDTO(
-            bundleId: Self.bundleID,
-            version: Self.version,
-            storeUrl: Self.storeURL,
-            firstInstallTime: appInstallTime() ?? 0,
-            lastUpdateTime: appUpdateTime() ?? 0,
-            startTime: appStartTime()
-        )
     }
 }

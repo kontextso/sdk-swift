@@ -5,11 +5,22 @@
 
 import Foundation
 
+enum DeviceType: String, Encodable {
+    case handset
+    case tablet
+    case other
+}
+
 struct HardwareDTO: Encodable {
-    let brand: String?     // "Apple"
-    let model: String?     // "iPhone13,3"
-    let type: String   // handset/tablet/desktop/...
-    let bootTime: Double  // OS boot time  or time since boot
+    /// "Apple"
+    let brand: String?
+    /// "iPhone13,3"
+    let model: String?
+    /// handset/tablet/desktop/...
+    let type: DeviceType
+    /// OS boot time  or time since boot
+    let bootTime: Double
+    /// If SD card is available, always false on iOS devices
     let sdCardAvailable: Bool?
 
     init(from model: Device) {

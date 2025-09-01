@@ -1,7 +1,3 @@
-//
-//  PowerDTO.swift
-//  KontextSwiftSDK
-//
 
 enum BatteryState: String, Encodable {
     case charging
@@ -10,10 +6,15 @@ enum BatteryState: String, Encodable {
     case unknown
 }
 
-
 struct PowerDTO {
-  let batteryLevel: Double       // 0-100
-  let batteryState: BatteryState?
-  let lowPowerMode: Bool
-}
+    /// Battery level (0 to 100) or nil if not available
+    let batteryLevel: Double?
+    let batteryState: BatteryState?
+    let lowPowerMode: Bool?
 
+    init(model: Device) {
+        batteryLevel = model.batteryLevel
+        batteryState = model.batteryState
+        lowPowerMode = model.lowPowerMode
+    }
+}
