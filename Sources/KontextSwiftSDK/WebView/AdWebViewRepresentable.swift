@@ -3,12 +3,12 @@ import UIKit
 
 struct AdWebViewRepresentable: UIViewRepresentable {
     private let url: URL
-    private let updateIFrameData: UpdateIFrameData?
+    private let updateIFrameData: IframeEvent.UpdateIFrameDataDTO?
     private let onIFrameEvent: (IframeEvent) -> Void
     
     init(
         url: URL,
-        updateIFrameData: UpdateIFrameData?,
+        updateIFrameData: IframeEvent.UpdateIFrameDataDTO?,
         onIFrameEvent: @escaping (IframeEvent) -> Void
     ) {
         self.url = url

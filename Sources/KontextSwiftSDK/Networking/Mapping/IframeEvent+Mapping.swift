@@ -1,6 +1,6 @@
 import Foundation
 
-extension EventIframeData: ModelConvertible {
+extension IframeEvent.EventIframeDataDTO: ModelConvertible {
     func toModel() -> AdsEvent {
         AdsEvent(
             name: data.name,
@@ -55,5 +55,27 @@ extension EventIframeContentDTO.VideoPlayedDataDTO: ModelConvertible {
 extension EventIframeContentDTO.RewardReceivedDataDTO: ModelConvertible {
     func toModel() -> AdsEventType.RewardReceivedData {
         AdsEventType.RewardReceivedData()
+    }
+}
+
+extension IframeEvent.ClickIframeDataDTO: ModelConvertible {
+    func toModel() -> ClickAdEventData {
+        ClickAdEventData(
+            id: id,
+            content: content,
+            messageId: messageId,
+            url: url
+        )
+    }
+}
+
+extension IframeEvent.ViewIframeDataDTO: ModelConvertible {
+    func toModel() -> ViewAdEventData {
+        ViewAdEventData(
+            id: id,
+            content: content,
+            messageId: messageId,
+            code: code
+        )
     }
 }

@@ -37,14 +37,14 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
 
 final class AdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
-    private let updateIframeData: UpdateIFrameData?
+    private let updateIframeData: IframeEvent.UpdateIFrameDataDTO?
     private let onIFrameEvent: (IframeEvent) -> Void
 
     private var scriptHandler: AdScriptMessageHandler?
 
     init(
         frame: CGRect = .zero,
-        updateIframeData: UpdateIFrameData?,
+        updateIframeData: IframeEvent.UpdateIFrameDataDTO?,
         onIFrameEvent: @escaping (IframeEvent) -> Void
     ) {
         self.onIFrameEvent = onIFrameEvent

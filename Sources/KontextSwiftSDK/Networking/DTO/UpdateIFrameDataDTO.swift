@@ -14,7 +14,7 @@ struct UpdateIFrameDataDTO: Encodable {
     let messages: [MessageDTO]
     let otherParams: [String: String]?
 
-    init(from model: UpdateIFrameData) {
+    init(from model: IframeEvent.UpdateIFrameDataDTO) {
         sdk = model.sdk
         code = model.code
         messageId = model.messageId
