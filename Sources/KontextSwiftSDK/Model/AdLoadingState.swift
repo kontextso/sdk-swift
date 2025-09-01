@@ -14,7 +14,7 @@ extension AdLoadingState {
     struct WebViewData: Sendable, Hashable {
         let url: URL?
         let updateData: UpdateIFrameData
-        let onIFrameEvent: @Sendable (AdEvent) -> Void
+        let onIFrameEvent: @Sendable (IframeEvent) -> Void
         let events: AnyPublisher<InlineAdEvent, Never>
 
         func hash(into hasher: inout Hasher) {
@@ -28,7 +28,7 @@ extension AdLoadingState {
     }
 }
 
-extension AdLoadingState {
+extension AdLoadingState: ModelConvertible {
     func toModel() -> Advertisement {
         Advertisement(
             id: id,

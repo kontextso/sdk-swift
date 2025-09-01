@@ -128,4 +128,14 @@ extension AdsProvider: AdsProviderActingDelegate {
             self.eventSubject.send(.didUpdateHeightForAd(ad))
         }
     }
+
+    func adsProviderActing(
+        _ adsProviderActing: any AdsProviderActing,
+        didReceiveEvent event: AdsEvent
+    ) {
+        Task { @MainActor in
+            self.delegate?.adsProvider(self, didReceiveEvent: event)
+            self.eventSubject.send(.didReceiveEvent(event))
+        }
+    }
 }

@@ -1,8 +1,3 @@
-//
-//  DeviceDTO.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 struct DeviceDTO: Encodable {

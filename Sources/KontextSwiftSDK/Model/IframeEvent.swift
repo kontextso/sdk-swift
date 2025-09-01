@@ -2,7 +2,7 @@ import Foundation
 import OSLog
 
 /// Represents different types of events that can be received from the InlineAd iframe
-enum AdEvent: Decodable, Hashable {
+enum IframeEvent: Decodable, Hashable {
     enum CodingKeys: CodingKey {
         case type
         case data
@@ -40,6 +40,9 @@ enum AdEvent: Decodable, Hashable {
 
     /// Close component request event to close component iframe
     case closeComponentIframe(ComponentIframeData)
+
+    /// Events coming from iframe
+    case eventIframe(EventIframeData)
 
     /// Unknown event type
     case unknown(String)
@@ -100,9 +103,15 @@ struct UnknownData: Decodable, Hashable {
     let type: String
 }
 
+/// Data for iframe event
+struct EventIframeData: Decodable, Hashable {
+    let type: String
+    let data: EventIframeContentDTO
+}
+
 // MARK: - Event Parsing
 
-extension AdEvent {
+extension IframeEvent {
     /// Creates an InlineAdEvent from a dictionary received from the iframe
     /// - Parameter dict: The dictionary containing event data
     /// - Returns: Parsed InlineAdEvent or nil if parsing fails
@@ -134,6 +143,8 @@ extension AdEvent {
             self = .initComponentIframe(try container.decode(ComponentIframeData.self, forKey: .data))
         case "error-component-iframe":
             self = .errorComponentIframe(try container.decode(ComponentIframeData.self, forKey: .data))
+        case "event-iframe":
+            self = .eventIframe(try container.decode(EventIframeData.self, forKey: .data))
         default:
             self = .unknown(type)
         }

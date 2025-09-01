@@ -1,8 +1,3 @@
-//
-//  UpdateIFrameDataDTO.swift
-//  KontextSwiftSDK
-//
-
 struct UpdateIFrameDTO: Encodable {
     enum EventType: String, Encodable {
         case updateIFrame = "update-iframe"
