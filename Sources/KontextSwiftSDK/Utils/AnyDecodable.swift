@@ -1,9 +1,9 @@
 import Foundation
 
-struct AnyDecodable: Decodable, Hashable {
-    let value: Any
+struct AnyDecodable: Decodable, Hashable, Sendable {
+    let value: any Sendable
 
-    init(_ value: Any) {
+    init(_ value: any Sendable) {
         self.value = value
     }
 

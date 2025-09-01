@@ -1,21 +1,28 @@
+/// Event received from a displayed ad.
 public struct AdsEvent: Sendable {
     public let name: String
     public let type: AdsEventType
 }
 
 public enum AdsEventType: Sendable {
+    /// Event received when user has viewed the ad.
     case viewed(ViewedData?)
+    /// Event received when user has clicked the ad.
     case clicked(ClickedData?)
+    /// Event received when video was played.
     case videoPlayed(VideoPlayedData?)
+    /// Event received when video was closed.
     case videoClosed(VideoClosedData?)
+    /// Event received when reward was received.
     case rewardReceived(RewardReceivedData?)
-    case event([String: Any])
+    /// Any other event.
+    case event([String: any Sendable])
 }
 
 public extension AdsEventType {
-    struct ViewedData {}
-    struct ClickedData {}
-    struct VideoPlayedData {}
-    struct VideoClosedData {}
-    struct RewardReceivedData {}
+    struct ViewedData: Sendable {}
+    struct ClickedData: Sendable {}
+    struct VideoPlayedData: Sendable {}
+    struct VideoClosedData: Sendable {}
+    struct RewardReceivedData: Sendable {}
 }

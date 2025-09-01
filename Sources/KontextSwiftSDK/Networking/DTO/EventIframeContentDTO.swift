@@ -9,7 +9,7 @@ struct EventIframeContentDTO: Decodable, Hashable {
 
     let name: String
     let code: String
-    var type: TypeDTO
+    let type: TypeDTO
 
     enum TypeName: String {
         case viewed = "viewed"

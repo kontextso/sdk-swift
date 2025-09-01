@@ -2,7 +2,7 @@ import Foundation
 import OSLog
 
 /// Represents different types of events that can be received from the InlineAd iframe
-enum IframeEvent: Decodable, Hashable {
+enum IframeEvent: Decodable, Hashable, Sendable {
     enum CodingKeys: CodingKey {
         case type
         case data
