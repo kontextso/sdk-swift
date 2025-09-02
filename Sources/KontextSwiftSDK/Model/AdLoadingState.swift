@@ -13,7 +13,7 @@ struct AdLoadingState {
 extension AdLoadingState {
     struct WebViewData: Sendable, Hashable {
         let url: URL?
-        let updateData: IframeEvent.UpdateIFrameDataDTO?
+        let updateData: UpdateIFrameDTO?
         let onIFrameEvent: @Sendable (IframeEvent) -> Void
         let events: AnyPublisher<InlineAdEvent, Never>
 

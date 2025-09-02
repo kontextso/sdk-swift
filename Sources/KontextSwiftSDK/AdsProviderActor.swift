@@ -194,12 +194,14 @@ private extension AdsProviderActor {
                 bidCode: bid.code,
                 otherParams: configuration.otherParams
             ),
-            updateData: IframeEvent.UpdateIFrameDataDTO(
-                sdk: SDKInfo.name,
-                code: bid.code,
-                messageId: messageId,
-                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
-                otherParams: configuration.otherParams
+            updateData: UpdateIFrameDTO(
+                data: IframeEvent.UpdateIFrameDataDTO(
+                    sdk: SDKInfo.name,
+                    code: bid.code,
+                    messageId: messageId,
+                    messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
+                    otherParams: configuration.otherParams
+                )
             ),
             onIFrameEvent: { [weak self] event in
                 Task {

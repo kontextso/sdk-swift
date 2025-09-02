@@ -28,3 +28,10 @@ public protocol AdsProviderDelegate: AnyObject {
     /// Called when user clicks an ad
     func adsProvider(_ adsProvider: AdsProvider, didClickAd: ClickAdEventData)
 }
+
+/// Default implementations
+public extension AdsProviderDelegate {
+    func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {}
+    func adsProvider(_ adsProvider: AdsProvider, didViewAd: ViewAdEventData) {}
+    func adsProvider(_ adsProvider: AdsProvider, didClickAd: ClickAdEventData) {}
+}

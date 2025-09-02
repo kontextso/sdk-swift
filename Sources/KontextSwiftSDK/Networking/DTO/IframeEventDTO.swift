@@ -77,7 +77,7 @@ extension IframeEvent {
     }
 
     /// Data for update-iframe events
-    struct UpdateIFrameDataDTO: Decodable, Hashable {
+    struct UpdateIFrameDataDTO: Codable, Hashable {
         let sdk: String
         let code: String
         let messageId: String
