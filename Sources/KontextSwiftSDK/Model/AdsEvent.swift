@@ -29,19 +29,3 @@ public extension AdsEventType {
     struct VideoClosedData: Sendable {}
     struct RewardReceivedData: Sendable {}
 }
-
-/// Data for view ad event returned by the ad view event.
-public struct ViewAdEventData: Sendable {
-    public let id: String
-    public let content: String
-    public let messageId: String
-    public let code: String
-}
-
-/// Data for click ad event return by the click view event.
-public struct ClickAdEventData: Sendable {
-    public let id: String
-    public let content: String
-    public let messageId: String
-    public let url: URL?
-}
