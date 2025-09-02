@@ -106,7 +106,7 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: TestEvent.character.rawValue
+            content: TestEvent.characterRewarded.rawValue
         )
 
         messages.append(userMessage)
