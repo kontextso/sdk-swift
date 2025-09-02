@@ -60,6 +60,8 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             pathComponents: ["preload"],
             queryItems: nil
         )
+        let app = AppInfo.current()
+        let sdk = SDKInfo.current()
         let responseDTO: PreloadResponseDTO = try await networking.request(
             method: .post,
             urlConvertible: preloadUrlConvertible,
@@ -67,7 +69,9 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             body: PreloadRequestDTO(
                 sessionId: sessionId,
                 configuration: configuration,
-                device: await Device.current(),
+                sdkInfo: sdk,
+                appinfo: app,
+                device: await Device.current(appInfo: app),
                 messages: messages
             )
         )
@@ -86,7 +90,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
                 URLQueryItem(name: "code", value: bidCode),
-                URLQueryItem(name: "sdk", value: SDKInfo.name)
+                URLQueryItem(name: "sdk", value: SDKInfo.current().name),
             ] + otherParams.map { URLQueryItem(name: $0.key, value: $0.value) }
         ).asURL()
     }

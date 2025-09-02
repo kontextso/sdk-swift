@@ -7,35 +7,79 @@ import Foundation
 import Network
 import CoreTelephony
 
+enum NetworkType: String, Encodable {
+    case wifi
+    case cellular
+    case ethernet
+    case other
+}
+
+enum NetworkDetail: String, Encodable {
+    case twoG = "2g"
+    case threeG = "3g"
+    case fourG = "4g"
+    case lte
+    case fiveG = "5g"
+    case nr
+    case hspa
+    case edge
+    case gprs
+}
+
 final class NetworkInfo {
     let userAgent: String?
     let carrierName: String?
     let networkType: NetworkType?
     let networkDetail: NetworkDetail?
 
-    init(userAgent: String?, carrierName: String?, networkType: NetworkType?, networkDetail: NetworkDetail?) {
+    init(
+        userAgent: String?,
+        carrierName: String?,
+        networkType: NetworkType?,
+        networkDetail: NetworkDetail?
+    ) {
         self.userAgent = userAgent
         self.carrierName = carrierName
         self.networkType = networkType
         self.networkDetail = networkDetail
     }
 
-    static func current() async -> NetworkInfo {
-        let
+    static func current(
+        appInfo: AppInfo,
+        osInfo: OSInfo,
+        hardwareInfo: HardwareInfo
+    ) async -> NetworkInfo {
+        let userAgent = currentUserAgent(appInfo: appInfo, osInfo: osInfo, hardwareInfo: hardwareInfo)
+        let carrierName = Self.carrierName
+        let networkType = await Self.networkType()
+        let networkDetail = await Self.networkDetail()
+
+        return NetworkInfo(
+            userAgent: userAgent,
+            carrierName: carrierName,
+            networkType: networkType,
+            networkDetail: networkDetail
+        )
     }
 
     /// Returns a User-Agent string representing the device and app
-    private static func currentUserAgent() -> String? {
-        let appName = AppInfo.name
-        let appVersion = AppInfo.version
+    private static func currentUserAgent(
+        appInfo: AppInfo,
+        osInfo: OSInfo,
+        hardwareInfo: HardwareInfo
+    ) -> String? {
+        let appName = appInfo.name
+        let appVersion = appInfo.version
         guard
-            let osName = OSInfo.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-            let osVersion = OSInfo.version.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+            let osName = osInfo.name
+                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+            let osVersion = osInfo.version
+                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
         else {
             return nil
         }
-
-        let deviceModel = UIDevice.current.model.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Unknown"
+        let deviceModel = hardwareInfo.model
+            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "UnknownDevice"
 
         return "\(appName)/\(appVersion) (\(deviceModel); \(osName) \(osVersion))"
     }
@@ -43,7 +87,7 @@ final class NetworkInfo {
     /// Returns the carrier name of the device, or nil if unavailable
     static var carrierName: String? {
         let networkInfo = CTTelephonyNetworkInfo()
-        var carrier: CTCarrier = networkInfo.serviceSubscriberCellularProviders?.values.first
+        var carrier: CTCarrier? = networkInfo.serviceSubscriberCellularProviders?.values.first
         return carrier?.carrierName
     }
 

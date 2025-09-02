@@ -5,15 +5,7 @@
 
 import Foundation
 
-enum AudioOutputType: String, Codable {
-    case wired
-    case hdmi
-    case bluetooth
-    case usb
-    case other
-}
-
-struct Audio: Codable {
+struct AudioDTO: Encodable {
     /// media volume 0-100
     let volume: Int?
     /// preferred over "soundOn"
@@ -23,7 +15,7 @@ struct Audio: Codable {
     /// array, wired/hdmi/bluetooth/...
     let outputType: [AudioOutputType]?
 
-    init(model: Device) {
+    init(from model: AudioInfo) {
         volume = model.volume
         muted = model.muted
         outputPluggedIn = model.outputPluggedIn

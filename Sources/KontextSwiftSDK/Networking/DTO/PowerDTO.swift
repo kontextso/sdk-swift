@@ -1,18 +1,11 @@
 
-enum BatteryState: String, Encodable {
-    case charging
-    case full
-    case unplugged
-    case unknown
-}
-
-struct PowerDTO {
+struct PowerDTO: Encodable {
     /// Battery level (0 to 100) or nil if not available
     let batteryLevel: Double?
     let batteryState: BatteryState?
     let lowPowerMode: Bool?
 
-    init(model: Device) {
+    init(from model: PowerInfo) {
         batteryLevel = model.batteryLevel
         batteryState = model.batteryState
         lowPowerMode = model.lowPowerMode

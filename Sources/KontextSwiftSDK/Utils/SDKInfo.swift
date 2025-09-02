@@ -2,27 +2,43 @@ import Foundation
 import UIKit
 
 final class SDKInfo  {
-    private static var bundle: Bundle { Bundle(for: SDKInfo.self) }
-    
     static let defaultAdServerURL: URL = URL(string: "https://server.megabrain.co")!
-    
+
     /// Name of the SDK's bundle, should be sdk-swift
-    static var name: String {
-        Self.bundle
-            .object(forInfoDictionaryKey: "CFBundleName") as? String ?? "sdk-swift"
-    }
-    
+    let name: String
     /// Version of the SDK in Major.Minor.Patch format, e.g. 1.0.0
-    static var version: String {
-        Self.bundle
+    let version: String
+    ///  "iOS" | "Android" | "Web"
+    let platform: String
+    ///  "android" | "ios" | "web"
+    let lowercasedPlatform: String
+
+    init(
+        name: String,
+        version: String,
+        platform: String,
+        lowercasedPlatform: String
+    ) {
+        self.name = name
+        self.version = version
+        self.platform = platform
+        self.lowercasedPlatform = lowercasedPlatform
+    }
+
+    static func current() -> SDKInfo {
+        let bundle = Bundle(for: SDKInfo.self)
+        let name = bundle
+            .object(forInfoDictionaryKey: "CFBundleName") as? String ?? "sdk-swift"
+        let version = bundle
             .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
-    }
+        let platform = UIDevice.current.systemName
+        let lowercasedPlatform = platform.lowercased()
 
-    static var platform: String {
-        UIDevice.current.systemName
-    }
-
-    static var lowercasedPlatform: String {
-        platform.lowercased()
+        return SDKInfo(
+            name: name,
+            version: version,
+            platform: platform,
+            lowercasedPlatform: lowercasedPlatform
+        )
     }
 }

@@ -8,9 +8,9 @@ struct SDKDTO: Encodable {
     let version: String
     let platform: String
 
-    init() {
-        self.name = SDKInfo.name
-        self.version = SDKInfo.version
-        self.platform = SDKInfo.lowercasedPlatform
+    init(from model: SDKInfo) {
+        self.name = model.name
+        self.version = model.version
+        self.platform = model.lowercasedPlatform
     }
 }

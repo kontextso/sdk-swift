@@ -20,12 +20,12 @@ struct AppDTO: Encodable {
 
     
     /// Initializes a new instance of `AppDTO`.
-    init() {
-        bundleId = AppInfo.bundleId
-        version = AppInfo.version
-        storeUrl = AppInfo.storeUrl
-        firstInstallTime = AppInfo.installTime
-        lastUpdateTime = AppInfo.updateTime
-        startTime = AppInfo.startTime
+    init(from model: AppInfo) {
+        bundleId = model.bundleId
+        version = model.version
+        storeUrl = model.storeUrl
+        firstInstallTime = model.installTime
+        lastUpdateTime = model.updateTime
+        startTime = model.startTime
     }
 }

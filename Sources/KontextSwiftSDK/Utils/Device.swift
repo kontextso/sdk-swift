@@ -4,67 +4,27 @@ import Darwin
 
 /// Device information for the SDK
 struct Device {
-    /// Device sound status (true if sound is on, false if muted)
-    let soundOn: Bool
-    /// Device screen width size
-    let screenWidth: CGFloat
-    /// Device screen height size
-    let screenHeight: CGFloat
-    /// Device screen scale (e.g., 2.0 for Retina displays)
-    let scale: CGFloat
-    /// Device orientation: "portrait" or "landscape"
-    let orientation: ScreenOrientation?
-    /// Device dark mode status (true if dark mode is on, false if light mode is on)
-    let isDarkMode: Bool
-    /// Additional device information
-    let additionalInfo: [String: String]
-    /// Battery level (0 to 100) or nil if not available
-    let batteryLevel: Double?
-    /// Battery state (charging, full, unplugged, unknown) or nil if not available
-    let batteryState: BatteryState?
-    /// Low power mode status (true if low power mode is on, false if off) or nil if not available
-    let lowPowerMode: Bool?
-    /// media volume 0-100
-    let volume: Int?
-    /// preferred over "soundOn"
-    let muted: Bool?
-    /// ANY output connected?
-    let outputPluggedIn: Bool?
-    /// array, wired/hdmi/bluetooth/...
-    let outputType: [AudioOutputType]?
+    let os: OSInfo
+    let hardware: HardwareInfo
+    let screen: ScreenInfo
+    let power: PowerInfo
+    let audio: AudioInfo
+    let network: NetworkInfo
 
     init(
-        soundOn: Bool = true,
-        screenWidth: CGFloat,
-        screenHeight: CGFloat,
-        scale: CGFloat,
-        orientation: ScreenOrientation?,
-        isDarkMode: Bool,
-        additionalInfo: [String: String] = [:],
-        bootTime: Double,
-        batteryLevel: Double?,
-        batteryState: BatteryState?,
-        lowPowerMode: Bool?,
-        volume: Int?,
-        muted: Bool?,
-        outputPluggedIn: Bool?,
-        outputType: [AudioOutputType]?
-
+        os: OSInfo,
+        hardware: HardwareInfo,
+        screen: ScreenInfo,
+        power: PowerInfo,
+        audio: AudioInfo,
+        network: NetworkInfo
     ) {
-        self.soundOn = soundOn
-        self.screenWidth = screenWidth
-        self.screenHeight = screenHeight
-        self.scale = scale
-        self.orientation = orientation
-        self.isDarkMode = isDarkMode
-        self.additionalInfo = additionalInfo
-        self.batteryLevel = batteryLevel
-        self.batteryState = batteryState
-        self.lowPowerMode = lowPowerMode
-        self.volume = volume
-        self.muted = muted
-        self.outputPluggedIn = outputPluggedIn
-        self.outputType = outputType
+        self.os = os
+        self.hardware = hardware
+        self.screen = screen
+        self.power = power
+        self.audio = audio
+        self.network = network
     }
 }
 
@@ -72,73 +32,25 @@ struct Device {
 
 extension Device {
     /// Creates a Device instance with current device information
-    @MainActor
-    static func current() -> Device {
-        // Get app information
-        let appBundleId = Bundle.main.bundleIdentifier ?? "unknown"
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-        // Detect sound status
-        let soundOn = AVAudioSession.sharedInstance().outputVolume != 0
-
-        // Additional device info
-        var additionalInfo: [String: String] = [:]
-        additionalInfo["screenWidth"] = "\(UIScreen.main.bounds.width)"
-        additionalInfo["screenHeight"] = "\(UIScreen.main.bounds.height)"
-        additionalInfo["scale"] = "\(UIScreen.main.scale)"
-
-        let orientation: ScreenOrientation? = switch UIDevice.current.orientation {
-        case .portrait, .portraitUpsideDown: .portrait
-        case .landscapeLeft, .landscapeRight: .landscape
-        default: nil
-        }
-
-        let screenWidth = UIScreen.main.bounds.width
-        let screenHeight = UIScreen.main.bounds.height
-        let scale = UIScreen.main.scale
-        let isDarkMode = UITraitCollection.current.userInterfaceStyle == .dark
-        let uptime = ProcessInfo.processInfo.systemUptime
-        let now = Date()
-        let bootTime = now.addingTimeInterval(-uptime).timeIntervalSince1970
-
-        UIDevice.current.isBatteryMonitoringEnabled = true
-        let batteryLevel: Double? = Double(UIDevice.current.batteryLevel) * 100
-        let batteryState: BatteryState? = switch UIDevice.current.batteryState {
-        case .charging: .charging
-        case .full: .full
-        case .unplugged: .unplugged
-        case .unknown: .unknown
-        }
-        let lowPowerMode: Bool? = ProcessInfo.processInfo.isLowPowerModeEnabled
-
-        let volume = Int(AVAudioSession.sharedInstance().outputVolume * 100)
-        let muted = AVAudioSession.sharedInstance().outputVolume == 0 ? true : false
-        let outputPluggedIn = AVAudioSession.sharedInstance().currentRoute.outputs.isEmpty == false
-        let outputTypes: [AudioOutputType] = AVAudioSession.sharedInstance().currentRoute.outputs.map { output in
-            return switch output.portType {
-            case .headphones, .lineOut, .builtInSpeaker, .PCI, .fireWire, .displayPort, .AVB, .thunderbolt: .wired
-            case .HDMI: .hdmi
-            case .bluetoothA2DP, .bluetoothHFP, .bluetoothLE, .carAudio, .airPlay: .bluetooth
-            case .usbAudio: .usb
-            default: .other
-            }
-        }
+    static func current(appInfo: AppInfo) async -> Device {
+        let os = await OSInfo.current()
+        let hardware = HardwareInfo.current()
+        let screen = ScreenInfo.current()
+        let power = PowerInfo.current()
+        let audio = AudioInfo.current()
+        let network = await NetworkInfo.current(
+            appInfo: appInfo,
+            osInfo: os,
+            hardwareInfo: hardware
+        )
 
         return Device(
-            soundOn: soundOn,
-            screenWidth: screenWidth,
-            screenHeight: screenHeight,
-            scale: scale,
-            orientation: orientation,
-            isDarkMode: isDarkMode,
-            additionalInfo: additionalInfo,
-            bootTime: bootTime,
-            batteryLevel: batteryLevel,
-            batteryState: batteryState,
-            lowPowerMode: lowPowerMode,
-            volume: volume,
-            muted: muted,
-            outputPluggedIn: outputPluggedIn,
-            outputType: outputTypes
+            os: os,
+            hardware: hardware,
+            screen: screen,
+            power: power,
+            audio: audio,
+            network: network
         )
     }
 }

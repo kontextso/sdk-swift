@@ -20,11 +20,11 @@ struct ScreenDTO: Encodable {
     /// Whether the device is in dark mode
     let darkMode: Bool
 
-    init(from device: Device) {
-        width = device.screenWidth
-        height = device.screenHeight
-        dpr = device.scale
-        orientation = device.orientation
-        darkMode = device.isDarkMode
+    init(from model: ScreenInfo) {
+        width = model.screenWidth
+        height = model.screenHeight
+        dpr = model.scale
+        orientation = model.orientation
+        darkMode = model.isDarkMode
     }
 }

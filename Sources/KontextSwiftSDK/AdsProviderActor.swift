@@ -215,7 +215,7 @@ private extension AdsProviderActor {
                 otherParams: configuration.otherParams
             ),
             updateData:  UpdateIFrameData(
-                sdk: SDKInfo.name,
+                sdk: SDKInfo.current().name,
                 code: bid.code,
                 messageId: messageId,
                 messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },

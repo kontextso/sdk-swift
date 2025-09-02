@@ -6,6 +6,7 @@
 import Foundation
 
 final class AppInfo  {
+    let name: String
     let bundleId: String?
     let version: String
     let storeUrl: String?
@@ -14,6 +15,7 @@ final class AppInfo  {
     let startTime: Double
 
     init(
+        name: String,
         bundleId: String?,
         version: String,
         storeUrl: String?,
@@ -21,6 +23,7 @@ final class AppInfo  {
         updateTime: Double?,
         startTime: Double
     ) {
+        self.name = name
         self.bundleId = bundleId
         self.version = version
         self.storeUrl = storeUrl
@@ -32,6 +35,8 @@ final class AppInfo  {
     static func current() -> AppInfo {
         // Prepare bundle
         let bundle = Bundle.main
+        // Prepare App name
+        let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Unknown"
         // Simple properties
         let bundleId = bundle.bundleIdentifier
         let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
@@ -47,6 +52,7 @@ final class AppInfo  {
         let startTime = Self.startTime
 
         return AppInfo(
+            name: name,
             bundleId: bundleId,
             version: version,
             storeUrl: storeUrl,

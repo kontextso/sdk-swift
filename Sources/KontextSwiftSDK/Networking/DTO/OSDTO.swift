@@ -13,11 +13,11 @@ struct OSDTO: Encodable {
     /// IANA, e.g. "Europe/Prague"
     let timezone: String
 
-    init() {
-        name = OSInfo.name.lowercased()
-        version = OSInfo.version
-        locale = OSInfo.locale
-        timezone = OSInfo.timezone
+    init(from model: OSInfo) {
+        name = model.name
+        version = model.version
+        locale = model.locale
+        timezone = model.timezone
     }
 };
 

@@ -5,22 +5,36 @@
 
 import UIKit
 
-public class OSInfo: Encodable {
+final class OSInfo: Sendable {
     /// "android" | "ios" | "web" | "windows" | ...
-    static var name: String {
-        UIDevice.current.systemName
-    }
+    let name: String
     /// "16.5"
-    static var version: String {
-        UIDevice.current.systemVersion
-    }
+    let version: String
     /// BCP-47, e.g. "cs-CZ"
-    static var locale: String {
-        Locale.current.identifier
-    }
+    let locale: String
     /// IANA, e.g. "Europe/Prague"
-    static var timezone: String {
-        TimeZone.current.identifier
+    let timezone: String
+
+    init(
+        name: String,
+        version: String,
+        locale: String,
+        timezone: String
+    ) {
+        self.name = name
+        self.version = version
+        self.locale = locale
+        self.timezone = timezone
+    }
+
+    @MainActor
+    static func current() -> OSInfo {
+        OSInfo(
+            name:  UIDevice.current.systemName.lowercased(),
+            version: UIDevice.current.systemVersion,
+            locale: Locale.current.identifier,
+            timezone: TimeZone.current.identifier
+        )
     }
 }
 

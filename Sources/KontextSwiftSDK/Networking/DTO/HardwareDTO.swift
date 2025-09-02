@@ -12,10 +12,12 @@ struct HardwareDTO: Encodable {
     let model: String?
     /// handset/tablet/desktop/...
     let type: DeviceType
-    /// OS boot time  or time since boot
-    let bootTime: Double
     /// If SD card is available, always false on iOS devices
     let sdCardAvailable: Bool?
+
+    // Device boot time (seconds since 1970)
+    // let bootTime: Double
+    // Is not allowed to be sent on iOS due to privacy reasons
 
     init(from model: HardwareInfo) {
         brand = model.brand
