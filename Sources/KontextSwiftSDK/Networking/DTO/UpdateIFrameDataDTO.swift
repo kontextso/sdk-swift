@@ -1,8 +1,4 @@
 struct UpdateIFrameDTO: Encodable, Hashable {
-    enum EventType: String, Encodable {
-        case updateIFrame = "update-iframe"
-    }
-
-    let type: EventType = .updateIFrame
+    let type: String = "update-iframe"
     let data: IframeEvent.UpdateIFrameDataDTO
 }

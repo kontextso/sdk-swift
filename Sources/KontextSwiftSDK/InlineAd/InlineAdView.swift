@@ -5,7 +5,7 @@ enum InlineAdEvent {
         InterstitialAdView.Params,
         UIModalPresentationStyle = .fullScreen
     )
-    case didFinishInterstitialAd
+    case didFinishInterstitialAd    
 }
 
 /// SwiftUI view that represents an inline ad in the chat UI.
