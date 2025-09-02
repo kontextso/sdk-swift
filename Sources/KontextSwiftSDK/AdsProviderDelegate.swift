@@ -1,6 +1,11 @@
 
 import UIKit
 
+public enum KontextError: Error {
+    /// No ad was generated for a message
+    case adUnavailable(messageId: String)
+}
+
 /// Event types for Publisher if that is preferred over delegate
 public enum AdsProviderEvent {
     /// Sent when the available ads have changed
@@ -13,12 +18,16 @@ public enum AdsProviderEvent {
     case didViewAd(ViewAdEventData)
     /// Called when user clicks an ad
     case didClickAd(ClickAdEventData)
+    /// Called when en error occurs in the process of preparing an advertisement.
+    case didEncounterError(KontextError)
 }
 
 /// Delegate protocol to notify about ads availability and height changes
 public protocol AdsProviderDelegate: AnyObject {
     /// Called when the available ads have changed
     func adsProvider(_ adsProvider: AdsProvider, didChangeAvailableAdsTo ads: [Advertisement])
+    /// Called when en error occurs in the process of preparing an advertisement.
+    func adsProvider(_ adsProvider: AdsProvider, didEncounterError: KontextError)
     /// Called when the height of a specific ad has been updated
     func adsProvider(_ adsProvider: AdsProvider, didUpdateHeightForAd ad: Advertisement)
     /// Called when an iFrame event occurred
