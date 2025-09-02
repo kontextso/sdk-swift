@@ -1,6 +1,3 @@
-//  RegulatoryDTO.swift
-//  KontextSwiftSDK
-
 import Foundation
 
 struct RegulatoryDTO: Encodable {

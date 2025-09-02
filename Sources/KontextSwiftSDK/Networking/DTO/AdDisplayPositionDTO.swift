@@ -1,8 +1,3 @@
-//
-//  AdDisplayPositionDTO.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 enum AdDisplayPositionDTO: String, Decodable, Sendable {

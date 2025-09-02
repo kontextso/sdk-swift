@@ -130,6 +130,18 @@ let adsProvider = AdsProvider(
 	sessionId: nil
 )
 
+AdsProvider provides event observing in two formats
+
+1. AdsProviderDelegate
+2. Combine publisher
+
+AdsProvider notifies about events such as:
+
+* ads being available for a message
+* ads size change
+* ads events (viewed, clicked etc.) 
+
+
 ```
 
 ### 5. Provide information about messages

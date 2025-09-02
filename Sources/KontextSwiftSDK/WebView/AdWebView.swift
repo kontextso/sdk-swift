@@ -25,7 +25,7 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
         }
 
         do {
-            let event = try AdEvent(fromJSON: message.body)
+            let event = try IframeEvent(fromJSON: message.body)
             adWebView.sendIframeEvent(event: event)
         } catch {
             os_log(.error, "[Ad]: iframeMessage failed to decode with error: \(error)")
@@ -38,14 +38,14 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
 final class AdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
     private let updateIframeData: UpdateIFrameData?
-    private let onIFrameEvent: (AdEvent) -> Void
+    private let onIFrameEvent: (IframeEvent) -> Void
 
     private var scriptHandler: AdScriptMessageHandler?
 
     init(
         frame: CGRect = .zero,
         updateIframeData: UpdateIFrameData?,
-        onIFrameEvent: @escaping (AdEvent) -> Void
+        onIFrameEvent: @escaping (IframeEvent) -> Void
     ) {
         self.onIFrameEvent = onIFrameEvent
 
@@ -99,7 +99,7 @@ final class AdWebView: WKWebView {
 
 // MARK: Private
 private extension AdWebView {
-    func sendIframeEvent(event: AdEvent) {
+    func sendIframeEvent(event: IframeEvent) {
         switch event {
         case .initIframe:
             sendUpdateIframe()

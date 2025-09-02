@@ -1,8 +1,3 @@
-//
-//  PreloadRequestDTO.swift
-//  KontextSwiftSDK
-//
-
 struct PreloadRequestDTO: Encodable {
     let publisherToken: String
     let conversationId: String

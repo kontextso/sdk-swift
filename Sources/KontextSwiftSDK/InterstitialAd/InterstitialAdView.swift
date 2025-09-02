@@ -10,11 +10,11 @@ struct InterstitialAdView: View {
         var id: String { url?.absoluteString ?? UUID().uuidString }
         let url: URL?
         let events: AnyPublisher<InterstitialAdEvent, Never>
-        let onIFrameEvent: (AdEvent) -> Void
+        let onIFrameEvent: (IframeEvent) -> Void
     }
 
     @StateObject private var viewModel: InterstitialAdViewModel
-    private var onIFrameEvent: (AdEvent) -> Void
+    private var onIFrameEvent: (IframeEvent) -> Void
 
     init(params: Params) {
         _viewModel = StateObject(

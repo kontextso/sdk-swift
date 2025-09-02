@@ -1,7 +1,6 @@
 @preconcurrency import Combine
 import OSLog
 import UIKit
-import SwiftUI
 
 // MARK: - AdsProviderActor
 
@@ -247,7 +246,7 @@ private extension AdsProviderActor {
 
 // MARK: iFrame events
 private extension AdsProviderActor {
-    func handleInlineIframeEvent(event: AdEvent, stateId: UUID) {
+    func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) {
         guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
             return
         }
@@ -294,12 +293,15 @@ private extension AdsProviderActor {
         case .openComponentIframe(let data):
             presentInterstitialAd(data, state: newState)
 
+        case .eventIframe(let data):
+            delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
+
         default:
             break
         }
     }
 
-    func handleInterstitialIframeEvent(event: AdEvent, state: AdLoadingState) {
+    func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
         switch event {
         case .initComponentIframe:
             Task { @MainActor in
@@ -315,6 +317,9 @@ private extension AdsProviderActor {
 
         case .clickIframe(let clickData):
             openURL(from: clickData, fallbackURL: state.webViewData.url)
+
+        case .eventIframe(let data):
+            delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
 
         default:
             break

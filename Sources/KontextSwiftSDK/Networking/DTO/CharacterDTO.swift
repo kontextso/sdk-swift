@@ -1,8 +1,3 @@
-//
-//  CharacterDTO.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 struct CharacterDTO: Encodable {

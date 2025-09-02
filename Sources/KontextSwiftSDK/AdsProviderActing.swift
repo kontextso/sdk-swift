@@ -25,4 +25,9 @@ protocol AdsProviderActingDelegate: AnyObject, Sendable {
         _ adsProviderActing: AdsProviderActing,
         didUpdateHeightForAd ad: Advertisement
     )
+
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didReceiveEvent event: AdsEvent
+    )
 }

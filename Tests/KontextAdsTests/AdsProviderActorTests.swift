@@ -5,7 +5,7 @@ import Testing
 
 struct AdsProviderActorTests {
     @Test
-    func testInitaillyDisabled() async throws {
+    func testInitiallyDisabled() async throws {
         let adsServerAPI = MockAdsServerAPI()
         let provider = AdsProviderActor(
             configuration: .minimal,
@@ -19,7 +19,7 @@ struct AdsProviderActorTests {
     }
 
     @Test
-    func testSetDisabedSet() async throws {
+    func testSetDisabledSet() async throws {
         let adsServerAPI = MockAdsServerAPI()
         let provider = AdsProviderActor(
             configuration: .minimal,
@@ -34,7 +34,7 @@ struct AdsProviderActorTests {
     }
 
     @Test
-    func testInitallyEnabled() async throws {
+    func testInitiallyEnabled() async throws {
         let adsServerAPI = MockAdsServerAPI()
         let provider = AdsProviderActor(
             configuration: .minimal,
