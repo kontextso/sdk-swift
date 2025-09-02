@@ -37,14 +37,14 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
 
 final class AdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
-    private let updateIframeData: UpdateIFrameData?
+    private let updateIframeData: UpdateIFrameDTO?
     private let onIFrameEvent: (IframeEvent) -> Void
 
     private var scriptHandler: AdScriptMessageHandler?
 
     init(
         frame: CGRect = .zero,
-        updateIframeData: UpdateIFrameData?,
+        updateIframeData: UpdateIFrameDTO?,
         onIFrameEvent: @escaping (IframeEvent) -> Void
     ) {
         self.onIFrameEvent = onIFrameEvent
@@ -114,11 +114,8 @@ private extension AdWebView {
             return
         }
 
-        let updateIframe = UpdateIFrameDTO(
-            data: UpdateIFrameDataDTO(from: updateIframeData)
-        )
         do {
-            let data = try JSONEncoder().encode(updateIframe)
+            let data = try JSONEncoder().encode(updateIframeData)
             guard let jsonString = String(data: data, encoding: .utf8) else {
                 throw EncodingError.invalidValue(
                     data,
@@ -132,7 +129,7 @@ private extension AdWebView {
             let javascript = "window.postMessage(\(jsonString), '*');"
             evaluateJavaScript(javascript, completionHandler: nil)
         } catch {
-            os_log(.error, "[Ad]: Failed to postMessage \(updateIframe.type.rawValue) with error: \(error)")
+            os_log(.error, "[Ad]: Failed to postMessage \(updateIframeData.type.rawValue) with error: \(error)")
         }
     }
 }
