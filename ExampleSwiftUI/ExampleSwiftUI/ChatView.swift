@@ -97,6 +97,9 @@ struct ChatView: View {
 
             case .didReceiveEvent(let data):
                 os_log("[RECEIVED EVENT]: \(data.name)")
+
+            default:
+                break
             }
         }
     }
