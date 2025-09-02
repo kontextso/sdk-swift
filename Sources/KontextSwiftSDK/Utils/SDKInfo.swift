@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 final class SDKInfo  {
     private static var bundle: Bundle { Bundle(for: SDKInfo.self) }
@@ -17,5 +18,11 @@ final class SDKInfo  {
             .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
 
-    static let platform = "ios"
+    static var platform: String {
+        UIDevice.current.systemName
+    }
+
+    static var lowercasedPlatform: String {
+        platform.lowercased()
+    }
 }

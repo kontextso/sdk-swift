@@ -11,6 +11,6 @@ struct SDKDTO: Encodable {
     init() {
         self.name = SDKInfo.name
         self.version = SDKInfo.version
-        self.platform = SDKInfo.platform
+        self.platform = SDKInfo.lowercasedPlatform
     }
 }

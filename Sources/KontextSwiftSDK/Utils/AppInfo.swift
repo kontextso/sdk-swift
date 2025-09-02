@@ -6,32 +6,59 @@
 import Foundation
 
 final class AppInfo  {
-    private static var bundle: Bundle { Bundle.main }
+    let bundleId: String?
+    let version: String
+    let storeUrl: String?
+    let installTime: Double?
+    let updateTime: Double?
+    let startTime: Double
 
-    static var bundleId: String? {
-        Self.bundle.bundleIdentifier
+    init(
+        bundleId: String?,
+        version: String,
+        storeUrl: String?,
+        installTime: Double?,
+        updateTime: Double?,
+        startTime: Double
+    ) {
+        self.bundleId = bundleId
+        self.version = version
+        self.storeUrl = storeUrl
+        self.installTime = installTime
+        self.updateTime = updateTime
+        self.startTime = startTime
     }
 
-    /// Name of the SDK's bundle, should be sdk-swift
-    static var name: String {
-        Self.bundle
-            .object(forInfoDictionaryKey: "CFBundleName") as? String ?? "sdk-swift"
+    static func current() -> AppInfo {
+        // Prepare bundle
+        let bundle = Bundle.main
+        // Simple properties
+        let bundleId = bundle.bundleIdentifier
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+        // Store url
+        let storeUrl: String? = if let bundleId {
+            "https://apps.apple.com/app/id\(bundleId)"
+        } else {
+            nil
+        }
+        // More complex calcullations through static properties
+        let installTime = Self.installTime
+        let updateTime = Self.updateTime
+        let startTime = Self.startTime
+
+        return AppInfo(
+            bundleId: bundleId,
+            version: version,
+            storeUrl: storeUrl,
+            installTime: installTime,
+            updateTime: updateTime,
+            startTime: startTime
+        )
     }
 
-    /// Version of the SDK in Major.Minor.Patch format, e.g. 1.0.0
-    static var version: String {
-        Self.bundle
-            .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
-    }
+    // MARK: - More complex properties
 
-    static var storeUrl: String? {
-        guard let bundleIdentifier = Self.bundleId else { return nil }
-        return "https://apps.apple.com/app/id\(bundleIdentifier)"
-    }
-
-    static let platform = "ios"
-
-    static var installTime: Double? {
+    private static var installTime: Double? {
         // Get path to the app's Documents directory
         if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
             if let attributes = try? FileManager.default.attributesOfItem(atPath: documentsURL.path),
@@ -42,7 +69,7 @@ final class AppInfo  {
         return nil
     }
 
-    static var updateTime: Double? {
+    private static var updateTime: Double? {
         let bundleURL = Bundle.main.bundleURL
         if let attributes = try? FileManager.default.attributesOfItem(atPath: bundleURL.path),
            let modificationDate = attributes[.modificationDate] as? Date {
@@ -51,7 +78,7 @@ final class AppInfo  {
         return nil
     }
 
-    static var startTime: Double {
+    private static var startTime: Double {
         let uptime = ProcessInfo.processInfo.systemUptime
         let now = Date()
         return now.addingTimeInterval(-uptime).timeIntervalSince1970

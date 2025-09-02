@@ -23,13 +23,10 @@ struct Audio: Codable {
     /// array, wired/hdmi/bluetooth/...
     let outputType: [AudioOutputType]?
 
-    init(volume: Int? = nil,
-         muted: Bool? = nil,
-         outputPluggedIn: Bool? = nil,
-         outputType: [AudioOutputType]? = nil) {
-        self.volume = volume
-        self.muted = muted
-        self.outputPluggedIn = outputPluggedIn
-        self.outputType = outputType
+    init(model: Device) {
+        volume = model.volume
+        muted = model.muted
+        outputPluggedIn = model.outputPluggedIn
+        outputType = model.outputType
     }
 }

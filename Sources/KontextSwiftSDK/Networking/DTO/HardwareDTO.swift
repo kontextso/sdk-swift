@@ -5,12 +5,6 @@
 
 import Foundation
 
-enum DeviceType: String, Encodable {
-    case handset
-    case tablet
-    case other
-}
-
 struct HardwareDTO: Encodable {
     /// "Apple"
     let brand: String?
@@ -23,11 +17,10 @@ struct HardwareDTO: Encodable {
     /// If SD card is available, always false on iOS devices
     let sdCardAvailable: Bool?
 
-    init(from model: Device) {
+    init(from model: HardwareInfo) {
         brand = model.brand
         self.model = model.model
-        type = model.deviceType
-        bootTime = model.bootTime
+        type = model.type
         sdCardAvailable = model.sdCardAvailable
     }
 }
