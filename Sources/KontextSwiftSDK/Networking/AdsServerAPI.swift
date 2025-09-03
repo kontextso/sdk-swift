@@ -17,6 +17,7 @@ protocol AdsServerAPI: Sendable {
         otherParams: [String: String]
     ) -> URL?
 
+    @MainActor
     func componentURL(
         messageId: String,
         bidId: String,

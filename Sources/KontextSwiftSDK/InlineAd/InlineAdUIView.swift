@@ -34,21 +34,15 @@ public final class InlineAdUIView: UIView {
         setupUI()
     }
 
-    deinit {
-        stopSampling()
-    }
+    public override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
 
-    public override func didMoveToWindow() {
-        super.didMoveToWindow()
-
-        guard window != nil else {
+        guard newWindow != nil else {
             stopSampling()
             return
         }
 
-        Task { @MainActor [weak self] in
-            self?.startSampling()
-        }
+        startSampling()
     }
 
     public override func layoutSubviews() {
@@ -142,13 +136,19 @@ private extension InlineAdUIView {
 // MARK: Viewport sampling
 private extension InlineAdUIView {
     func startSampling() {
+        guard samplingTimer == nil, superview != nil else {
+            return
+        }
+
         stopSampling()
 
         let samplingTimer = Timer.scheduledTimer(
             withTimeInterval: samplingInterval,
             repeats: true
         ) { [weak self] _ in
-            self?.sampleViewport()
+            Task { @MainActor in
+                self?.sampleViewport()
+            }
         }
         self.samplingTimer = samplingTimer
 
@@ -158,10 +158,15 @@ private extension InlineAdUIView {
     }
 
     func stopSampling() {
+        guard samplingTimer != nil else {
+            return
+        }
+
         samplingTimer?.invalidate()
         samplingTimer = nil
     }
 
+    @MainActor
     func sampleViewport() {
         guard let window else {
             return

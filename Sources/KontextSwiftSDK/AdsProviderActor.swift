@@ -63,7 +63,7 @@ extension AdsProviderActor: AdsProviderActing {
         self.delegate = delegate
     }
 
-    func setMessages(messages: [AdsMessage]) async throws {
+    func setMessages(messages: [AdsMessage]) async {
         guard !isDisabled else {
             return
         }
@@ -87,23 +87,34 @@ extension AdsProviderActor: AdsProviderActing {
         }
 
         lastPreloadUserMessageId = lastUserMessage.id
-        let preloadedData = try await preloadWithTimeout(
-            timeout: preloadTimeout,
-            sessionId: sessionId,
-            configuration: configuration,
-            api: adsServerAPI,
-            messages: messagesToSend
-        )
+        do {
+            let preloadedData = try await preloadWithTimeout(
+                timeout: preloadTimeout,
+                sessionId: sessionId,
+                configuration: configuration,
+                api: adsServerAPI,
+                messages: messagesToSend
+            )
 
-        if preloadedData.permanentError == true {
-            isDisabled = true
-            reset()
+            if preloadedData.permanentError == true {
+                isDisabled = true
+                reset()
+            }
+
+            bids = preloadedData.bids ?? []
+            sessionId = preloadedData.sessionId
+
+            // No bids are available, report status.
+            guard preloadedData.bids != nil else {
+                notifyAdNotAvailable(messageId: lastUserMessage.id)
+                return
+            }
+
+            await bindBidsToLastUserMessage()
+            await bindBidsToLastAssistantMessage()
+        } catch {
+            delegate?.adsProviderActing(self, didEncounterError: .invalidResponse)
         }
-
-        bids = preloadedData.bids ?? []
-        sessionId = preloadedData.sessionId
-        await bindBidsToLastUserMessage()
-        await bindBidsToLastAssistantMessage()
     }
 
     func reset() {
@@ -188,6 +199,15 @@ private extension AdsProviderActor {
         delegate?.adsProviderActing(
             self,
             didChangeAvailableAdsTo: ads
+        )
+    }
+
+    func notifyAdNotAvailable(messageId: String) {
+        delegate?.adsProviderActing(
+            self,
+            didEncounterError: .adUnavailable(
+                messageId: messageId
+            )
         )
     }
 
@@ -300,7 +320,9 @@ private extension AdsProviderActor {
             notifyAboutAdChanges()
 
         case .openComponentIframe(let data):
-            presentInterstitialAd(data, state: newState)
+            Task {
+                await presentInterstitialAd(data, state: newState)
+            }
 
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
@@ -353,8 +375,8 @@ private extension AdsProviderActor {
     func presentInterstitialAd(
         _ data: IframeEvent.OpenComponentIframeDataDTO,
         state: AdLoadingState
-    ) {
-        let url = adsServerAPI.componentURL(
+    ) async {
+        let url = await adsServerAPI.componentURL(
             messageId: state.messageId,
             bidId: state.bid.bidId,
             bidCode: state.bid.code,
