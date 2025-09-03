@@ -8,7 +8,7 @@ protocol AdsProviderActing: Sendable {
 
     func setDisabled(_ isDisabled: Bool) async
 
-    func setMessages(messages: [AdsMessage]) async throws
+    func setMessages(messages: [AdsMessage]) async
 
     func reset() async
 }
@@ -29,5 +29,10 @@ protocol AdsProviderActingDelegate: AnyObject, Sendable {
     func adsProviderActing(
         _ adsProviderActing: AdsProviderActing,
         didReceiveEvent event: AdsEvent
+    )
+
+    func adsProviderActing(
+        _ adsProviderActing: AdsProviderActing,
+        didEncounterError: KontextError
     )
 }

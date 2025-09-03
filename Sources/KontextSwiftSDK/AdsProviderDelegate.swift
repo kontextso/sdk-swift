@@ -4,6 +4,8 @@ import UIKit
 public enum KontextError: Error {
     /// No ad was generated for a message
     case adUnavailable(messageId: String)
+    /// Advertisement loading failed.
+    case invalidResponse
 }
 
 /// Event types for Publisher if that is preferred over delegate
@@ -33,4 +35,5 @@ public protocol AdsProviderDelegate: AnyObject {
 /// Default implementations
 public extension AdsProviderDelegate {
     func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {}
+    func adsProvider(_ adsProvider: AdsProvider, didUpdateHeightForAd ad: Advertisement) {}
 }

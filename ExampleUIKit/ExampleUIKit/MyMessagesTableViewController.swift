@@ -155,6 +155,13 @@ extension MyMessagesTableViewController: AdsProviderDelegate {
         self.tableView.beginUpdates()
         self.tableView.endUpdates()
     }
+
+    func adsProvider(
+        _ adsProvider: KontextSwiftSDK.AdsProvider,
+        didEncounterError: KontextSwiftSDK.KontextError
+    ) {
+        // ad not available or error occurred
+    }
 }
 
 // MARK: - Table view data source

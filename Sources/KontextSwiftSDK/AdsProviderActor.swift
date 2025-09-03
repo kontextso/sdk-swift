@@ -62,7 +62,7 @@ extension AdsProviderActor: AdsProviderActing {
         self.delegate = delegate
     }
 
-    func setMessages(messages: [AdsMessage]) async throws {
+    func setMessages(messages: [AdsMessage]) async {
         guard !isDisabled else {
             return
         }
@@ -86,23 +86,34 @@ extension AdsProviderActor: AdsProviderActing {
         }
 
         lastPreloadUserMessageId = lastUserMessage.id
-        let preloadedData = try await preloadWithTimeout(
-            timeout: preloadTimeout,
-            sessionId: sessionId,
-            configuration: configuration,
-            api: adsServerAPI,
-            messages: messagesToSend
-        )
+        do {
+            let preloadedData = try await preloadWithTimeout(
+                timeout: preloadTimeout,
+                sessionId: sessionId,
+                configuration: configuration,
+                api: adsServerAPI,
+                messages: messagesToSend
+            )
 
-        if preloadedData.permanentError == true {
-            isDisabled = true
-            reset()
+            if preloadedData.permanentError == true {
+                isDisabled = true
+                reset()
+            }
+
+            bids = preloadedData.bids ?? []
+            sessionId = preloadedData.sessionId
+
+            // No bids are available, report status.
+            guard preloadedData.bids != nil else {
+                notifyAdNotAvailable(messageId: lastUserMessage.id)
+                return
+            }
+
+            bindBidsToLastUserMessage()
+            bindBidsToLastAssistantMessage()
+        } catch {
+            delegate?.adsProviderActing(self, didEncounterError: .invalidResponse)
         }
-
-        bids = preloadedData.bids ?? []
-        sessionId = preloadedData.sessionId
-        bindBidsToLastUserMessage()
-        bindBidsToLastAssistantMessage()
     }
 
     func reset() {
@@ -179,6 +190,15 @@ private extension AdsProviderActor {
         delegate?.adsProviderActing(
             self,
             didChangeAvailableAdsTo: ads
+        )
+    }
+
+    func notifyAdNotAvailable(messageId: String) {
+        delegate?.adsProviderActing(
+            self,
+            didEncounterError: .adUnavailable(
+                messageId: messageId
+            )
         )
     }
 
