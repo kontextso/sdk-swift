@@ -1,8 +1,3 @@
-//
-//  NetworkDTO.swift
-//  KontextSwiftSDK
-//
-
 struct NetworkDTO: Encodable {
     /// User agent string for the network request
     let userAgent: String?
@@ -12,11 +7,4 @@ struct NetworkDTO: Encodable {
     let detail: NetworkDetail?
     /// Carrier name (e.g., "T-Mobile CZ")
     let carrier: String?
-
-    init(from model: NetworkInfo) {
-        userAgent = model.userAgent
-        type = model.networkType
-        detail = model.networkDetail
-        carrier = model.carrierName
-    }
 }

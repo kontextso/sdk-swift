@@ -1,8 +1,3 @@
-//
-//  ScreenDTO.swift
-//  KontextSwiftSDK
-//
-
 enum ScreenOrientation: String, Encodable {
     case portrait
     case landscape
@@ -19,12 +14,4 @@ struct ScreenDTO: Encodable {
     let orientation: ScreenOrientation?
     /// Whether the device is in dark mode
     let darkMode: Bool
-
-    init(from model: ScreenInfo) {
-        width = model.screenWidth
-        height = model.screenHeight
-        dpr = model.scale
-        orientation = model.orientation
-        darkMode = model.isDarkMode
-    }
 }

@@ -33,9 +33,9 @@ struct PreloadRequestDTO: Encodable {
         advertisingId = configuration.advertisingId
         vendorId = configuration.vendorId
         self.sessionId = sessionId
-        self.sdk = SDKDTO(from: sdkInfo)
-        self.app = AppDTO(from: appinfo)
-        self.device = DeviceDTO(from: device)
+        self.sdk = sdkInfo.toModel()
+        self.app = appinfo.toModel()
+        self.device = device.toModel()
         self.regulatory = RegulatoryDTO(from: configuration.regulatory)
     }
 }

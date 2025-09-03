@@ -1,8 +1,3 @@
-//
-//  AppDTO.swift
-//  KontextSwiftSDK
-//
-
 /// A data transfer object that contains application-related information.
 struct AppDTO: Encodable {
     /// The bundle identifier of the application (e.g. com.example.app)
@@ -17,14 +12,4 @@ struct AppDTO: Encodable {
     let lastUpdateTime: Double?
     /// Current process start time as a timestamp
     let startTime: Double?
-
-    /// Initializes a new instance of `AppDTO`.
-    init(from model: AppInfo) {
-        bundleId = model.bundleId
-        version = model.version
-        storeUrl = model.storeUrl
-        firstInstallTime = model.installTime
-        lastUpdateTime = model.updateTime
-        startTime = model.startTime
-    }
 }

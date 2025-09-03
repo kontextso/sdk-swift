@@ -31,19 +31,10 @@ struct AppInfo  {
 extension AppInfo {
     /// Creates an AppInfo instance with current app information
     static func current() -> AppInfo {
-        // Prepare bundle
         let bundle = Bundle.main
-        // Prepare App name
         let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Unknown"
-        // Simple properties
         let bundleId = bundle.bundleIdentifier
         let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
-        // Store url
-        let storeUrl: String? = if let bundleId {
-            "https://apps.apple.com/app/id\(bundleId)"
-        } else {
-            nil
-        }
         let installTime = installTime
         let updateTime = updateTime
         let startTime = startTime
@@ -52,7 +43,7 @@ extension AppInfo {
             name: name,
             bundleId: bundleId,
             version: version,
-            storeUrl: storeUrl,
+            storeUrl: nil,
             installTime: installTime,
             updateTime: updateTime,
             startTime: startTime
@@ -62,7 +53,7 @@ extension AppInfo {
 
 private extension AppInfo {
     static var installTime: Double? {
-        // Get path to the app's Documents directory
+        // Determine install time as the first creation of the user documents folder.
         if let documentsURL = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
@@ -76,6 +67,7 @@ private extension AppInfo {
     }
 
     static var updateTime: Double? {
+        // Determine install time as the last modification of the user documents folder.
         let bundleURL = Bundle.main.bundleURL
         if let attributes = try? FileManager.default.attributesOfItem(atPath: bundleURL.path),
            let modificationDate = attributes[.modificationDate] as? Date {
