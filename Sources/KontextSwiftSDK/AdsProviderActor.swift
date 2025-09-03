@@ -22,6 +22,7 @@ actor AdsProviderActor {
     private var states: [AdLoadingState]
 
     private let numberOfRelevantMessages = 10
+
     /// Events published to interstitial and inline components
     private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
     private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
@@ -81,7 +82,7 @@ extension AdsProviderActor: AdsProviderActing {
             reset()
             notifyAboutAdChanges()
         } else {
-            bindBidsToLastAssistantMessage()
+            await bindBidsToLastAssistantMessage()
             return
         }
 
@@ -101,8 +102,8 @@ extension AdsProviderActor: AdsProviderActing {
 
         bids = preloadedData.bids ?? []
         sessionId = preloadedData.sessionId
-        bindBidsToLastUserMessage()
-        bindBidsToLastAssistantMessage()
+        await bindBidsToLastUserMessage()
+        await bindBidsToLastAssistantMessage()
     }
 
     func reset() {
@@ -113,18 +114,24 @@ extension AdsProviderActor: AdsProviderActing {
 
 // MARK: Data processing
 private extension AdsProviderActor {
-    func bindBidsToLastUserMessage() {
-        bindBidsToLastMessage(forRole: .user, adDisplayPosition: .afterUserMessage)
+    func bindBidsToLastUserMessage() async {
+        await bindBidsToLastMessage(
+            forRole: .user,
+            adDisplayPosition: .afterUserMessage
+        )
     }
 
-    func bindBidsToLastAssistantMessage() {
-        bindBidsToLastMessage(forRole: .assistant, adDisplayPosition: .afterAssistantMessage)
+    func bindBidsToLastAssistantMessage() async {
+        await bindBidsToLastMessage(
+            forRole: .assistant,
+            adDisplayPosition: .afterAssistantMessage
+        )
     }
 
     func bindBidsToLastMessage(
         forRole role: Role,
         adDisplayPosition: AdDisplayPosition
-    ) {
+    ) async {
         // Messages have to be after the last preload user message
         guard let lastPreloadUserMessageIndex = messages.firstIndex(where: {
             $0.id == lastPreloadUserMessageId
@@ -151,19 +158,21 @@ private extension AdsProviderActor {
         let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
         // Insert new states for last message id
         let stateId = UUID()
-        let newStates = uniqueBids.map { bid in
-            AdLoadingState(
+
+        var newStates: [AdLoadingState] = []
+        for bid in uniqueBids {
+            newStates.append(AdLoadingState(
                 id: stateId,
                 bid: bid,
                 messageId: lastMessageId,
                 show: true,
                 preferredHeight: nil, // Use default preferred height
-                webViewData: prepareWebViewData(
+                webViewData: await prepareWebViewData(
                     stateId: stateId,
                     messageId: lastMessageId,
                     bid: bid
                 )
-            )
+            ))
         }
 
         guard !newStates.isEmpty else {
@@ -186,23 +195,21 @@ private extension AdsProviderActor {
         stateId: UUID,
         messageId: String,
         bid: Bid
-    ) -> AdLoadingState.WebViewData {
-        AdLoadingState.WebViewData(
+    ) async -> AdLoadingState.WebViewData {
+        await AdLoadingState.WebViewData(
             url: adsServerAPI.frameURL(
                 messageId: messageId,
                 bidId: bid.bidId,
                 bidCode: bid.code,
                 otherParams: configuration.otherParams
             ),
-            updateData: UpdateIFrameDTO(
-                data: IframeEvent.UpdateIFrameDataDTO(
-                    sdk: SDKInfo.name,
-                    code: bid.code,
-                    messageId: messageId,
-                    messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
-                    otherParams: configuration.otherParams
-                )
-            ),
+            updateData: UpdateIFrameDTO(data: IframeEvent.UpdateIFrameDataDTO(
+                sdk: await SDKInfo.current().name,
+                code: bid.code,
+                messageId: messageId,
+                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
+                otherParams: configuration.otherParams
+            )),
             onIFrameEvent: { [weak self] event in
                 Task {
                     await self?.handleInlineIframeEvent(event: event, stateId: stateId)

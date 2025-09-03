@@ -17,7 +17,7 @@ Swift Package Manager and CocoaPods are two currently supported ways of integrat
 ### Swift Package Manager (Recommended)
 
 
-The [Swift Package Manager](https://swift.org/package-manager/) is integrated to Swift and is one of the easiest ways to add a dependency to na iOS app. Once the Swift Package is setup add KontextSwiftSDK into your list of dependencies.
+The [Swift Package Manager](https://swift.org/package-manager/) is integrated to Swift and is one of the easiest ways to add a dependency to an iOS app. Once the Swift Package is setup add KontextSwiftSDK into your list of dependencies.
 
 ```swift
 dependencies: [

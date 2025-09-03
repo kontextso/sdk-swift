@@ -9,19 +9,19 @@ struct PreloadRequestDTO: Encodable {
     let advertisingId: String?
     let vendorId: String?
     let sessionId: String?
+    let sdk: SDKDTO
+    let app: AppDTO
     let device: DeviceDTO?
-    let sdk: String
-    let sdkVersion: String
     let regulatory: RegulatoryDTO?
     
 
     init(
         sessionId: String?,
         configuration: AdsProviderConfiguration,
-        device: Device,
-        messages: [AdsMessage],
-        sdk: String,
-        sdkVersion: String
+        sdkInfo: SDKInfo,
+        appinfo: AppInfo,
+        device: DeviceInfo,
+        messages: [AdsMessage]
     ) {
         publisherToken = configuration.publisherToken
         conversationId = configuration.conversationId
@@ -33,9 +33,9 @@ struct PreloadRequestDTO: Encodable {
         advertisingId = configuration.advertisingId
         vendorId = configuration.vendorId
         self.sessionId = sessionId
-        self.device = DeviceDTO(from: device)
-        self.sdk = sdk
-        self.sdkVersion = sdkVersion
+        self.sdk = sdkInfo.toModel()
+        self.app = appinfo.toModel()
+        self.device = device.toModel()
         self.regulatory = RegulatoryDTO(from: configuration.regulatory)
     }
 }
