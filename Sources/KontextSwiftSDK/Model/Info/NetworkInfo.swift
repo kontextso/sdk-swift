@@ -1,11 +1,6 @@
-//
-//  NetworkDetail.swift
-//  KontextSwiftSDK
-//
-
+import CoreTelephony
 import Foundation
 import Network
-import CoreTelephony
 
 enum NetworkType: String, Encodable {
     case wifi
@@ -26,7 +21,7 @@ enum NetworkDetail: String, Encodable {
     case gprs
 }
 
-final class NetworkInfo {
+struct NetworkInfo {
     let userAgent: String?
     let carrierName: String?
     let networkType: NetworkType?
@@ -43,16 +38,23 @@ final class NetworkInfo {
         self.networkType = networkType
         self.networkDetail = networkDetail
     }
+}
 
+extension NetworkInfo {
+    /// Creates a NetworkInfo instance with current network information
     static func current(
         appInfo: AppInfo,
         osInfo: OSInfo,
         hardwareInfo: HardwareInfo
     ) async -> NetworkInfo {
-        let userAgent = currentUserAgent(appInfo: appInfo, osInfo: osInfo, hardwareInfo: hardwareInfo)
-        let carrierName = Self.carrierName
-        let networkType = await Self.networkType()
-        let networkDetail = await Self.networkDetail()
+        let userAgent = currentUserAgent(
+            appInfo: appInfo,
+            osInfo: osInfo,
+            hardwareInfo: hardwareInfo
+        )
+        let carrierName = carrierName
+        let networkType = await networkType()
+        let networkDetail = await networkDetail()
 
         return NetworkInfo(
             userAgent: userAgent,
@@ -61,9 +63,11 @@ final class NetworkInfo {
             networkDetail: networkDetail
         )
     }
+}
 
+private extension NetworkInfo {
     /// Returns a User-Agent string representing the device and app
-    private static func currentUserAgent(
+    static func currentUserAgent(
         appInfo: AppInfo,
         osInfo: OSInfo,
         hardwareInfo: HardwareInfo
@@ -87,7 +91,7 @@ final class NetworkInfo {
     /// Returns the carrier name of the device, or nil if unavailable
     static var carrierName: String? {
         let networkInfo = CTTelephonyNetworkInfo()
-        var carrier: CTCarrier? = networkInfo.serviceSubscriberCellularProviders?.values.first
+        let carrier: CTCarrier? = networkInfo.serviceSubscriberCellularProviders?.values.first
         return carrier?.carrierName
     }
 
@@ -134,7 +138,7 @@ final class NetworkInfo {
         }
     }
     
-    private static func mapRadioTechnologyToDetail() -> NetworkDetail? {
+    static func mapRadioTechnologyToDetail() -> NetworkDetail? {
         let info = CTTelephonyNetworkInfo()
         let radioTech: String?
 

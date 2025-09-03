@@ -1,8 +1,3 @@
-//
-//  AudioInfo.swift
-//  KontextSwiftSDK
-//
-
 import AVFAudio
 
 enum AudioOutputType: String, Codable {
@@ -13,7 +8,7 @@ enum AudioOutputType: String, Codable {
     case other
 }
 
-final class AudioInfo {
+struct AudioInfo {
     /// media volume 0-100
     let volume: Int?
     /// preferred over "soundOn"
@@ -22,7 +17,6 @@ final class AudioInfo {
     let outputPluggedIn: Bool?
     /// array, wired/hdmi/bluetooth/...
     let outputType: [AudioOutputType]?
-
 
     init(
         volume: Int?,
@@ -35,7 +29,10 @@ final class AudioInfo {
         self.outputPluggedIn = outputPluggedIn
         self.outputType = outputType
     }
+}
 
+extension AudioInfo {
+    /// Creates an AudioInfo instance with current audio information
     static func current() -> AudioInfo {
         let volume = Int(AVAudioSession.sharedInstance().outputVolume * 100)
         let muted = AVAudioSession.sharedInstance().outputVolume == 0 ? true : false

@@ -25,7 +25,7 @@ struct PreloadRequestDTO: Encodable {
         configuration: AdsProviderConfiguration,
         sdkInfo: SDKInfo,
         appinfo: AppInfo,
-        device: Device,
+        device: DeviceInfo,
         messages: [AdsMessage]
     ) {
         publisherToken = configuration.publisherToken

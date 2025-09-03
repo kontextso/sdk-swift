@@ -31,7 +31,6 @@ protocol AdsProviderActingDelegate: AnyObject, Sendable {
 // MARK: - AdsProviderActor
 
 actor AdsProviderActor {
-    private let numberOfRelevantMessages = 10
     /// Represents a single session of interaction within a conversation.
     /// A new sessionId is generated each time the SDK is initialized—typically when the user opens or reloads the app.
     /// This helps us track discrete usage periods, even within the same ongoing conversation.
@@ -48,6 +47,7 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
+    private let numberOfRelevantMessages = 10
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
@@ -102,7 +102,7 @@ extension AdsProviderActor: AdsProviderActing {
             reset()
             notifyAboutAdChanges()
         } else {
-            bindBidsToLastAssistantMessage()
+            await bindBidsToLastAssistantMessage()
             return
         }
 
@@ -122,8 +122,8 @@ extension AdsProviderActor: AdsProviderActing {
 
         bids = preloadedData.bids ?? []
         sessionId = preloadedData.sessionId
-        bindBidsToLastUserMessage()
-        bindBidsToLastAssistantMessage()
+        await bindBidsToLastUserMessage()
+        await bindBidsToLastAssistantMessage()
     }
 
     func reset() {
@@ -133,18 +133,24 @@ extension AdsProviderActor: AdsProviderActing {
 }
 
 private extension AdsProviderActor {
-    func bindBidsToLastUserMessage() {
-        bindBidsToLastMessage(forRole: .user, adDisplayPosition: .afterUserMessage)
+    func bindBidsToLastUserMessage() async {
+        await bindBidsToLastMessage(
+            forRole: .user,
+            adDisplayPosition: .afterUserMessage
+        )
     }
 
-    func bindBidsToLastAssistantMessage() {
-        bindBidsToLastMessage(forRole: .assistant, adDisplayPosition: .afterAssistantMessage)
+    func bindBidsToLastAssistantMessage() async {
+        await bindBidsToLastMessage(
+            forRole: .assistant,
+            adDisplayPosition: .afterAssistantMessage
+        )
     }
 
     func bindBidsToLastMessage(
         forRole role: Role,
         adDisplayPosition: AdDisplayPosition
-    ) {
+    ) async {
         // Messages have to be after the last preload user message
         guard let lastPreloadUserMessageIndex = messages.firstIndex(where: {
             $0.id == lastPreloadUserMessageId
@@ -171,19 +177,21 @@ private extension AdsProviderActor {
         let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
         // Insert new states for last message id
         let stateId = UUID()
-        let newStates = uniqueBids.map { bid in
-            AdLoadingState(
+
+        var newStates: [AdLoadingState] = []
+        for bid in uniqueBids {
+            newStates.append(AdLoadingState(
                 id: stateId,
                 bid: bid,
                 messageId: lastMessageId,
                 show: true,
                 preferredHeight: nil, // Use default preferred height
-                webViewData: prepareWebViewData(
+                webViewData: await prepareWebViewData(
                     stateId: stateId,
                     messageId: lastMessageId,
                     bid: bid
                 )
-            )
+            ))
         }
 
         guard !newStates.isEmpty else {
@@ -206,8 +214,8 @@ private extension AdsProviderActor {
         stateId: UUID,
         messageId: String,
         bid: Bid
-    ) -> AdLoadingState.WebViewData {
-        AdLoadingState.WebViewData(
+    ) async -> AdLoadingState.WebViewData {
+        await AdLoadingState.WebViewData(
             url: adsServerAPI.frameURL(
                 messageId: messageId,
                 bidId: bid.bidId,
@@ -215,7 +223,7 @@ private extension AdsProviderActor {
                 otherParams: configuration.otherParams
             ),
             updateData:  UpdateIFrameData(
-                sdk: SDKInfo.current().name,
+                sdk: await SDKInfo.current().name,
                 code: bid.code,
                 messageId: messageId,
                 messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },

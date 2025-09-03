@@ -1,8 +1,3 @@
-//
-//  HardwareInfo.swift
-//  KontextSwiftSDK
-//
-
 import UIKit
 
 enum DeviceType: String, Encodable {
@@ -11,7 +6,7 @@ enum DeviceType: String, Encodable {
     case other
 }
 
-final class HardwareInfo {
+struct HardwareInfo {
     /// Device brand (e.g., "Apple")
     let brand: String
     /// Device model (e.g., "iPhone17,3")
@@ -21,24 +16,22 @@ final class HardwareInfo {
     /// True if an SD card is available, false otherwise (always false for iOS devices)
     let sdCardAvailable: Bool
 
-    // Device boot time (seconds since 1970)
-    // let bootTime: Double
-    // Is not allowed to be sent on iOS due to privacy reasons
-
     init(
         brand: String,
         model: String,
         type: DeviceType,
-        // bootTime: Double,
         sdCardAvailable: Bool
     ) {
         self.brand = brand
         self.model = model
         self.type = type
-        // self.bootTime = bootTime
         self.sdCardAvailable = sdCardAvailable
     }
+}
 
+extension HardwareInfo {
+    @MainActor
+    /// Creates a HardwareInfo instance with current hardware information
     static func current() -> HardwareInfo {
         // Always Apple on iOS
         let brand = "Apple"
@@ -67,4 +60,3 @@ final class HardwareInfo {
         )
     }
 }
-

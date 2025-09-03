@@ -18,7 +18,6 @@ struct AppDTO: Encodable {
     /// Current process start time as a timestamp
     let startTime: Double?
 
-    
     /// Initializes a new instance of `AppDTO`.
     init(from model: AppInfo) {
         bundleId = model.bundleId

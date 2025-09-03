@@ -3,7 +3,7 @@ import UIKit
 import Darwin
 
 /// Device information for the SDK
-struct Device {
+struct DeviceInfo {
     let os: OSInfo
     let hardware: HardwareInfo
     let screen: ScreenInfo
@@ -28,15 +28,13 @@ struct Device {
     }
 }
 
-// MARK: - Device Detection
-
-extension Device {
-    /// Creates a Device instance with current device information
-    static func current(appInfo: AppInfo) async -> Device {
+extension DeviceInfo {
+    /// Creates a DeviceInfo instance with current device information
+    static func current(appInfo: AppInfo) async -> DeviceInfo {
         let os = await OSInfo.current()
-        let hardware = HardwareInfo.current()
-        let screen = ScreenInfo.current()
-        let power = PowerInfo.current()
+        let hardware = await HardwareInfo.current()
+        let screen = await ScreenInfo.current()
+        let power = await PowerInfo.current()
         let audio = AudioInfo.current()
         let network = await NetworkInfo.current(
             appInfo: appInfo,
@@ -44,7 +42,7 @@ extension Device {
             hardwareInfo: hardware
         )
 
-        return Device(
+        return DeviceInfo(
             os: os,
             hardware: hardware,
             screen: screen,

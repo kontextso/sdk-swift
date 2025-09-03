@@ -11,7 +11,7 @@ struct DeviceDTO: Encodable {
     let audio: AudioDTO
     let network: NetworkDTO
 
-    init(from model: Device) {
+    init(from model: DeviceInfo) {
         self.os = OSDTO(from: model.os)
         self.hardware = HardwareDTO(from: model.hardware)
         self.screen = ScreenDTO(from: model.screen)

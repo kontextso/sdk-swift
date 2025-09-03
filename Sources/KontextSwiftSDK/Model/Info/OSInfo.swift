@@ -1,8 +1,3 @@
-//
-//  OSInfo.swift
-//  KontextSwiftSDK
-//
-
 import UIKit
 
 final class OSInfo: Sendable {

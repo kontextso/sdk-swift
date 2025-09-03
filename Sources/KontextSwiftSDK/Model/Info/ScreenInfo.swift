@@ -5,7 +5,7 @@
 
 import UIKit
 
-final class ScreenInfo {
+struct ScreenInfo {
     /// Device screen width size
     let screenWidth: CGFloat
     /// Device screen height size
@@ -30,15 +30,18 @@ final class ScreenInfo {
         self.orientation = orientation
         self.isDarkMode = isDarkMode
     }
+}
 
+extension ScreenInfo {
+    @MainActor
+    /// Creates a ScreenInfo instance with current screen information
     static func current() -> ScreenInfo {
-        // Orientation
         let orientation: ScreenOrientation? = switch UIDevice.current.orientation {
         case .portrait, .portraitUpsideDown: .portrait
         case .landscapeLeft, .landscapeRight: .landscape
         default: nil
         }
-        // Dark mode
+
         let isDarkMode = UITraitCollection.current.userInterfaceStyle == .dark
 
         return ScreenInfo(

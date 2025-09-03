@@ -1,8 +1,3 @@
-//
-//  BatteryInfo.swift
-//  KontextSwiftSDK
-//
-
 import UIKit
 
 enum BatteryState: String, Encodable {
@@ -12,7 +7,7 @@ enum BatteryState: String, Encodable {
     case unknown
 }
 
-final class PowerInfo {
+struct PowerInfo {
     /// Battery level (0 to 100) or nil if not available
     let batteryLevel: Double?
     /// Battery state (charging, full, unplugged, unknown) or nil if not available
@@ -29,7 +24,11 @@ final class PowerInfo {
         self.batteryState = batteryState
         self.lowPowerMode = lowPowerMode
     }
+}
 
+extension PowerInfo {
+    @MainActor
+    /// Creates a PowerInfo instance with current power information
     static func current() -> PowerInfo {
         // Enable battery monitoring first
         UIDevice.current.isBatteryMonitoringEnabled = true
@@ -40,6 +39,7 @@ final class PowerInfo {
         case .full: .full
         case .unplugged: .unplugged
         case .unknown: .unknown
+        @unknown default: .unknown
         }
         let lowPowerMode: Bool? = ProcessInfo.processInfo.isLowPowerModeEnabled
 
@@ -50,4 +50,3 @@ final class PowerInfo {
         )
     }
 }
-

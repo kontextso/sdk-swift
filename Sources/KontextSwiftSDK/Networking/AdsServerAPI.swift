@@ -1,8 +1,3 @@
-//
-//  AdsServerAPI.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 // MARK: - AdsServerAPI
@@ -13,7 +8,8 @@ protocol AdsServerAPI: Sendable {
         configuration: AdsProviderConfiguration,
         messages: [AdsMessage]
     ) async throws -> PreloadedData
-    
+
+    @MainActor
     func frameURL(
         messageId: String,
         bidId: String,
@@ -61,23 +57,25 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             queryItems: nil
         )
         let app = AppInfo.current()
-        let sdk = SDKInfo.current()
+        let sdk = await SDKInfo.current()
+        let requestDTO = PreloadRequestDTO(
+            sessionId: sessionId,
+            configuration: configuration,
+            sdkInfo: sdk,
+            appinfo: app,
+            device: await DeviceInfo.current(appInfo: app),
+            messages: messages
+        )
         let responseDTO: PreloadResponseDTO = try await networking.request(
             method: .post,
             urlConvertible: preloadUrlConvertible,
             headers: [.acceptType(.json), .contentType(.json)],
-            body: PreloadRequestDTO(
-                sessionId: sessionId,
-                configuration: configuration,
-                sdkInfo: sdk,
-                appinfo: app,
-                device: await Device.current(appInfo: app),
-                messages: messages
-            )
+            body: requestDTO
         )
         return responseDTO.preloadedData
     }
-    
+
+    @MainActor
     func frameURL(
         messageId: String,
         bidId: String,
@@ -90,7 +88,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
                 URLQueryItem(name: "code", value: bidCode),
-                URLQueryItem(name: "sdk", value: SDKInfo.current().name),
+                URLQueryItem(name: "sdk", value: SDKInfo.current().name)
             ] + otherParams.map { URLQueryItem(name: $0.key, value: $0.value) }
         ).asURL()
     }

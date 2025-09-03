@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-final class SDKInfo  {
+struct SDKInfo  {
     static let defaultAdServerURL: URL = URL(string: "https://server.megabrain.co")!
 
     /// Name of the SDK's bundle, should be sdk-swift
@@ -24,9 +24,14 @@ final class SDKInfo  {
         self.platform = platform
         self.lowercasedPlatform = lowercasedPlatform
     }
+}
 
+extension SDKInfo {
+    @MainActor
+    /// Creates a SDKInfo instance with current SDK information
     static func current() -> SDKInfo {
-        let bundle = Bundle(for: SDKInfo.self)
+        final class _BundleToken {}
+        let bundle = Bundle(for: _BundleToken.self)
         let name = bundle
             .object(forInfoDictionaryKey: "CFBundleName") as? String ?? "sdk-swift"
         let version = bundle

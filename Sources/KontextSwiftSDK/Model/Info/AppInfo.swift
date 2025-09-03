@@ -1,11 +1,6 @@
-//
-//  AppInfo.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
-final class AppInfo  {
+struct AppInfo  {
     let name: String
     let bundleId: String?
     let version: String
@@ -31,7 +26,10 @@ final class AppInfo  {
         self.updateTime = updateTime
         self.startTime = startTime
     }
+}
 
+extension AppInfo {
+    /// Creates an AppInfo instance with current app information
     static func current() -> AppInfo {
         // Prepare bundle
         let bundle = Bundle.main
@@ -46,10 +44,9 @@ final class AppInfo  {
         } else {
             nil
         }
-        // More complex calcullations through static properties
-        let installTime = Self.installTime
-        let updateTime = Self.updateTime
-        let startTime = Self.startTime
+        let installTime = installTime
+        let updateTime = updateTime
+        let startTime = startTime
 
         return AppInfo(
             name: name,
@@ -61,12 +58,15 @@ final class AppInfo  {
             startTime: startTime
         )
     }
+}
 
-    // MARK: - More complex properties
-
-    private static var installTime: Double? {
+private extension AppInfo {
+    static var installTime: Double? {
         // Get path to the app's Documents directory
-        if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).last {
+        if let documentsURL = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        ).first {
             if let attributes = try? FileManager.default.attributesOfItem(atPath: documentsURL.path),
                let creationDate = attributes[.creationDate] as? Date {
                 return creationDate.timeIntervalSince1970
@@ -75,7 +75,7 @@ final class AppInfo  {
         return nil
     }
 
-    private static var updateTime: Double? {
+    static var updateTime: Double? {
         let bundleURL = Bundle.main.bundleURL
         if let attributes = try? FileManager.default.attributesOfItem(atPath: bundleURL.path),
            let modificationDate = attributes[.modificationDate] as? Date {
@@ -84,7 +84,7 @@ final class AppInfo  {
         return nil
     }
 
-    private static var startTime: Double {
+    static var startTime: Double {
         let uptime = ProcessInfo.processInfo.systemUptime
         let now = Date()
         return now.addingTimeInterval(-uptime).timeIntervalSince1970
