@@ -138,24 +138,4 @@ extension AdsProvider: AdsProviderActingDelegate {
             eventSubject.send(.didReceiveEvent(event))
         }
     }
-
-    func adsProviderActing(
-        _ adsProviderActing: any AdsProviderActing,
-        didViewAd event: ViewAdEventData
-    ) {
-        Task { @MainActor in
-            delegate?.adsProvider(self, didViewAd: event)
-            eventSubject.send(.didViewAd(event))
-        }
-    }
-
-    func adsProviderActing(
-        _ adsProviderActing: any AdsProviderActing,
-        didClickAd event: ClickAdEventData
-    ) {
-        Task { @MainActor in
-            delegate?.adsProvider(self, didClickAd: event)
-            eventSubject.send(.didClickAd(event))
-        }
-    }
 }

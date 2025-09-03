@@ -14,10 +14,6 @@ public enum AdsProviderEvent {
     case didUpdateHeightForAd(Advertisement)
     /// Sent when an iFrame event occurred
     case didReceiveEvent(AdsEvent)
-    /// Called when user views an ad
-    case didViewAd(ViewAdEventData)
-    /// Called when user clicks an ad
-    case didClickAd(ClickAdEventData)
     /// Called when en error occurs in the process of preparing an advertisement.
     case didEncounterError(KontextError)
 }
@@ -32,15 +28,9 @@ public protocol AdsProviderDelegate: AnyObject {
     func adsProvider(_ adsProvider: AdsProvider, didUpdateHeightForAd ad: Advertisement)
     /// Called when an iFrame event occurred
     func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent)
-    /// Called when user views an ad
-    func adsProvider(_ adsProvider: AdsProvider, didViewAd: ViewAdEventData)
-    /// Called when user clicks an ad
-    func adsProvider(_ adsProvider: AdsProvider, didClickAd: ClickAdEventData)
 }
 
 /// Default implementations
 public extension AdsProviderDelegate {
     func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {}
-    func adsProvider(_ adsProvider: AdsProvider, didViewAd: ViewAdEventData) {}
-    func adsProvider(_ adsProvider: AdsProvider, didClickAd: ClickAdEventData) {}
 }

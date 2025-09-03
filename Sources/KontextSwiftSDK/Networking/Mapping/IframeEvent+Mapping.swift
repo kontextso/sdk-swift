@@ -57,25 +57,3 @@ extension EventIframeContentDTO.RewardReceivedDataDTO: ModelConvertible {
         AdsEventType.RewardReceivedData()
     }
 }
-
-extension IframeEvent.ClickIframeDataDTO: ModelConvertible {
-    func toModel() -> ClickAdEventData {
-        ClickAdEventData(
-            id: id,
-            content: content,
-            messageId: messageId,
-            url: url
-        )
-    }
-}
-
-extension IframeEvent.ViewIframeDataDTO: ModelConvertible {
-    func toModel() -> ViewAdEventData {
-        ViewAdEventData(
-            id: id,
-            content: content,
-            messageId: messageId,
-            code: code
-        )
-    }
-}

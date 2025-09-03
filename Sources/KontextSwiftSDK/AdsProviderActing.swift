@@ -30,14 +30,4 @@ protocol AdsProviderActingDelegate: AnyObject, Sendable {
         _ adsProviderActing: AdsProviderActing,
         didReceiveEvent event: AdsEvent
     )
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didClickAd: ClickAdEventData
-    )
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didViewAd: ViewAdEventData
-    )
 }
