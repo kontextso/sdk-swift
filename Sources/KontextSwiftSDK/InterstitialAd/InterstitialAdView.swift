@@ -35,7 +35,6 @@ struct InterstitialAdView: View {
                     onIFrameEvent: { onIFrameEvent($0) }
                 )
                 .opacity(viewModel.showIframe ? 1 : 0)
-                .ignoresSafeArea()
             }
 
             if !viewModel.showIframe {

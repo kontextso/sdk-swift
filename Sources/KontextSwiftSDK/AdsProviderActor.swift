@@ -274,11 +274,9 @@ private extension AdsProviderActor {
 
         case .viewIframe(let viewData):
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
-            delegate?.adsProviderActing(self, didViewAd: viewData.toModel())
 
         case .clickIframe(let clickData):
             openURL(from: clickData, fallbackURL: newState.webViewData.url)
-            delegate?.adsProviderActing(self, didClickAd: clickData.toModel())
 
         case .resizeIframe(let resizedData):
             guard resizedData.height != newState.preferredHeight else {
@@ -321,7 +319,6 @@ private extension AdsProviderActor {
 
         case .clickIframe(let clickData):
             openURL(from: clickData, fallbackURL: state.webViewData.url)
-            delegate?.adsProviderActing(self, didClickAd: clickData.toModel())
 
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
