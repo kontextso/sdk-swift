@@ -1,8 +1,3 @@
-//
-//  RoleDTO.swift
-//  KontextSwiftSDK
-//
-
 enum RoleDTO: String, Codable {
     /// Author of the message is the user of the app
     case user

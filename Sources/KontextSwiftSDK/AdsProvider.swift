@@ -114,8 +114,8 @@ extension AdsProvider: AdsProviderActingDelegate {
         didChangeAvailableAdsTo ads: [Advertisement]
     ) {
         Task { @MainActor in
-            self.delegate?.adsProvider(self, didChangeAvailableAdsTo: ads)
-            self.eventSubject.send(.didChangeAvailableAdsTo(ads))
+            delegate?.adsProvider(self, didChangeAvailableAdsTo: ads)
+            eventSubject.send(.didChangeAvailableAdsTo(ads))
         }
     }
 
@@ -124,8 +124,18 @@ extension AdsProvider: AdsProviderActingDelegate {
         didUpdateHeightForAd ad: Advertisement
     ) {
         Task { @MainActor in
-            self.delegate?.adsProvider(self, didUpdateHeightForAd: ad)
-            self.eventSubject.send(.didUpdateHeightForAd(ad))
+            delegate?.adsProvider(self, didUpdateHeightForAd: ad)
+            eventSubject.send(.didUpdateHeightForAd(ad))
+        }
+    }
+
+    func adsProviderActing(
+        _ adsProviderActing: any AdsProviderActing,
+        didReceiveEvent event: AdsEvent
+    ) {
+        Task { @MainActor in
+            delegate?.adsProvider(self, didReceiveEvent: event)
+            eventSubject.send(.didReceiveEvent(event))
         }
     }
 }

@@ -7,6 +7,8 @@ public enum AdsProviderEvent {
     case didChangeAvailableAdsTo([Advertisement])
     /// Sent when the height of a specific ad has been updated
     case didUpdateHeightForAd(Advertisement)
+    /// Sent when an iFrame event occurred
+    case didReceiveEvent(AdsEvent)
 }
 
 /// Delegate protocol to notify about ads availability and height changes
@@ -15,4 +17,11 @@ public protocol AdsProviderDelegate: AnyObject {
     func adsProvider(_ adsProvider: AdsProvider, didChangeAvailableAdsTo ads: [Advertisement])
     /// Called when the height of a specific ad has been updated
     func adsProvider(_ adsProvider: AdsProvider, didUpdateHeightForAd ad: Advertisement)
+    /// Called when an iFrame event occurred
+    func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent)
+}
+
+/// Default implementations
+public extension AdsProviderDelegate {
+    func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {}
 }

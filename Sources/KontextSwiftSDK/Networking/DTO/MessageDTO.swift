@@ -1,8 +1,3 @@
-//
-//  MessageDTO.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 struct MessageDTO: Codable, Hashable {

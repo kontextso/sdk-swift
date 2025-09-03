@@ -2,32 +2,6 @@
 import OSLog
 import UIKit
 
-// MARK: - AdsProviderActing
-
-protocol AdsProviderActing: Sendable {
-    func setDelegate(delegate: AdsProviderActingDelegate?) async
-
-    func setDisabled(_ isDisabled: Bool) async
-
-    func setMessages(messages: [AdsMessage]) async throws
-
-    func reset() async
-}
-
-// MARK: - AdsProviderActingDelegate
-
-protocol AdsProviderActingDelegate: AnyObject, Sendable {
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didChangeAvailableAdsTo ads: [Advertisement]
-    )
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didUpdateHeightForAd ad: Advertisement
-    )
-}
-
 // MARK: - AdsProviderActor
 
 actor AdsProviderActor {
@@ -48,6 +22,12 @@ actor AdsProviderActor {
     private var states: [AdLoadingState]
 
     private let numberOfRelevantMessages = 10
+
+    /// Events published to interstitial and inline components
+    private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
+    private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
+    private var interstitialTimeoutTask: Task<Void, Never>?
+
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
@@ -132,6 +112,7 @@ extension AdsProviderActor: AdsProviderActing {
     }
 }
 
+// MARK: Data processing
 private extension AdsProviderActor {
     func bindBidsToLastUserMessage() async {
         await bindBidsToLastMessage(
@@ -222,79 +203,24 @@ private extension AdsProviderActor {
                 bidCode: bid.code,
                 otherParams: configuration.otherParams
             ),
-            updateData:  UpdateIFrameData(
+            updateData: UpdateIFrameDTO(data: IframeEvent.UpdateIFrameDataDTO(
                 sdk: await SDKInfo.current().name,
                 code: bid.code,
                 messageId: messageId,
                 messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
                 otherParams: configuration.otherParams
-            ),
+            )),
             onIFrameEvent: { [weak self] event in
                 Task {
-                    await self?.handleIFrameEvent(event: event, stateId: stateId)
+                    await self?.handleInlineIframeEvent(event: event, stateId: stateId)
                 }
-            }
+            },
+            events: inlineEventSubject.eraseToAnyPublisher()
         )
-    }
-
-    func handleIFrameEvent(event: InlineAdEvent, stateId: UUID) {
-        guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
-            return
-        }
-        var newState = states[stateIndex]
-
-        switch event {
-        case .initIframe:
-            break // Handled by InlineAdWebView
-
-        case .showIframe:
-            if !newState.show {
-                newState.show = true
-                states[stateIndex] = newState
-                notifyAboutAdChanges()
-            }
-
-        case .hideIframe:
-            if newState.show {
-                newState.show = false
-                states[stateIndex] = newState
-                notifyAboutAdChanges()
-            }
-
-        case .viewIframe(let viewData):
-            os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
-
-        case .clickIframe(let clickData):
-            if let iframeClickedURL = if let clickDataURL = clickData.url {
-                adsServerAPI.redirectURL(relativeURL: clickDataURL)
-            } else {
-                newState.webViewData.url
-            } {
-                Task { @MainActor in
-                    UIApplication.shared.open(iframeClickedURL)
-                }
-            }
-
-        case .resizeIframe(let resizedData):
-            guard resizedData.height != newState.preferredHeight else {
-                return
-            }
-
-            newState.preferredHeight = resizedData.height
-            states[stateIndex] = newState
-            delegate?.adsProviderActing(self, didUpdateHeightForAd: newState.toModel())
-
-        case .errorIframe(let message):
-            os_log(.error, "[InlineAd]: Error: \(message.message)")
-            reset()
-            notifyAboutAdChanges()
-
-        case .unknown:
-            break
-        }
     }
 }
 
+// MARK: Preload
 private extension AdsProviderActor {
     func preloadWithTimeout(
         timeout: Int,
@@ -323,6 +249,145 @@ private extension AdsProviderActor {
 
             group.cancelAll()
             return data
+        }
+    }
+}
+
+// MARK: iFrame events
+private extension AdsProviderActor {
+    func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) {
+        guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
+            return
+        }
+        var newState = states[stateIndex]
+
+        switch event {
+        case .initIframe:
+            break // Handled by InlineAdWebView
+
+        case .showIframe:
+            if !newState.show {
+                newState.show = true
+                states[stateIndex] = newState
+                notifyAboutAdChanges()
+            }
+
+        case .hideIframe:
+            if newState.show {
+                newState.show = false
+                states[stateIndex] = newState
+                notifyAboutAdChanges()
+            }
+
+        case .viewIframe(let viewData):
+            os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
+
+        case .clickIframe(let clickData):
+            openURL(from: clickData, fallbackURL: newState.webViewData.url)
+
+        case .resizeIframe(let resizedData):
+            guard resizedData.height != newState.preferredHeight else {
+                return
+            }
+
+            newState.preferredHeight = resizedData.height
+            states[stateIndex] = newState
+            delegate?.adsProviderActing(self, didUpdateHeightForAd: newState.toModel())
+
+        case .errorIframe(let message):
+            os_log(.error, "[InlineAd]: Error: \(message?.message ?? "unknown")")
+            reset()
+            notifyAboutAdChanges()
+
+        case .openComponentIframe(let data):
+            presentInterstitialAd(data, state: newState)
+
+        case .eventIframe(let data):
+            delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
+
+        default:
+            break
+        }
+    }
+
+    func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
+        switch event {
+        case .initComponentIframe:
+            Task { @MainActor in
+                interstitialEventSubject.send(.didChangeDisplay(true))
+            }
+            interstitialTimeoutTask?.cancel()
+            interstitialTimeoutTask = nil
+
+        case .closeComponentIframe, .errorComponentIframe:
+            Task { @MainActor in
+                inlineEventSubject.send(.didFinishInterstitialAd)
+            }
+
+        case .clickIframe(let clickData):
+            openURL(from: clickData, fallbackURL: state.webViewData.url)
+
+        case .eventIframe(let data):
+            delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
+
+        default:
+            break
+        }
+    }
+}
+
+// MARK: Present actions
+private extension AdsProviderActor {
+    func openURL(from data: IframeEvent.ClickIframeDataDTO, fallbackURL: URL?) {
+        if let iframeClickedURL = if let clickDataURL = data.url {
+            adsServerAPI.redirectURL(relativeURL: clickDataURL)
+        } else {
+            fallbackURL
+        } {
+            Task { @MainActor in
+                UIApplication.shared.open(iframeClickedURL)
+            }
+        }
+    }
+
+    func presentInterstitialAd(
+        _ data: IframeEvent.OpenComponentIframeDataDTO,
+        state: AdLoadingState
+    ) {
+        let url = adsServerAPI.componentURL(
+            messageId: state.messageId,
+            bidId: state.bid.bidId,
+            bidCode: state.bid.code,
+            component: data.component,
+            otherParams: configuration.otherParams
+        )
+
+        Task { @MainActor in
+            let params = InterstitialAdView.Params(
+                url: url,
+                events: interstitialEventSubject.eraseToAnyPublisher(),
+                onIFrameEvent: { [weak self] event in
+                    Task {
+                        await self?.handleInterstitialIframeEvent(
+                            event: event,
+                            state: state
+                        )
+                    }
+                }
+            )
+            inlineEventSubject.send(.didRequestInterstitialAd(params))
+        }
+
+        // Close interstitial ad if it init component does not
+        // arrive within timeout interval.
+        interstitialTimeoutTask = Task { @MainActor in
+            try? await Task.sleep(milliseconds: data.timeout + 500) // Add buffer time for displaying.
+
+            guard !Task.isCancelled else {
+                return
+            }
+
+            inlineEventSubject.send(.didFinishInterstitialAd)
         }
     }
 }

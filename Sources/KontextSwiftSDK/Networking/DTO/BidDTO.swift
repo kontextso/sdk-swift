@@ -1,8 +1,3 @@
-//
-//  BidDTO.swift
-//  KontextSwiftSDK
-//
-
 struct BidDTO: Decodable {
     let bidId: String
     let code: String

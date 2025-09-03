@@ -21,7 +21,7 @@ The [Swift Package Manager](https://swift.org/package-manager/) is integrated to
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/kontextso/sdk-swift", .upToNextMajor(from: "1.0.3"))
+    .package(url: "https://github.com/kontextso/sdk-swift", .upToNextMajor(from: "1.0.4"))
 ]
 ```
 
@@ -129,6 +129,18 @@ let adsProvider = AdsProvider(
 	// ID of the session, will be nil for new chats, SDK will resolve it internally with first ads.
 	sessionId: nil
 )
+
+AdsProvider provides event observing in two formats
+
+1. AdsProviderDelegate
+2. Combine publisher
+
+AdsProvider notifies about events such as:
+
+* ads being available for a message
+* ads size change
+* ads events (viewed, clicked etc.) 
+
 
 ```
 
