@@ -11,8 +11,14 @@ public final class InlineAdUIView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     /// The web view that loads and displays the ad content.
     private var adWebView: AdWebView?
+    /// Timer that periodically reports ad viewport.
+    private var samplingTimer: Timer?
     /// Presented interstitial view controller.
     private weak var interstitialViewController: UIViewController?
+    /// Sampling viewport interval in seconds
+    private let samplingInterval = 0.2
+    /// Events targeted for AdWebView
+    private let adWebViewEventsSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
@@ -27,12 +33,35 @@ public final class InlineAdUIView: UIView {
         observeEvents()
         setupUI()
     }
+
+    deinit {
+        stopSampling()
+    }
+
+    public override func didMoveToWindow() {
+        super.didMoveToWindow()
+
+        guard window != nil else {
+            stopSampling()
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            self?.startSampling()
+        }
+    }
+
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        sampleViewport()
+    }
 }
 
 private extension InlineAdUIView {
     func setupUI() {
         let adWebView = AdWebView(
             updateIframeData: viewModel.ad.webViewData.updateData,
+            eventPublisher: adWebViewEventsSubject.eraseToAnyPublisher(),
             onIFrameEvent: { [weak self] event in
                 guard let self else {
                     return
@@ -54,7 +83,7 @@ private extension InlineAdUIView {
             equalToConstant: viewModel.ad.preferredHeight
         )
         heightConstraint.priority = .defaultHigh
-        
+
         self.heightConstraint = heightConstraint
 
         NSLayoutConstraint.activate([
@@ -87,7 +116,10 @@ private extension InlineAdUIView {
             }
             .store(in: &cancellables)
     }
+}
 
+// MARK: Interstitial
+private extension InlineAdUIView {
     func presentInterstitialAd(
         params: InterstitialAdView.Params,
         presentationMode: UIModalPresentationStyle
@@ -104,5 +136,58 @@ private extension InlineAdUIView {
     func dismissInterstitialAd() {
         interstitialViewController?.dismiss(animated: true)
         interstitialViewController = nil
+    }
+}
+
+// MARK: Viewport sampling
+private extension InlineAdUIView {
+    func startSampling() {
+        stopSampling()
+
+        let samplingTimer = Timer.scheduledTimer(
+            withTimeInterval: samplingInterval,
+            repeats: true
+        ) { [weak self] _ in
+            self?.sampleViewport()
+        }
+        self.samplingTimer = samplingTimer
+
+        RunLoop.main.add(samplingTimer, forMode: .common)
+
+        sampleViewport()
+    }
+
+    func stopSampling() {
+        samplingTimer?.invalidate()
+        samplingTimer = nil
+    }
+
+    func sampleViewport() {
+        guard let window else {
+            return
+        }
+
+        let screenBounds = window.screen.bounds
+        let screenWidth = screenBounds.width
+        let screenHeight = screenBounds.height
+        let containerWidth = bounds.width
+        let containerHeight = bounds.height
+
+        // Convert container origin to window coordinates
+        // Using bounds.origin (0,0 in self space) converted from self -> window
+        let originInWindow = convert(bounds.origin, to: window)
+
+        let data = UpdateDimensionsIFrameDataDTO.Data(
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
+            containerWidth: containerWidth,
+            containerHeight: containerHeight,
+            containerX: originInWindow.x,
+            containerY: originInWindow.y
+        )
+
+        adWebViewEventsSubject.send(.didPrepareUpdateDimensions(
+            UpdateDimensionsIFrameDataDTO(data: data)
+        ))
     }
 }

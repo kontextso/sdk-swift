@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 enum InlineAdEvent {
@@ -5,13 +6,16 @@ enum InlineAdEvent {
         InterstitialAdView.Params,
         UIModalPresentationStyle = .fullScreen
     )
-    case didFinishInterstitialAd
+    case didFinishInterstitialAd    
 }
 
 /// SwiftUI view that represents an inline ad in the chat UI.
 public struct InlineAdView: View {
     @StateObject private var viewModel: InlineAdViewModel
     @State private var interstitialParams: InterstitialAdView.Params?
+
+    /// Events targeted for AdWebView
+    private let adWebViewEventsSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
     private let ad: Advertisement
 
     /// - Parameters:
@@ -27,10 +31,14 @@ public struct InlineAdView: View {
                 AdWebViewRepresentable(
                     url: url,
                     updateIFrameData: viewModel.ad.webViewData.updateData,
+                    eventPublisher: adWebViewEventsSubject.eraseToAnyPublisher(),
                     onIFrameEvent: { event in
                         viewModel.ad.webViewData.onIFrameEvent(event)
                     }
                 )
+                .readRect(coordinateSpace: .global) {
+                    onRectChange($0)
+                }
                 .frame(height: viewModel.ad.preferredHeight)
             }
         }
@@ -48,5 +56,26 @@ public struct InlineAdView: View {
                 interstitialParams = nil
             }
         }
+    }
+}
+
+// MARK: Private
+private extension InlineAdView {
+    func onRectChange(_ rect: CGRect) {
+        let screenSize = UIScreen.main.bounds.size
+        let data = UpdateDimensionsIFrameDataDTO.Data(
+            screenWidth: screenSize.width,
+            screenHeight: screenSize.height,
+            containerWidth: rect.width,
+            containerHeight: rect.height,
+            containerX: rect.minX,
+            containerY: rect.minY
+        )
+
+        adWebViewEventsSubject.send(.didPrepareUpdateDimensions(
+            UpdateDimensionsIFrameDataDTO(
+                data: data
+            )
+        ))
     }
 }
