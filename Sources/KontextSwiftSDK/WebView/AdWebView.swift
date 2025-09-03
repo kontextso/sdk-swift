@@ -1,36 +1,12 @@
+import Combine
 import OSLog
 import SwiftUI
 import UIKit
 import WebKit
 
-// MARK: - AdScriptMessageHandler
-
-private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
-    private weak var adWebView: AdWebView?
-
-    init(adWebView: AdWebView) {
-        self.adWebView = adWebView
-        super.init()
-    }
-
-    func userContentController(
-        _ userContentController: WKUserContentController,
-        didReceive message: WKScriptMessage
-    ) {
-        guard
-            message.name == "iframeMessage",
-            let adWebView
-        else {
-            return
-        }
-
-        do {
-            let event = try IframeEvent(fromJSON: message.body)
-            adWebView.sendIframeEvent(event: event)
-        } catch {
-            os_log(.error, "[Ad]: iframeMessage failed to decode with error: \(error)")
-        }
-    }
+/// Events targeted for AdWebView
+enum AdWebViewUpdateEvent {
+    case didPrepareUpdateDimensions(UpdateDimensionsIFrameDataDTO)
 }
 
 // MARK: - AdWebView
@@ -38,16 +14,20 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
 final class AdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
     private let updateIframeData: UpdateIFrameDTO?
+    private let eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>?
     private let onIFrameEvent: (IframeEvent) -> Void
 
+    private var cancellables: Set<AnyCancellable> = []
     private var scriptHandler: AdScriptMessageHandler?
 
     init(
         frame: CGRect = .zero,
         updateIframeData: UpdateIFrameDTO?,
+        eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>? = nil,
         onIFrameEvent: @escaping (IframeEvent) -> Void
     ) {
         self.onIFrameEvent = onIFrameEvent
+        self.eventPublisher = eventPublisher
 
         let js = """
         window.addEventListener('message', function(event) {
@@ -76,6 +56,8 @@ final class AdWebView: WKWebView {
         if let scriptHandler {
             configuration.userContentController.add(scriptHandler, name: "iframeMessage")
         }
+
+        observeEvents()
     }
 
     required init?(coder: NSCoder) {
@@ -99,23 +81,34 @@ final class AdWebView: WKWebView {
 
 // MARK: Private
 private extension AdWebView {
+    func observeEvents() {
+        eventPublisher?
+            .sink { [weak self] event in
+                switch event {
+                case .didPrepareUpdateDimensions(let data):
+                    self?.sendUpdateIframe(data: data)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
     func sendIframeEvent(event: IframeEvent) {
         switch event {
         case .initIframe:
-            sendUpdateIframe()
+            sendUpdateIframe(data: updateIframeData)
         default:
             break
         }
         onIFrameEvent(event)
     }
 
-    func sendUpdateIframe() {
-        guard let updateIframeData else {
+    func sendUpdateIframe<T: Encodable>(data: T?) {
+        guard let data else {
             return
         }
 
         do {
-            let data = try JSONEncoder().encode(updateIframeData)
+            let data = try JSONEncoder().encode(data)
             guard let jsonString = String(data: data, encoding: .utf8) else {
                 throw EncodingError.invalidValue(
                     data,
@@ -129,7 +122,37 @@ private extension AdWebView {
             let javascript = "window.postMessage(\(jsonString), '*');"
             evaluateJavaScript(javascript, completionHandler: nil)
         } catch {
-            os_log(.error, "[Ad]: Failed to postMessage \(updateIframeData.type.rawValue) with error: \(error)")
+            os_log(.error, "[Ad]: Failed to postMessage with error: \(error)")
+        }
+    }
+}
+
+// MARK: - AdScriptMessageHandler
+
+private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    private weak var adWebView: AdWebView?
+
+    init(adWebView: AdWebView) {
+        self.adWebView = adWebView
+        super.init()
+    }
+
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        guard
+            message.name == "iframeMessage",
+            let adWebView
+        else {
+            return
+        }
+
+        do {
+            let event = try IframeEvent(fromJSON: message.body)
+            adWebView.sendIframeEvent(event: event)
+        } catch {
+            os_log(.error, "[Ad]: iframeMessage failed to decode with error: \(error)")
         }
     }
 }

@@ -55,7 +55,7 @@ enum APIError: Error {
 
 // MARK: - URLConvertible
 
-protocol URLConvertible {
+protocol URLConvertible: Sendable {
     func asURL() -> URL?
 }
 

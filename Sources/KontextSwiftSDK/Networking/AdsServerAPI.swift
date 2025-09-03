@@ -1,8 +1,3 @@
-//
-//  AdsServerAPI.swift
-//  KontextSwiftSDK
-//
-
 import Foundation
 
 // MARK: - AdsServerAPI
@@ -13,7 +8,8 @@ protocol AdsServerAPI: Sendable {
         configuration: AdsProviderConfiguration,
         messages: [AdsMessage]
     ) async throws -> PreloadedData
-    
+
+    @MainActor
     func frameURL(
         messageId: String,
         bidId: String,
@@ -21,6 +17,7 @@ protocol AdsServerAPI: Sendable {
         otherParams: [String: String]
     ) -> URL?
 
+    @MainActor
     func componentURL(
         messageId: String,
         bidId: String,
@@ -68,22 +65,26 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             pathComponents: ["preload"],
             queryItems: nil
         )
+        let app = AppInfo.current()
+        let sdk = await SDKInfo.current()
+        let requestDTO = PreloadRequestDTO(
+            sessionId: sessionId,
+            configuration: configuration,
+            sdkInfo: sdk,
+            appinfo: app,
+            device: await DeviceInfo.current(appInfo: app),
+            messages: messages
+        )
         let responseDTO: PreloadResponseDTO = try await networking.request(
             method: .post,
             urlConvertible: preloadUrlConvertible,
             headers: [.acceptType(.json), .contentType(.json)],
-            body: PreloadRequestDTO(
-                sessionId: sessionId,
-                configuration: configuration,
-                device: await Device.current(),
-                messages: messages,
-                sdk: SDKInfo.name,
-                sdkVersion: SDKInfo.version
-            )
+            body: requestDTO
         )
         return responseDTO.preloadedData
     }
-    
+
+    @MainActor
     func frameURL(
         messageId: String,
         bidId: String,
@@ -96,11 +97,12 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
                 URLQueryItem(name: "code", value: bidCode),
-                URLQueryItem(name: "sdk", value: SDKInfo.name)
+                URLQueryItem(name: "sdk", value: SDKInfo.current().name)
             ] + otherParams.map { URLQueryItem(name: $0.key, value: $0.value) }
         ).asURL()
     }
 
+    @MainActor
     func componentURL(
         messageId: String,
         bidId: String,
@@ -114,7 +116,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
                 URLQueryItem(name: "code", value: bidCode),
-                URLQueryItem(name: "sdk", value: SDKInfo.name),
+                URLQueryItem(name: "sdk", value: SDKInfo.current().name),
             ] + otherParams.map { URLQueryItem(name: $0.key, value: $0.value)}
         ).asURL()
     }

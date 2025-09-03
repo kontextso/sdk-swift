@@ -1,5 +1,3 @@
-import Foundation
-
 struct RegulatoryDTO: Encodable {
     let gdpr: Int?
     let gdprConsent: String?
