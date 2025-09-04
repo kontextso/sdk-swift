@@ -30,12 +30,12 @@ public final class AdsProvider: @unchecked Sendable {
     /// - Publishes events on the main thread
     /// - Information about newly available ads
     /// - Information about height changes of ads
-    public var eventPublisher: AnyPublisher<AdsProviderEvent, Never> {
+    public var eventPublisher: AnyPublisher<AdsEvent, Never> {
         self.eventSubject.eraseToAnyPublisher()
     }
 
     /// Passthrough subject that is used to implement eventPublisher
-    private let eventSubject: PassthroughSubject<AdsProviderEvent, Never>
+    private let eventSubject: PassthroughSubject<AdsEvent, Never>
 
     /// Initializes a new instance of `AdsProvider`.
     ///
@@ -57,7 +57,7 @@ public final class AdsProvider: @unchecked Sendable {
             isDisabled: isDisabled
         )
         self.delegate = delegate
-        self.eventSubject = PassthroughSubject<AdsProviderEvent, Never>()
+        self.eventSubject = PassthroughSubject<AdsEvent, Never>()
 
         Task {
             await dependencies.adsProviderActing.setDelegate(delegate: self)
@@ -106,42 +106,12 @@ public final class AdsProvider: @unchecked Sendable {
 
 extension AdsProvider: AdsProviderActingDelegate {
     func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didChangeAvailableAdsTo ads: [Advertisement]
-    ) {
-        Task { @MainActor in
-            delegate?.adsProvider(self, didChangeAvailableAdsTo: ads)
-            eventSubject.send(.didChangeAvailableAdsTo(ads))
-        }
-    }
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didUpdateHeightForAd ad: Advertisement
-    ) {
-        Task { @MainActor in
-            delegate?.adsProvider(self, didUpdateHeightForAd: ad)
-            eventSubject.send(.didUpdateHeightForAd(ad))
-        }
-    }
-
-    func adsProviderActing(
         _ adsProviderActing: any AdsProviderActing,
         didReceiveEvent event: AdsEvent
     ) {
         Task { @MainActor in
             delegate?.adsProvider(self, didReceiveEvent: event)
-            eventSubject.send(.didReceiveEvent(event))
-        }
-    }
-
-    func adsProviderActing(
-        _ adsProvider: any AdsProviderActing,
-        didEncounterError error: KontextError
-    ) {
-        Task { @MainActor in
-            delegate?.adsProvider(self, didEncounterError: error)
-            eventSubject.send(.didEncounterError(error))
+            eventSubject.send(event)
         }
     }
 }

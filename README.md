@@ -140,12 +140,19 @@ AdsProvider provides event observing in two formats
 1. AdsProviderDelegate
 2. Combine publisher
 
-AdsProvider notifies about events such as:
+AdsProvider publishes `AdsEvent` type that informs about ad changes and ad events:
 
-* `didChangeAvailableAdsTo` - Received after `setMessages` is called and an ad is available, ads received in this event are ready to be rendered in either `InlineAdView` or `InlineAdUIView`.
-* `didUpdateHeightForAd` - Received after an ad changes its size when it's being rendered.
-* `didReceiveEventAds` - Received from a rendered ad, serves events that occur within the ad (viewed, clicked, error etc.).
-* `didEncounterError` - Received when an error occurs in the retrieval of an advertisement, informs about ad not being available or errors retrieving an ad.
+* Filled - Event received when ad is available or ads have changed.
+* NoFill - Event received when ad is not available.
+* AdHeight - Event received when the height of a specific ad has been updated.
+* Viewed - Event received when user has viewed the ad.
+* Clicked - Event received when user has clicked the ad.
+* RenderStarted - Event received when ad starts rendering.
+* RenderCompleted - Event received when ad completes rendering.
+* Error - Event received when ad encounters an error.
+* VideoStarted - Event received when video started playing.
+* VideoCompleted - Event received when video finished playing.
+* RewardGranted - Event received when reward was granted.
 
 ### 5. Provide information about messages
 

@@ -113,7 +113,15 @@ extension AdsProviderActor: AdsProviderActing {
             await bindBidsToLastUserMessage()
             await bindBidsToLastAssistantMessage()
         } catch {
-            delegate?.adsProviderActing(self, didEncounterError: .invalidResponse)
+            delegate?.adsProviderActing(
+                self,
+                didReceiveEvent: .error(
+                    AdsEvent.ErrorData(
+                        message: error.localizedDescription,
+                        errCode: ""
+                    )
+                )
+            )
         }
     }
 
@@ -198,16 +206,14 @@ private extension AdsProviderActor {
         let ads = states.filter { $0.show }.map { $0.toModel() }
         delegate?.adsProviderActing(
             self,
-            didChangeAvailableAdsTo: ads
+            didReceiveEvent: AdsEvent.filled(ads)
         )
     }
 
     func notifyAdNotAvailable(messageId: String) {
         delegate?.adsProviderActing(
             self,
-            didEncounterError: .adUnavailable(
-                messageId: messageId
-            )
+            didReceiveEvent: .noFill(.init(messageId: messageId))
         )
     }
 
@@ -312,7 +318,11 @@ private extension AdsProviderActor {
 
             newState.preferredHeight = resizedData.height
             states[stateIndex] = newState
-            delegate?.adsProviderActing(self, didUpdateHeightForAd: newState.toModel())
+
+            delegate?.adsProviderActing(
+                self,
+                didReceiveEvent: AdsEvent.adHeight(newState.toModel())
+            )
 
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message?.message ?? "unknown")")

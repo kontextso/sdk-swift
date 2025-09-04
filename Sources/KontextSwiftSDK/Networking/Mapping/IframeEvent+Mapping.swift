@@ -2,26 +2,29 @@ import Foundation
 
 extension IframeEvent.EventIframeDataDTO: ModelConvertible {
     func toModel() -> AdsEvent {
-        AdsEvent(
-            name: data.name,
-            type: data.type.toModel()
-        )
+        data.type.toModel()
     }
 }
 
 extension EventIframeContentDTO.TypeDTO: ModelConvertible {
-    func toModel() -> AdsEventType {
+    func toModel() -> AdsEvent {
         switch self {
         case .viewed(let viewedDataDTO):
             .viewed(viewedDataDTO?.toModel())
         case .clicked(let clickedDataDTO):
             .clicked(clickedDataDTO?.toModel())
-        case .videoPlayed(let videoPlayedDataDTO):
-            .videoPlayed(videoPlayedDataDTO?.toModel())
-        case .videoClosed(let videoClosedDataDTO):
-            .videoClosed(videoClosedDataDTO?.toModel())
-        case .rewardReceived(let rewardReceivedDataDTO):
-            .rewardReceived(rewardReceivedDataDTO?.toModel())
+        case .renderStarted(let generalDataDTO):
+            .renderStarted(generalDataDTO?.toModel())
+        case .renderCompleted(let generalDataDTO):
+            .renderCompleted(generalDataDTO?.toModel())
+        case .error(let errorDataDTO):
+            .error(errorDataDTO?.toModel())
+        case .videoStarted(let generalDataDTO):
+            .videoStarted(generalDataDTO?.toModel())
+        case .videoCompleted(let generalDataDTO):
+            .videoCompleted(generalDataDTO?.toModel())
+        case .rewardGranted(let generalDataDTO):
+            .rewardGranted(generalDataDTO?.toModel())
         case .event(let dictionary):
             .event(dictionary)
         }
@@ -29,31 +32,37 @@ extension EventIframeContentDTO.TypeDTO: ModelConvertible {
 }
 
 extension EventIframeContentDTO.ViewedDataDTO: ModelConvertible {
-    func toModel() -> AdsEventType.ViewedData {
-        AdsEventType.ViewedData()
+    func toModel() -> AdsEvent.ViewedData {
+        AdsEvent.ViewedData(
+            bidId: id,
+            content: content,
+            messageId: messageId
+        )
     }
 }
 
 extension EventIframeContentDTO.ClickedDataDTO: ModelConvertible {
-    func toModel() -> AdsEventType.ClickedData {
-        AdsEventType.ClickedData()
+    func toModel() -> AdsEvent.ClickedData {
+        AdsEvent.ClickedData(
+            bidId: id,
+            content: content,
+            messageId: messageId,
+            url: url
+        )
     }
 }
 
-extension EventIframeContentDTO.VideoClosedDataDTO: ModelConvertible {
-    func toModel() -> AdsEventType.VideoClosedData {
-        AdsEventType.VideoClosedData()
+extension EventIframeContentDTO.ErrorDataDTO: ModelConvertible {
+    func toModel() -> AdsEvent.ErrorData {
+        AdsEvent.ErrorData(
+            message: message,
+            errCode: errCode
+        )
     }
 }
 
-extension EventIframeContentDTO.VideoPlayedDataDTO: ModelConvertible {
-    func toModel() -> AdsEventType.VideoPlayedData {
-        AdsEventType.VideoPlayedData()
-    }
-}
-
-extension EventIframeContentDTO.RewardReceivedDataDTO: ModelConvertible {
-    func toModel() -> AdsEventType.RewardReceivedData {
-        AdsEventType.RewardReceivedData()
+extension EventIframeContentDTO.GeneralDataDTO: ModelConvertible {
+    func toModel() -> AdsEvent.GeneralData {
+        AdsEvent.GeneralData(bidId: id)
     }
 }
