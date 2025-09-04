@@ -123,7 +123,6 @@ private extension MyMessagesTableViewController {
         tableView.reloadData()
     }
 
-
     func prepareViewModels() {
         var viewModels: [CellViewModel] = []
         for message in messages {
@@ -139,28 +138,18 @@ private extension MyMessagesTableViewController {
 // MARK: - AdsProviderDelegate
 
 extension MyMessagesTableViewController: AdsProviderDelegate {
-    func adsProvider(
-        _ adsProvider: KontextSwiftSDK.AdsProvider,
-        didChangeAvailableAdsTo ads: [KontextSwiftSDK.Advertisement]
-    ) {
-        self.ads = ads
-        self.prepareViewModels()
-        self.tableView.reloadData()
-    }
-
-    func adsProvider(
-        _ adsProvider: KontextSwiftSDK.AdsProvider,
-        didUpdateHeightForAd ad: KontextSwiftSDK.Advertisement
-    ) {
-        self.tableView.beginUpdates()
-        self.tableView.endUpdates()
-    }
-
-    func adsProvider(
-        _ adsProvider: KontextSwiftSDK.AdsProvider,
-        didEncounterError: KontextSwiftSDK.KontextError
-    ) {
-        // ad not available or error occurred
+    func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {
+        switch event {
+        case .filled(let ads):
+            self.ads = ads
+            self.prepareViewModels()
+            self.tableView.reloadData()
+        case .adHeight:
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        default:
+            break
+        }
     }
 }
 

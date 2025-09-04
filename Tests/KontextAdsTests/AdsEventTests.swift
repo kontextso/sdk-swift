@@ -11,23 +11,32 @@ struct AdsEventTests {
             {
               "type": "event-iframe",
               "data": {
-                "name": "clicked",
+                "name": "ad.clicked",
                 "code": "200",
                 "payload": { 
-                   "videoId": 1000
+                   "id": "uuid",
+                   "content": "black",
+                   "messageId": "1234"
                 }
               }
             }
         """
 
         let data = try #require(json.data(using: .utf8))
-        let result = try JSONDecoder().decode(EventIframeData.self, from: data)
+        let result = try JSONDecoder().decode(IframeEvent.EventIframeDataDTO.self, from: data)
 
-        #expect(result.data.name == "clicked")
+        #expect(result.data.name == "ad.clicked")
 
         switch result.data.type {
         case .clicked(let data):
-            #expect(data == EventIframeContentDTO.ClickedDataDTO())
+            #expect(
+                data == EventIframeContentDTO.ClickedDataDTO(
+                    id: "uuid",
+                    content: "black",
+                    messageId: "1234",
+                    url: nil
+                )
+            )
         default:
             Issue.record("Expected clicked event type, got: \(result.data.type)")
         }
@@ -39,16 +48,16 @@ struct AdsEventTests {
             {
               "type": "event-iframe",
               "data": {
-                "name": "clicked",
+                "name": "ad.clicked",
                 "code": "200"
               }
             }
         """
 
         let data = try #require(json.data(using: .utf8))
-        let result = try JSONDecoder().decode(EventIframeData.self, from: data)
+        let result = try JSONDecoder().decode(IframeEvent.EventIframeDataDTO.self, from: data)
 
-        #expect(result.data.name == "clicked")
+        #expect(result.data.name == "ad.clicked")
 
         switch result.data.type {
         case .clicked(let data):
@@ -74,7 +83,7 @@ struct AdsEventTests {
         """
 
         let data = try #require(json.data(using: .utf8))
-        let result = try JSONDecoder().decode(EventIframeData.self, from: data)
+        let result = try JSONDecoder().decode(IframeEvent.EventIframeDataDTO.self, from: data)
 
         #expect(result.data.name == "new-event")
 
