@@ -14,7 +14,7 @@ struct AdsProviderActorTests {
             adsServerAPI: adsServerAPI
         )
 
-        try await provider.setMessages(messages: AdsMessage.variation1)
+        await provider.setMessages(messages: AdsMessage.variation1)
         #expect(adsServerAPI.preloadCalled == false, "Preload should not be called when disabled")
     }
 
@@ -29,7 +29,7 @@ struct AdsProviderActorTests {
         )
 
         await provider.setDisabled(true)
-        try await provider.setMessages(messages: AdsMessage.variation1)
+        await provider.setMessages(messages: AdsMessage.variation1)
         #expect(adsServerAPI.preloadCalled == false, "Preload should not be called when disabled")
     }
 
@@ -43,7 +43,7 @@ struct AdsProviderActorTests {
             adsServerAPI: adsServerAPI
         )
 
-        try await provider.setMessages(messages: AdsMessage.variation1)
+        await provider.setMessages(messages: AdsMessage.variation1)
         #expect(adsServerAPI.preloadCalled == true, "Preload should be called when enabled")
     }
 
@@ -58,7 +58,7 @@ struct AdsProviderActorTests {
         )
 
         await provider.setDisabled(false)
-        try await provider.setMessages(messages: AdsMessage.variation1)
+        await provider.setMessages(messages: AdsMessage.variation1)
         #expect(adsServerAPI.preloadCalled == true, "Preload should be called when enabled")
     }
 }

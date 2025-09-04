@@ -12,27 +12,49 @@ struct EventIframeContentDTO: Decodable, Hashable {
     let type: TypeDTO
 
     enum TypeName: String {
-        case viewed = "viewed"
-        case clicked = "clicked"
-        case videoPlayed = "video-played"
-        case videoClosed = "video-closed"
-        case rewardReceived = "reward-received"
+        case viewed = "ad.viewed"
+        case clicked = "ad.clicked"
+        case renderStarted = "ad.renderStarted"
+        case renderCompleted = "ad.render"
+        case error = "ad.error"
+        case rewardGranted = "reward.granted"
+        case videoStarted = "video.started"
+        case videoCompleted = "video.completed"
     }
 
     enum TypeDTO: Decodable, Hashable {
         case viewed(ViewedDataDTO?)
         case clicked(ClickedDataDTO?)
-        case videoPlayed(VideoPlayedDataDTO?)
-        case videoClosed(VideoClosedDataDTO?)
-        case rewardReceived(RewardReceivedDataDTO?)
+        case renderStarted(GeneralDataDTO?)
+        case renderCompleted(GeneralDataDTO?)
+        case error(ErrorDataDTO?)
+        case videoStarted(GeneralDataDTO?)
+        case videoCompleted(GeneralDataDTO?)
+        case rewardGranted(GeneralDataDTO?)
         case event([String: AnyDecodable])
     }
 
-    struct ViewedDataDTO: Decodable, Hashable {}
-    struct ClickedDataDTO: Decodable, Hashable {}
-    struct VideoPlayedDataDTO: Decodable, Hashable {}
-    struct VideoClosedDataDTO: Decodable, Hashable {}
-    struct RewardReceivedDataDTO: Decodable, Hashable {}
+    struct ViewedDataDTO: Decodable, Hashable {
+        let id: String
+        let content: String
+        let messageId: String
+    }
+
+    struct ClickedDataDTO: Decodable, Hashable {
+        let id: String
+        let content: String
+        let messageId: String
+        let url: URL?
+    }
+
+    struct GeneralDataDTO: Decodable, Hashable {
+        let id: String
+    }
+
+    struct ErrorDataDTO: Decodable, Hashable {
+        let message: String
+        let errCode: String
+    }
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -45,12 +67,18 @@ struct EventIframeContentDTO: Decodable, Hashable {
             type = .viewed(try? container.decodeIfPresent(ViewedDataDTO.self, forKey: .type))
         case .clicked:
             type = .clicked(try? container.decodeIfPresent(ClickedDataDTO.self, forKey: .type))
-        case .videoClosed:
-            type = .videoClosed(try? container.decodeIfPresent(VideoClosedDataDTO.self, forKey: .type))
-        case .videoPlayed:
-            type = .videoPlayed(try? container.decodeIfPresent(VideoPlayedDataDTO.self, forKey: .type))
-        case .rewardReceived:
-            type = .rewardReceived(try? container.decodeIfPresent(RewardReceivedDataDTO.self, forKey: .type))
+        case .renderStarted:
+            type = .renderStarted(try? container.decodeIfPresent(GeneralDataDTO.self, forKey: .type))
+        case .renderCompleted:
+            type = .renderCompleted(try? container.decodeIfPresent(GeneralDataDTO.self, forKey: .type))
+        case .error:
+            type = .error(try? container.decodeIfPresent(ErrorDataDTO.self, forKey: .type))
+        case .rewardGranted:
+            type = .rewardGranted(try? container.decodeIfPresent(GeneralDataDTO.self, forKey: .type))
+        case .videoStarted:
+            type = .videoStarted(try? container.decodeIfPresent(GeneralDataDTO.self, forKey: .type))
+        case .videoCompleted:
+            type = .videoCompleted(try? container.decodeIfPresent(GeneralDataDTO.self, forKey: .type))
         case .none:
             type = .event(try container.decode([String: AnyDecodable].self, forKey: .type))
         }

@@ -18,21 +18,6 @@ protocol AdsProviderActing: Sendable {
 protocol AdsProviderActingDelegate: AnyObject, Sendable {
     func adsProviderActing(
         _ adsProviderActing: AdsProviderActing,
-        didChangeAvailableAdsTo ads: [Advertisement]
-    )
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didUpdateHeightForAd ad: Advertisement
-    )
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
         didReceiveEvent event: AdsEvent
-    )
-
-    func adsProviderActing(
-        _ adsProviderActing: AdsProviderActing,
-        didEncounterError: KontextError
     )
 }

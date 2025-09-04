@@ -85,19 +85,16 @@ struct ChatView: View {
             .padding()
         }
         .onReceive(adsProvider.eventPublisher) { event in
+            print(event.name)
             switch event {
-            case .didChangeAvailableAdsTo(let newAds):
+            case .filled(let newAds):
                 ads = newAds
-            case .didUpdateHeightForAd(let newAd):
+            case .adHeight(let newAd):
                 guard let index = ads.firstIndex(where: { $0.id == newAd.id }) else {
                     return
                 }
 
                 ads[index] = newAd
-
-            case .didReceiveEvent(let data):
-                os_log("[RECEIVED EVENT]: \(data.name)")
-
             default:
                 break
             }
@@ -109,7 +106,7 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: TestEvent.characterRewarded.rawValue
+            content: TestEvent.image.rawValue
         )
 
         messages.append(userMessage)
