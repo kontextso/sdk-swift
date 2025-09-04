@@ -127,8 +127,12 @@ let adsProvider = AdsProvider(
 	// Previously created configuration (it is immutable and publicly available if you need to refer to it later)
 	configuration: configuration,
 	// ID of the session, will be nil for new chats, SDK will resolve it internally with first ads.
-	sessionId: nil
+	sessionId: nil,
+    // Optional delegate to consume events using delegate pattern.   
+    delegate: self
 )
+
+#### Events
 
 AdsProvider provides event observing in two formats
 
@@ -137,11 +141,10 @@ AdsProvider provides event observing in two formats
 
 AdsProvider notifies about events such as:
 
-* ads being available for a message
-* ads size change
-* ads events (viewed, clicked etc.) 
-
-
+* `didChangeAvailableAdsTo` - Received after `setMessages` is called and an ad is available, ads received in this event are ready to be rendered in either `InlineAdView` or `InlineAdUIView`.
+* `didUpdateHeightForAd` - Received after an ad changes its size when it's being rendered.
+* `didReceiveEventAds` - Received from a rendered ad, serves events that occur within the ad (viewed, clicked, error etc.).
+* `didEncounterError` - Received when an error occurs in the retrieval of an advertisement, informs about ad not being available or errors retrieving an ad.
 ```
 
 ### 5. Provide information about messages
@@ -204,7 +207,7 @@ ZStack {
 
 ```
 
-For usage with UIKit please use `InlineAdUIView` instead and refer to the ExampleUIKit app.
+For usage with UIKit please use `InlineAdUIView` instead and refer to the ExampleUIKit app. Beware that the ad view changes size as the ad is rendered - size changes are reported through events from AdsProvider.
 
 Now you are set up and ready to go 🎉
 
