@@ -17,7 +17,7 @@ Swift Package Manager and CocoaPods are two currently supported ways of integrat
 ### Swift Package Manager (Recommended)
 
 
-The [Swift Package Manager](https://swift.org/package-manager/) is integrated to Swift and is one of the easiest ways to add a dependency to na iOS app. Once the Swift Package is setup add KontextSwiftSDK into your list of dependencies.
+The [Swift Package Manager](https://swift.org/package-manager/) is integrated to Swift and is one of the easiest ways to add a dependency to an iOS app. Once the Swift Package is setup add KontextSwiftSDK into your list of dependencies.
 
 ```swift
 dependencies: [
@@ -129,6 +129,18 @@ let adsProvider = AdsProvider(
 	// ID of the session, will be nil for new chats, SDK will resolve it internally with first ads.
 	sessionId: nil
 )
+
+AdsProvider provides event observing in two formats
+
+1. AdsProviderDelegate
+2. Combine publisher
+
+AdsProvider notifies about events such as:
+
+* ads being available for a message
+* ads size change
+* ads events (viewed, clicked etc.) 
+
 
 ```
 

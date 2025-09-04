@@ -12,7 +12,9 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     var preloadError: Error?
 
     private(set) var frameURLCalls: [(messageId: String, bidId: String, bidCode: String)] = []
+    private(set) var componentURLCalls: [(messageId: String, bidId: String, bidCode: String)] = []
     var frameURLReturnValue: URL?
+    var componentURLReturnValue: URL?
 
     private(set) var redirectURLCalls: [URL] = []
     var redirectURLReturnValue: URL?
@@ -44,6 +46,17 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     ) -> URL? {
         frameURLCalls.append((messageId, bidId, bidCode))
         return frameURLReturnValue
+    }
+
+    func componentURL(
+        messageId: String,
+        bidId: String,
+        bidCode: String,
+        component: String,
+        otherParams: [String : String]
+    ) -> URL? {
+        componentURLCalls.append((messageId, bidId, bidCode))
+        return componentURLReturnValue
     }
 
     func redirectURL(relativeURL: URL) -> URL {

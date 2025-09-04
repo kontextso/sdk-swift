@@ -1,8 +1,3 @@
-//
-//  PreloadResponseDTO.swift
-//  KontextSwiftSDK
-//
-
 struct PreloadResponseDTO: Decodable {
     let sessionId: String?
     let bids: [BidDTO]

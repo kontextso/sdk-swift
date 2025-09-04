@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import OSLog
 import KontextSwiftSDK
 import SwiftUI
 
@@ -92,7 +93,13 @@ struct ChatView: View {
                     return
                 }
 
-                ads[index] = newAd                
+                ads[index] = newAd
+
+            case .didReceiveEvent(let data):
+                os_log("[RECEIVED EVENT]: \(data.name)")
+
+            default:
+                break
             }
         }
     }
