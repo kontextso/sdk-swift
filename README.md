@@ -131,6 +131,7 @@ let adsProvider = AdsProvider(
     // Optional delegate to consume events using delegate pattern.   
     delegate: self
 )
+```
 
 #### Events
 
@@ -145,7 +146,6 @@ AdsProvider notifies about events such as:
 * `didUpdateHeightForAd` - Received after an ad changes its size when it's being rendered.
 * `didReceiveEventAds` - Received from a rendered ad, serves events that occur within the ad (viewed, clicked, error etc.).
 * `didEncounterError` - Received when an error occurs in the retrieval of an advertisement, informs about ad not being available or errors retrieving an ad.
-```
 
 ### 5. Provide information about messages
 
