@@ -4,7 +4,7 @@ List of changes by respective version.
 
 > This lists was started with version 1.1.0 and therefore no previous changes are listed here.
 
-## [1.1.0](https://github.com/Alamofire/Alamofire/releases/tag/1.1.0)
+## [1.1.0](https://github.com//kontextso/sdk-swift/releases/tag/1.1.0)
 
 Released on 2025-09-04.
 
