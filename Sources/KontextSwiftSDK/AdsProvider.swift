@@ -15,8 +15,8 @@ public final class AdsProvider: @unchecked Sendable {
     /// - Multiple instance do not interfere with each other and have completely separate ads.
     public let configuration: AdsProviderConfiguration
 
-    /// Dependency container that holds all dependencies used by AdsProvider.
-    private let dependencies: DependencyContainer
+    /// Dependency container that holds all dependencies used by AdsProvider.    
+    let dependencies: DependencyContainer
 
     /// Delegate to receive ads related events
     ///
@@ -37,6 +37,7 @@ public final class AdsProvider: @unchecked Sendable {
     /// Passthrough subject that is used to implement eventPublisher
     private let eventSubject: PassthroughSubject<AdsEvent, Never>
 
+    @MainActor
     /// Initializes a new instance of `AdsProvider`.
     ///
     /// - Parameters:
@@ -56,6 +57,24 @@ public final class AdsProvider: @unchecked Sendable {
             sessionId: sessionId,
             isDisabled: isDisabled
         )
+        self.delegate = delegate
+        self.eventSubject = PassthroughSubject<AdsEvent, Never>()
+
+        Task {
+            await dependencies.adsProviderActing.setDelegate(delegate: self)
+        }
+    }
+
+    /// Internal init used for unit testing.
+    init(
+        configuration: AdsProviderConfiguration,
+        sessionId: String? = nil,
+        isDisabled: Bool = false,
+        dependencies: DependencyContainer,
+        delegate: AdsProviderDelegate? = nil
+    ) {
+        self.configuration = configuration
+        self.dependencies = dependencies
         self.delegate = delegate
         self.eventSubject = PassthroughSubject<AdsEvent, Never>()
 
@@ -109,7 +128,7 @@ extension AdsProvider: AdsProviderActingDelegate {
         _ adsProviderActing: any AdsProviderActing,
         didReceiveEvent event: AdsEvent
     ) {
-        Task { @MainActor in
+        Task { @MainActor in            
             delegate?.adsProvider(self, didReceiveEvent: event)
             eventSubject.send(event)
         }

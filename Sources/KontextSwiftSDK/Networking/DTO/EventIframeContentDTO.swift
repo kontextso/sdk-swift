@@ -56,6 +56,12 @@ struct EventIframeContentDTO: Decodable, Hashable {
         let errCode: String
     }
 
+    init(name: String, code: String, type: TypeDTO) {
+        self.name = name
+        self.code = code
+        self.type = type
+    }
+
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 

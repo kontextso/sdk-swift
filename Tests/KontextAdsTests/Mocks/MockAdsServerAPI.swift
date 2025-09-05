@@ -1,6 +1,11 @@
 import Foundation
 @testable import KontextSwiftSDK
 
+enum MockAdsServerAPISimulationBehaviour {
+    case adAvailable
+    case adNotAvailable
+}
+
 final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     // MARK: - Properties to track calls
     private(set) var preloadCalled = false
@@ -8,7 +13,6 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     private(set) var preloadConfiguration: AdsProviderConfiguration?
     private(set) var preloadMessages: [AdsMessage] = []
 
-    var preloadResult: PreloadedData = .data1
     var preloadError: Error?
 
     private(set) var frameURLCalls: [(messageId: String, bidId: String, bidCode: String)] = []
@@ -18,6 +22,12 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
 
     private(set) var redirectURLCalls: [URL] = []
     var redirectURLReturnValue: URL?
+
+    private let behaviour: MockAdsServerAPISimulationBehaviour
+
+    init(_ behaviour: MockAdsServerAPISimulationBehaviour = .adAvailable) {
+        self.behaviour = behaviour
+    }
 
     // MARK: - AdsServerAPI Implementation
 
@@ -35,7 +45,10 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             throw error
         }
 
-        return preloadResult
+        return switch behaviour {
+        case .adAvailable: .data1
+        case .adNotAvailable: .data2
+        }
     }
 
     func frameURL(
