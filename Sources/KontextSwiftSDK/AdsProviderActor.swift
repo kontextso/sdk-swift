@@ -31,18 +31,21 @@ actor AdsProviderActor {
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
+    private let urlOpener: URLOpening
     private weak var delegate: AdsProviderActingDelegate?
 
     init(
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
         isDisabled: Bool,
-        adsServerAPI: AdsServerAPI
+        adsServerAPI: AdsServerAPI,
+        urlOpener: URLOpening
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
         self.isDisabled = isDisabled
         self.adsServerAPI = adsServerAPI
+        self.urlOpener = urlOpener
         delegate = nil
         messages = []
         bids = []
@@ -255,26 +258,12 @@ private extension AdsProviderActor {
         api: AdsServerAPI,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
-        try await withThrowingTaskGroup(of: PreloadedData.self) { group in
-            group.addTask {
-                try await Task.sleep(seconds: TimeInterval(timeout))
-                throw CancellationError()
-            }
-
-            group.addTask {
-                try await api.preload(
-                    sessionId: sessionId,
-                    configuration: configuration,
-                    messages: messages
-                )
-            }
-
-            guard let data = try await group.next() else {
-                throw CancellationError()
-            }
-
-            group.cancelAll()
-            return data
+        try await withTimeout(TimeInterval(timeout)) {
+            try await api.preload(
+                sessionId: sessionId,
+                configuration: configuration,
+                messages: messages
+            )
         }
     }
 }
@@ -377,7 +366,11 @@ private extension AdsProviderActor {
             fallbackURL
         } {
             Task { @MainActor in
-                UIApplication.shared.open(iframeClickedURL)
+                if !urlOpener.canOpenURL(iframeClickedURL) {
+                    return
+                }
+
+                urlOpener.open(iframeClickedURL, options: [:], completionHandler: nil)
             }
         }
     }
