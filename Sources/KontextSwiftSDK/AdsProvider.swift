@@ -16,7 +16,7 @@ public final class AdsProvider: @unchecked Sendable {
     public let configuration: AdsProviderConfiguration
 
     /// Dependency container that holds all dependencies used by AdsProvider.    
-    let dependencies: DependencyContainer
+    private let dependencies: DependencyContainer
 
     /// Delegate to receive ads related events
     ///
