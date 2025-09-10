@@ -6,14 +6,6 @@
 import KontextSwiftSDK
 import UIKit
 
-enum TestEvent: String {
-    case text = "kontextso ad_format:INLINE"
-    case image = "kontextso ad_format:IMAGE"
-    case video = "kontextso ad_format:VIDEO"
-    case character = "kontextso ad_format:INTERSTITIAL"
-    case characterRewarded = "kontextso ad_format:INTERSTITIAL_REWARDED"
-}
-
 final class MyMessagesTableViewController: UITableViewController {
     private let adsProvider: AdsProvider
     private var messages: [MyMessage]
@@ -38,7 +30,8 @@ final class MyMessagesTableViewController: UITableViewController {
         messages = []
         viewModels = []
         adsProvider = AdsProvider(configuration: AdsProviderConfiguration(
-            publisherToken: "nexus-dev",
+            // Replace publisher token with your own to try out
+            publisherToken: "{publisher-token}",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
@@ -97,7 +90,7 @@ private extension MyMessagesTableViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: TestEvent.characterRewarded.rawValue,
+            content: "Hello my smart helpful assistant, how are you?",
             createdAt: Date()
         )
         messages.append(message)
