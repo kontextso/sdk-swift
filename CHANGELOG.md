@@ -6,6 +6,8 @@ List of changes by respective version.
 
 ## [1.1.1](https://github.com//kontextso/sdk-swift/releases/tag/1.1.1)
 
+Released on 2025-09-10.
+
 ### Removed
 
 - Removed predefined debugging messages from Example apps.
