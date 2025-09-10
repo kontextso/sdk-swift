@@ -8,14 +8,6 @@ import OSLog
 import KontextSwiftSDK
 import SwiftUI
 
-enum TestEvent: String {
-    case text = "kontextso ad_format:INLINE"
-    case image = "kontextso ad_format:IMAGE"
-    case video = "kontextso ad_format:VIDEO"
-    case character = "kontextso ad_format:INTERSTITIAL"
-    case characterRewarded = "kontextso ad_format:INTERSTITIAL_REWARDED"
-}
-
 struct ChatMessage: Identifiable, MessageRepresentable {
     let id: String
     let role: Role
@@ -43,7 +35,8 @@ struct ChatView: View {
 
         // 2. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
-            publisherToken: "nexus-dev",
+            // Replace publisher token with your own to try out
+            publisherToken: "{publisher-token}",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
@@ -106,7 +99,7 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: TestEvent.image.rawValue
+            content: "Hello my smart helpful assistant, how are you?"
         )
 
         messages.append(userMessage)
