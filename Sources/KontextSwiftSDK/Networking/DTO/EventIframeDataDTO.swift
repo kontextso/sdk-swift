@@ -1,6 +1,6 @@
 import Foundation
 
-struct EventIframeContentDTO: Decodable, Hashable {
+struct EventIframeDataDTO: Decodable, Hashable {
     private enum CodingKeys: String, CodingKey {
         case name
         case code
