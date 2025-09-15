@@ -31,7 +31,7 @@ public final class AdsProvider: @unchecked Sendable {
     /// - Information about newly available ads
     /// - Information about height changes of ads
     public var eventPublisher: AnyPublisher<AdsEvent, Never> {
-        self.eventSubject.eraseToAnyPublisher()
+        eventSubject.eraseToAnyPublisher()
     }
 
     /// Passthrough subject that is used to implement eventPublisher
