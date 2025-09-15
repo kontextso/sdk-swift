@@ -51,6 +51,7 @@ final class AdWebView: WKWebView {
 
         isOpaque = false
         backgroundColor = .clear
+        scrollView.isScrollEnabled = false
 
         scriptHandler = AdScriptMessageHandler(adWebView: self)
         if let scriptHandler {

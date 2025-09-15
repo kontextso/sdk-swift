@@ -102,12 +102,6 @@ extension IframeEvent {
     struct UnknownDataDTO: Decodable, Hashable {
         let type: String
     }
-
-    /// Data for iframe event
-    struct EventIframeDataDTO: Decodable, Hashable {
-        let type: String
-        let data: EventIframeContentDTO
-    }
 }
 
 // MARK: - Event Parsing

@@ -1,6 +1,6 @@
 import Foundation
 
-struct EventIframeContentDTO: Decodable, Hashable {
+struct EventIframeDataDTO: Decodable, Hashable {
     private enum CodingKeys: String, CodingKey {
         case name
         case code
@@ -54,6 +54,12 @@ struct EventIframeContentDTO: Decodable, Hashable {
     struct ErrorDataDTO: Decodable, Hashable {
         let message: String
         let errCode: String
+    }
+
+    init(name: String, code: String, type: TypeDTO) {
+        self.name = name
+        self.code = code
+        self.type = type
     }
 
     init(from decoder: any Decoder) throws {

@@ -31,12 +31,13 @@ public final class AdsProvider: @unchecked Sendable {
     /// - Information about newly available ads
     /// - Information about height changes of ads
     public var eventPublisher: AnyPublisher<AdsEvent, Never> {
-        self.eventSubject.eraseToAnyPublisher()
+        eventSubject.eraseToAnyPublisher()
     }
 
     /// Passthrough subject that is used to implement eventPublisher
     private let eventSubject: PassthroughSubject<AdsEvent, Never>
 
+    @MainActor
     /// Initializes a new instance of `AdsProvider`.
     ///
     /// - Parameters:
@@ -56,6 +57,24 @@ public final class AdsProvider: @unchecked Sendable {
             sessionId: sessionId,
             isDisabled: isDisabled
         )
+        self.delegate = delegate
+        self.eventSubject = PassthroughSubject<AdsEvent, Never>()
+
+        Task {
+            await dependencies.adsProviderActing.setDelegate(delegate: self)
+        }
+    }
+
+    /// Internal init used for unit testing.
+    init(
+        configuration: AdsProviderConfiguration,
+        sessionId: String? = nil,
+        isDisabled: Bool = false,
+        dependencies: DependencyContainer,
+        delegate: AdsProviderDelegate? = nil
+    ) {
+        self.configuration = configuration
+        self.dependencies = dependencies
         self.delegate = delegate
         self.eventSubject = PassthroughSubject<AdsEvent, Never>()
 
@@ -109,7 +128,7 @@ extension AdsProvider: AdsProviderActingDelegate {
         _ adsProviderActing: any AdsProviderActing,
         didReceiveEvent event: AdsEvent
     ) {
-        Task { @MainActor in
+        Task { @MainActor in            
             delegate?.adsProvider(self, didReceiveEvent: event)
             eventSubject.send(event)
         }
