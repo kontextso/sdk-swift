@@ -16,7 +16,7 @@ Released on 2025-09-15.
 ### Fixed
 
 - Decoding of Events is now using correct structure.
-- Disabled scroll webview behaviour on WKWebView.
+- Disabled scroll behaviour on WKWebView.
 - Improved flaky tests.
 
 ## [1.1.1](https://github.com//kontextso/sdk-swift/releases/tag/1.1.1)
