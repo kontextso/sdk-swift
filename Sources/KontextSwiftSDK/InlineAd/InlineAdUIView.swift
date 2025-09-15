@@ -66,7 +66,8 @@ private extension InlineAdUIView {
                 if case .resizeIframe(let resizeIframeData) = event {
                     self.heightConstraint?.constant = resizeIframeData.height
                 }
-            }
+            },
+            onOMEvent: viewModel.ad.webViewData.onOMEvent
         )
         addSubview(adWebView)
         self.adWebView = adWebView

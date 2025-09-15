@@ -1,11 +1,15 @@
 import Foundation
 @preconcurrency import OMSDK_Kontextso
 
+enum OMEvent: Sendable {
+    case didStart(WKWebView, URL?)    
+}
+
 protocol OMServicing: Sendable {
     @discardableResult
     func activate() -> Bool
 
-    func createSession(_ webView: WKWebView) throws -> OMSession
+    func createSession(_ webView: WKWebView, url: URL?) throws -> OMSession
 }
 
 final class OMService: OMServicing {
@@ -18,7 +22,7 @@ final class OMService: OMServicing {
     /// Used to identify integration
     private let partner = OMIDKontextsoPartner(
         name: "Kontextso",
-        versionString: "1.1.2"
+        versionString: Constants.version
     )
 
     /// Activates OM SDK
@@ -33,7 +37,7 @@ final class OMService: OMServicing {
     }
 
     /// Creates OMID context, configuration and returns a session
-    func createSession(_ webView: WKWebView) throws -> OMSession {
+    func createSession(_ webView: WKWebView, url: URL?) throws -> OMSession {
         guard isActive else {
             throw OMError.sdkIsNotActive
         }
@@ -46,7 +50,7 @@ final class OMService: OMServicing {
             let context = try OMIDKontextsoAdSessionContext(
                 partner: partner,
                 webView: webView,
-                contentUrl: nil,
+                contentUrl: url?.absoluteString,
                 customReferenceIdentifier: nil
             )
 
@@ -64,7 +68,7 @@ final class OMService: OMServicing {
             )
 
             session.mainAdView = webView
-            return OMSession(session: session)
+            return OMSession(session: session, webView: webView)
         } catch {
             throw OMError.sessionCreationFailed(error.localizedDescription)
         }
@@ -83,9 +87,11 @@ private extension OMService {
 
 struct OMSession {
     private let session: OMIDKontextsoAdSession
+    private let webView: WKWebView
 
-    init(session: OMIDKontextsoAdSession) {
+    init(session: OMIDKontextsoAdSession, webView: WKWebView) {
         self.session = session
+        self.webView = webView
     }
 
     func start() {

@@ -14,24 +14,23 @@ enum AdWebViewUpdateEvent {
 final class AdWebView: WKWebView {
     private let webConfiguration = WKWebViewConfiguration()
     private let updateIframeData: UpdateIFrameDTO?
-    private let omService: OMServicing
     private let eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>?
     private let onIFrameEvent: (IframeEvent) -> Void
+    private let onOMEvent: (OMEvent) -> Void
 
     private var cancellables: Set<AnyCancellable> = []
     private var scriptHandler: AdScriptMessageHandler?
-    private var omSession: OMSession?
 
     init(
         frame: CGRect = .zero,
         updateIframeData: UpdateIFrameDTO?,
-        omService: OMServicing,
         eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>? = nil,
-        onIFrameEvent: @escaping (IframeEvent) -> Void
+        onIFrameEvent: @escaping (IframeEvent) -> Void,
+        onOMEvent: @escaping (OMEvent) -> Void
     ) {
-        self.onIFrameEvent = onIFrameEvent
         self.eventPublisher = eventPublisher
-        self.omService = omService
+        self.onIFrameEvent = onIFrameEvent
+        self.onOMEvent = onOMEvent
 
         let js = """
         window.addEventListener('message', function(event) {
@@ -71,8 +70,7 @@ final class AdWebView: WKWebView {
     }
 
     deinit {
-        scriptHandler = nil
-        omSession
+        scriptHandler = nil        
     }
 
     override func removeFromSuperview() {
@@ -139,17 +137,7 @@ private extension AdWebView {
 
 extension AdWebView: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard omSession == nil else {
-            return
-        }
-
-
-        do {
-            omSession = try omService.createSession(self)
-            omSession?.start()
-        } catch {
-            // TODO: Handle error
-        }
+        onOMEvent(.didStart(webView, url))
     }
 }
 

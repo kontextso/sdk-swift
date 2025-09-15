@@ -34,7 +34,8 @@ public struct InlineAdView: View {
                     eventPublisher: adWebViewEventsSubject.eraseToAnyPublisher(),
                     onIFrameEvent: { event in
                         viewModel.ad.webViewData.onIFrameEvent(event)
-                    }
+                    },
+                    onOMEvent: viewModel.ad.webViewData.onOMEvent
                 )
                 .readRect(coordinateSpace: .global) {
                     onRectChange($0)

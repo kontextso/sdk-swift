@@ -22,6 +22,7 @@ struct DependencyContainer: Sendable {
         isDisabled: Bool
     ) -> DependencyContainer {
         let networking = Network()
+        let omService = OMService()
         let adsServerAPI = BaseURLAdsServerAPI(
             baseURL: configuration.adServerUrl,
             networking: networking
@@ -30,9 +31,9 @@ struct DependencyContainer: Sendable {
             configuration: configuration,
             sessionId: sessionId,
             isDisabled: isDisabled,
-            adsServerAPI: adsServerAPI
+            adsServerAPI: adsServerAPI,
+            omService: omService
         )
-        let omService = OMService()
 
         return DependencyContainer(
             networking: networking,
