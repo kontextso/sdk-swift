@@ -8,11 +8,10 @@ List of changes by respective version.
 
 Released on 2025-09-15.
 
-
 ### Added
 
--  Exposed AdsEvent's Data properties as public.
-- Tests for AdsProvider's event emmitting.
+- Exposed AdsEvent's Data properties as public.
+- Tests for AdsProvider's event emitting.
 
 ### Fixed
 
