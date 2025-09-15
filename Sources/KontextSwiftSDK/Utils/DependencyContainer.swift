@@ -2,15 +2,18 @@ struct DependencyContainer: Sendable {
     let networking: Networking
     let adsServerAPI: AdsServerAPI
     let adsProviderActing: AdsProviderActing
+    let omService: OMServicing
 
     init(
         networking: Networking,
         adsServerAPI: AdsServerAPI,
-        adsProviderActing: AdsProviderActing
+        adsProviderActing: AdsProviderActing,
+        omService: OMServicing
     ) {
         self.networking = networking
         self.adsServerAPI = adsServerAPI
         self.adsProviderActing = adsProviderActing
+        self.omService = omService
     }
     
     static func defaultContainer(
@@ -29,11 +32,13 @@ struct DependencyContainer: Sendable {
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI
         )
+        let omService = OMService()
 
         return DependencyContainer(
             networking: networking,
             adsServerAPI: adsServerAPI,
-            adsProviderActing: providerActor
+            adsProviderActing: providerActor,
+            omService: omService
         )
     }
 }

@@ -59,6 +59,8 @@ public final class AdsProvider: @unchecked Sendable {
         self.delegate = delegate
         self.eventSubject = PassthroughSubject<AdsEvent, Never>()
 
+        dependencies.omService.activate()
+
         Task {
             await dependencies.adsProviderActing.setDelegate(delegate: self)
         }

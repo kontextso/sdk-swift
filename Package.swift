@@ -14,9 +14,14 @@ let package = Package(
     targets: [
         .target(
             name: "KontextSwiftSDK",
+            dependencies: ["OMSDK_Kontextso"],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
             ]
+        ),
+        .binaryTarget(
+            name: "OMSDK_Kontextso",
+            path: "Frameworks/OMSDK_Kontextso.xcframework"
         ),
         .testTarget(
             name: "KontextSwiftSDKTests",
