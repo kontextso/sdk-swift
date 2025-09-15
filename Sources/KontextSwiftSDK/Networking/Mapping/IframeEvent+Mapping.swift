@@ -1,12 +1,12 @@
 import Foundation
 
-extension IframeEvent.EventIframeDataDTO: ModelConvertible {
+extension EventIframeDataDTO: ModelConvertible {
     func toModel() -> AdsEvent {
-        data.type.toModel()
+        type.toModel()
     }
 }
 
-extension EventIframeContentDTO.TypeDTO: ModelConvertible {
+extension EventIframeDataDTO.TypeDTO: ModelConvertible {
     func toModel() -> AdsEvent {
         switch self {
         case .viewed(let viewedDataDTO):
@@ -31,7 +31,7 @@ extension EventIframeContentDTO.TypeDTO: ModelConvertible {
     }
 }
 
-extension EventIframeContentDTO.ViewedDataDTO: ModelConvertible {
+extension EventIframeDataDTO.ViewedDataDTO: ModelConvertible {
     func toModel() -> AdsEvent.ViewedData {
         AdsEvent.ViewedData(
             bidId: id,
@@ -41,7 +41,7 @@ extension EventIframeContentDTO.ViewedDataDTO: ModelConvertible {
     }
 }
 
-extension EventIframeContentDTO.ClickedDataDTO: ModelConvertible {
+extension EventIframeDataDTO.ClickedDataDTO: ModelConvertible {
     func toModel() -> AdsEvent.ClickedData {
         AdsEvent.ClickedData(
             bidId: id,
@@ -52,7 +52,7 @@ extension EventIframeContentDTO.ClickedDataDTO: ModelConvertible {
     }
 }
 
-extension EventIframeContentDTO.ErrorDataDTO: ModelConvertible {
+extension EventIframeDataDTO.ErrorDataDTO: ModelConvertible {
     func toModel() -> AdsEvent.ErrorData {
         AdsEvent.ErrorData(
             message: message,
@@ -61,7 +61,7 @@ extension EventIframeContentDTO.ErrorDataDTO: ModelConvertible {
     }
 }
 
-extension EventIframeContentDTO.GeneralDataDTO: ModelConvertible {
+extension EventIframeDataDTO.GeneralDataDTO: ModelConvertible {
     func toModel() -> AdsEvent.GeneralData {
         AdsEvent.GeneralData(bidId: id)
     }

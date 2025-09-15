@@ -4,6 +4,15 @@ List of changes by respective version.
 
 > This lists was started with version 1.1.0 and therefore no previous changes are listed here.
 
+## [1.1.1](https://github.com//kontextso/sdk-swift/releases/tag/1.1.1)
+
+Released on 2025-09-10.
+
+### Removed
+
+- Removed predefined debugging messages from Example apps.
+- Removed nexus-dev as value for publisherToken parameter from Example apps because it is not valid anymore.
+
 ## [1.1.0](https://github.com//kontextso/sdk-swift/releases/tag/1.1.0)
 
 Released on 2025-09-04.
