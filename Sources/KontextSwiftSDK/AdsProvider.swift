@@ -15,7 +15,7 @@ public final class AdsProvider: @unchecked Sendable {
     /// - Multiple instance do not interfere with each other and have completely separate ads.
     public let configuration: AdsProviderConfiguration
 
-    /// Dependency container that holds all dependencies used by AdsProvider.    
+    /// Dependency container that holds all dependencies used by AdsProvider.
     private let dependencies: DependencyContainer
 
     /// Delegate to receive ads related events

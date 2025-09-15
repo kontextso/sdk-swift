@@ -225,7 +225,7 @@ struct AdsProviderTests {
             .buffer(size: 1, prefetch: .keepFull, whenFull: .dropOldest)
             .values
 
-        let errorData = EventIframeContentDTO.ViewedDataDTO(
+        let errorData = EventIframeDataDTO.ViewedDataDTO(
             id: UUID().uuidString,
             content: "content",
             messageId: UUID().uuidString
@@ -237,13 +237,10 @@ struct AdsProviderTests {
                     if case let .filled(ads) = event, let ad = ads.first {
                         ad.webViewData.onIFrameEvent(
                             .eventIframe(
-                                IframeEvent.EventIframeDataDTO(
-                                    type: "ad.viewed",
-                                    data: EventIframeContentDTO(
-                                        name: "ad.viewed",
-                                        code: "",
-                                        type: .viewed(errorData)
-                                    )
+                                EventIframeDataDTO(
+                                    name: "ad.viewed",
+                                    code: "",
+                                    type: .viewed(errorData)
                                 )
                             )
                         )
