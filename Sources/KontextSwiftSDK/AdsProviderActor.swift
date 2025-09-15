@@ -135,9 +135,7 @@ extension AdsProviderActor: AdsProviderActing {
         states = []
 
         // OM requires web view to be alive 1 second after finish is called.
-        Task {
-            await resetOmStates()
-        }
+        Task { await resetOmStates() }
     }
 }
 
@@ -392,18 +390,21 @@ private extension AdsProviderActor {
 // MARK: OM Events
 private extension AdsProviderActor {
     func handleOMEvent(event: OMEvent, stateId: UUID) {
-        guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
+        let newState = omSessions.first(where: { $0.stateId == stateId })
+
+        guard newState == nil else {
+            // Finish and remove existing session if it exists.
+            newState?.session.finish()
+            omSessions.removeAll { $0.stateId == stateId }
             return
         }
-
-        var newState = omSessions[stateIndex]
 
         switch event {
         case .didStart(let webView, let url):
             do {
                 let omSession = try omService.createSession(webView, url: url)
-                newState = OMSessionState(stateId: stateId, session: omSession)
-                omSessions[stateIndex] = newState
+                let newState = OMSessionState(stateId: stateId, session: omSession)
+                omSessions.append(newState)
                 omSession.start()
             } catch {
                 os_log("OM failed to start: \(error)")
