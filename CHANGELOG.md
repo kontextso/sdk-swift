@@ -4,6 +4,14 @@ List of changes by respective version.
 
 > This lists was started with version 1.1.0 and therefore no previous changes are listed here.
 
+## [1.1.3](https://github.com//kontextso/sdk-swift/releases/tag/1.1.3)
+
+Released on 2025-09-16.
+
+## Added
+
+- Make key properties on Advertisment's Bid public.
+
 ## [1.1.2](https://github.com//kontextso/sdk-swift/releases/tag/1.1.2)
 
 Released on 2025-09-15.
