@@ -10,7 +10,8 @@ public struct Advertisement: Sendable, Hashable {
     public let placementCode: String
     /// Advertisement preferred height
     public let preferredHeight: CGFloat
+    /// Ad bid metadata
+    public let bid: Bid
 
-    let bid: Bid
     let webViewData: AdLoadingState.WebViewData
 }
