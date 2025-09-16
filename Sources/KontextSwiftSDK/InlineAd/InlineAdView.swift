@@ -13,9 +13,12 @@ enum InlineAdEvent {
 public struct InlineAdView: View {
     @StateObject private var viewModel: InlineAdViewModel
     @State private var interstitialParams: InterstitialAdView.Params?
-
+    @State private var keyboardHeight: CGFloat = 0
+    @State private var rect: CGRect = .zero
     /// Events targeted for AdWebView
-    private let adWebViewEventsSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
+    @State private var adWebViewEventsSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
+    @State private var timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
+
     private let ad: Advertisement
 
     /// - Parameters:
@@ -37,7 +40,7 @@ public struct InlineAdView: View {
                     }
                 )
                 .readRect(coordinateSpace: .global) {
-                    onRectChange($0)
+                    rect = $0
                 }
                 .frame(height: viewModel.ad.preferredHeight)
             }
@@ -47,6 +50,12 @@ public struct InlineAdView: View {
         }
         .onChange(of: ad) { newAd in
             viewModel.ad = newAd
+        }
+        .onReceive(Publishers.keyboardHeight) { height in
+            keyboardHeight = height
+        }
+        .onReceive(timer) { _ in
+            reportUpdateDimensions()
         }
         .onReceive(viewModel.ad.webViewData.events) { event in
             switch event {
@@ -61,7 +70,7 @@ public struct InlineAdView: View {
 
 // MARK: Private
 private extension InlineAdView {
-    func onRectChange(_ rect: CGRect) {
+    func reportUpdateDimensions() {
         let screenSize = UIScreen.main.bounds.size
         let data = UpdateDimensionsIFrameDataDTO.Data(
             screenWidth: screenSize.width,
@@ -69,13 +78,12 @@ private extension InlineAdView {
             containerWidth: rect.width,
             containerHeight: rect.height,
             containerX: rect.minX,
-            containerY: rect.minY
+            containerY: rect.minY,
+            keyboardHeight: keyboardHeight
         )
 
         adWebViewEventsSubject.send(.didPrepareUpdateDimensions(
-            UpdateDimensionsIFrameDataDTO(
-                data: data
-            )
+            UpdateDimensionsIFrameDataDTO(data: data)
         ))
     }
 }
