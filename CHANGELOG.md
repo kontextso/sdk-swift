@@ -10,7 +10,7 @@ Released on 2025-09-16.
 
 ## Added
 
-- Make key properties on Advertisment's Bid public.
+- Make key properties on Advertisement's Bid public.
 
 ## [1.1.2](https://github.com//kontextso/sdk-swift/releases/tag/1.1.2)
 
