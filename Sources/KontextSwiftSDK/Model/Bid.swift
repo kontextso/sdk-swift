@@ -1,7 +1,7 @@
 import Foundation
 
 public struct Bid: Sendable, Hashable {
-    /// ID of the bid
+    /// Id of the bid
     public let bidId: String
     /// Placement code
     public let code: String
