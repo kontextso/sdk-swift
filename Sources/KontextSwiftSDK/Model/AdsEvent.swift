@@ -34,7 +34,7 @@ public extension AdsEvent {
         public let bidId: String
         public let content: String
         public let messageId: String
-        public let format: String
+        public let format: String?
     }
     
     struct ClickedData: Sendable {
@@ -42,8 +42,8 @@ public extension AdsEvent {
         public let content: String
         public let messageId: String
         public let url: URL
-        public let format: String
-        public let area: String
+        public let format: String?
+        public let area: String?
     }
     
     struct ErrorData: Sendable {
