@@ -14,7 +14,8 @@ struct AdsEventTests {
                 "payload": { 
                    "id": "uuid",
                    "content": "black",
-                   "messageId": "1234"
+                   "messageId": "1234",
+                   "url": "https://example.com"
                 }              
             }
         """
@@ -31,7 +32,9 @@ struct AdsEventTests {
                     id: "uuid",
                     content: "black",
                     messageId: "1234",
-                    url: nil
+                    url: URL(string: "https://example.com")!,
+                    format: nil,
+                    area: nil
                 )
             )
         default:
