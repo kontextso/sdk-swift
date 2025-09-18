@@ -54,7 +54,7 @@ extension IframeEvent {
     struct ViewIframeDataDTO: Decodable, Hashable {
         let id: String
         let content: String
-        let messageId: String
+        let messageId: String?
         let code: String
     }
 

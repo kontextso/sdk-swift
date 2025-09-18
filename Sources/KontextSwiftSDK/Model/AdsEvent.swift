@@ -34,13 +34,16 @@ public extension AdsEvent {
         public let bidId: String
         public let content: String
         public let messageId: String
+        public let format: String
     }
     
     struct ClickedData: Sendable {
         public let bidId: String
         public let content: String
         public let messageId: String
-        public let url: URL?
+        public let url: URL
+        public let format: String
+        public let area: String
     }
     
     struct ErrorData: Sendable {
