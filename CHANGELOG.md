@@ -4,6 +4,20 @@ List of changes by respective version.
 
 > This lists was started with version 1.1.0 and therefore no previous changes are listed here.
 
+## [1.1.4](https://github.com//kontextso/sdk-swift/releases/tag/1.1.4)
+
+Released on 2025-09-18.
+
+## Added
+ 
+- New parameters `format` and `area` for `AdsEvent.ClickedData`.
+- New parameter `format` for `AdsEvent.ViewedData`.
+
+## Updated
+
+- Changed parameter `url` to non-optiona for `AdsEvent.ClickedData`.
+
+
 ## [1.1.3](https://github.com//kontextso/sdk-swift/releases/tag/1.1.3)
 
 Released on 2025-09-16.
