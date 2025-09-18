@@ -13,5 +13,6 @@ extension UpdateDimensionsIFrameDataDTO {
         let containerHeight: CGFloat
         let containerX: CGFloat
         let containerY: CGFloat
+        let keyboardHeight: CGFloat
     }
 }

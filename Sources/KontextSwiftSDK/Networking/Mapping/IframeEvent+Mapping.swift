@@ -36,7 +36,8 @@ extension EventIframeDataDTO.ViewedDataDTO: ModelConvertible {
         AdsEvent.ViewedData(
             bidId: id,
             content: content,
-            messageId: messageId
+            messageId: messageId,
+            format: format
         )
     }
 }
@@ -47,7 +48,9 @@ extension EventIframeDataDTO.ClickedDataDTO: ModelConvertible {
             bidId: id,
             content: content,
             messageId: messageId,
-            url: url
+            url: url,
+            format: format,
+            area: area
         )
     }
 }

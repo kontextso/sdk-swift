@@ -284,7 +284,8 @@ struct AdsProviderTests {
         let errorData = EventIframeDataDTO.ViewedDataDTO(
             id: UUID().uuidString,
             content: "content",
-            messageId: UUID().uuidString
+            messageId: UUID().uuidString,
+            format: nil
         )
 
         do {
