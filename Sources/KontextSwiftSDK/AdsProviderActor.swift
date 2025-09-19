@@ -144,7 +144,7 @@ private extension AdsProviderActor {
     func resetOmStates() async {
         omSessions.forEach { $0.session.finish() }
         try? await Task.sleep(seconds: 1)
-        omSessions.removeAll()
+        omSessions = []
     }
 
     func bindBidsToLastUserMessage() async {

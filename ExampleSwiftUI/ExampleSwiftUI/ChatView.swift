@@ -43,7 +43,7 @@ struct ChatView: View {
 
         // 2. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
-            publisherToken: "polybuzz-dev",
+            publisherToken: "<publisher-token>",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
