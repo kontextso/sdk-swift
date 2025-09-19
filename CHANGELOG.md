@@ -15,7 +15,7 @@ Released on 2025-09-18.
 
 ## Updated
 
-- Changed parameter `url` to non-optiona for `AdsEvent.ClickedData`.
+- Changed parameter `url` to non-optional for `AdsEvent.ClickedData`.
 
 
 ## [1.1.3](https://github.com//kontextso/sdk-swift/releases/tag/1.1.3)

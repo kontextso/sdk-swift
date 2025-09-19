@@ -7,8 +7,6 @@
 > We use versioning without `v` at the front to align it for both SPM and Cocoapods so please keep that in mind.
 > For Example: `1.0.0`.
 
----
-
 
 ## 1. Create a release branch and test
 
@@ -22,10 +20,10 @@
 
 ## 2. Update the changelog
 
-Edit CHANGELOG.md to include the new release notes in following format
+Edit CHANGELOG.md to include the new release notes in following format:
 
 ```markdown
-## [1.1.0](https://github.com//kontextso/sdk-swift/releases/tag/1.1.0)
+## [1.0.0](https://github.com//kontextso/sdk-swift/releases/tag/1.0.0)
 
 Released on 2025-09-16.
 
@@ -49,7 +47,6 @@ Update the version in KontextSDK.podspec:
 
 ```
 s.version = "1.0.0"
-
 ```
 
 ## 4. Commit changes
@@ -92,7 +89,7 @@ pod trunk push KontextSDK.podspec --allow-warnings
 
 ## 9. Verify
 
-1. Check that the version is available on the [CocoaPods page](https://cocoapods.org/pods/KontextSDK).
+1. Check that the version is available on the [CocoaPods page](https://cocoapods.org/pods/KontextSwiftSDK).
 2. Integrate the new version into the internal testing app and confirm it builds and runs.
 3. Release the internal testing app with updated SDK version.
 
