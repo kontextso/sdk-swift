@@ -64,6 +64,7 @@ extension IframeEvent {
         let content: String
         let messageId: String
         let url: URL?
+        let appStoreId: String?
     }
 
     /// Data for resize-iframe events
@@ -85,17 +86,42 @@ extension IframeEvent {
         let otherParams: [String: String]?
     }
 
+    enum Component: String, Decodable {
+        case modal
+        case skoverlay
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+            self = Component(rawValue: value) ?? .modal
+        }
+    }
+
+    enum Position: String, Decodable {
+        case bottom
+        case bottomRaised
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+            self = Position(rawValue: value) ?? .bottom
+        }
+    }
+
     /// Data for open component iframe events
     struct OpenComponentIframeDataDTO: Decodable, Hashable {
         let code: String
-        let component: String
+        let component: Component
         let timeout: TimeInterval // ms
+        let appStoreId: String?
+        let position: Position?
+        let dismissible: Bool?
     }
 
     /// Data for general component iframe events
     struct ComponentIframeDataDTO: Decodable, Hashable {
         let code: String
-        let component: String
+        let component: Component
     }
 
     /// Data for unknown events

@@ -45,7 +45,7 @@ public struct AdsProviderConfiguration: Sendable {
     public let regulatory: Regulatory?
     ///   An arbitrary key-value collection of values that the publisher can send.
     ///   It varies per publisher, but all publishers provide at least the theme parameter.
-    public let otherParams: [String: String]
+    public let otherParams: [String: String]?
 
     /// Initializes a new AdsProviderConfiguration to be later passed to the AdsProvider.
     ///
@@ -72,7 +72,7 @@ public struct AdsProviderConfiguration: Sendable {
         vendorId: String? = nil,
         adServerUrl: URL? = nil,
         regulatory: Regulatory? = nil,
-        otherParams: [String: String]
+        otherParams: [String: String]? = nil
     ) {
         self.publisherToken = publisherToken
         self.userId = userId

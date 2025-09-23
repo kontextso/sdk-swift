@@ -1,23 +1,31 @@
 import Combine
 import SwiftUI
+import StoreKit
 
 enum InlineAdEvent {
     case didRequestInterstitialAd(
         InterstitialAdView.Params,
         UIModalPresentationStyle = .fullScreen
     )
-    case didFinishInterstitialAd    
+    case didRequestSKOverlay(SKOverlayParams)
+    case didFinishSKOverlay
+    case didFinishInterstitialAd
 }
 
 /// SwiftUI view that represents an inline ad in the chat UI.
 public struct InlineAdView: View {
     @StateObject private var viewModel: InlineAdViewModel
-    @State private var interstitialParams: InterstitialAdView.Params?
+    /// Screen data
     @State private var keyboardHeight: CGFloat = 0
     @State private var rect: CGRect = .zero
+    @State private var timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
+
+    /// Presentation
+    @State private var interstitialParams: InterstitialAdView.Params?
+    @State private var skOverlayParams: SKOverlayParams?
+
     /// Events targeted for AdWebView
     @State private var adWebViewEventsSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
-    @State private var timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
 
     private let ad: Advertisement
 
@@ -45,6 +53,21 @@ public struct InlineAdView: View {
                 .frame(height: viewModel.ad.preferredHeight)
             }
         }
+        .appStoreOverlay(
+            isPresented: Binding(
+                get: { skOverlayParams != nil },
+                set: { newValue in
+                    if !newValue {
+                        skOverlayParams = nil
+                    }
+                }
+            )
+        ) {
+            SKOverlay.AppConfiguration(
+                appIdentifier: skOverlayParams?.appStoreId ?? "",
+                position: skOverlayParams?.position ?? .bottom
+            )
+        }
         .fullScreenCover(item: $interstitialParams) { params in
             InterstitialAdView(params: params)
         }
@@ -61,8 +84,12 @@ public struct InlineAdView: View {
             switch event {
             case .didRequestInterstitialAd(let params, _):
                 interstitialParams = params
+            case .didRequestSKOverlay(let params):
+                skOverlayParams = params
             case .didFinishInterstitialAd:
                 interstitialParams = nil
+            case .didFinishSKOverlay:
+                skOverlayParams = nil
             }
         }
     }

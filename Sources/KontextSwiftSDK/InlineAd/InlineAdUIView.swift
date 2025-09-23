@@ -1,6 +1,7 @@
 import Combine
-import UIKit
+import StoreKit
 import SwiftUI
+import UIKit
 
 /// A UIView that displays an inline advertisement using a web view.
 public final class InlineAdUIView: UIView {
@@ -63,11 +64,12 @@ private extension InlineAdUIView {
                     return
                 }
 
-                self.viewModel.ad.webViewData.onIFrameEvent(event)
-
                 if case .resizeIframe(let resizeIframeData) = event {
                     self.heightConstraint?.constant = resizeIframeData.height
+                    self.layoutIfNeeded()
                 }
+
+                self.viewModel.ad.webViewData.onIFrameEvent(event)
             }
         )
         addSubview(adWebView)
@@ -104,10 +106,16 @@ private extension InlineAdUIView {
 
                 switch event {
                 case .didRequestInterstitialAd(let params, let mode):
-                    self.presentInterstitialAd(params: params, presentationMode: mode)
+                    presentInterstitialAd(params: params, presentationMode: mode)
+
+                case .didRequestSKOverlay(let params):
+                    presentSKOverlay(params: params)
 
                 case .didFinishInterstitialAd:
-                    self.dismissInterstitialAd()
+                    dismissInterstitialAd()
+
+                case .didFinishSKOverlay:
+                    dismissSKOverlay()
                 }
             }
             .store(in: &cancellables)
@@ -138,6 +146,32 @@ private extension InlineAdUIView {
     func dismissInterstitialAd() {
         interstitialViewController?.dismiss(animated: true)
         interstitialViewController = nil
+    }
+}
+
+// MARK: SKOverlay
+private extension InlineAdUIView {
+    func presentSKOverlay(params: SKOverlayParams) {
+        guard let scene = window?.windowScene else {
+            return
+        }
+
+        let configuration = SKOverlay.AppConfiguration(
+            appIdentifier: params.appStoreId,
+            position: params.position
+        )
+        configuration.userDismissible = params.dismissible
+
+        let overlay = SKOverlay(configuration: configuration)
+        overlay.present(in: scene)
+    }
+
+    func dismissSKOverlay() {
+        guard let scene = window?.windowScene else {
+            return
+        }
+
+        SKOverlay.dismiss(in: scene)
     }
 }
 
