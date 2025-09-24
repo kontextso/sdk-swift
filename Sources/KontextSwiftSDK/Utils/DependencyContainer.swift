@@ -4,15 +4,18 @@ struct DependencyContainer: Sendable {
     let networking: Networking
     let adsServerAPI: AdsServerAPI
     let adsProviderActing: AdsProviderActing
+    let adImpressionService: AdImpressionServicing
 
     init(
         networking: Networking,
         adsServerAPI: AdsServerAPI,
-        adsProviderActing: AdsProviderActing
+        adsProviderActing: AdsProviderActing,
+        adImpressionService: AdImpressionServicing
     ) {
         self.networking = networking
         self.adsServerAPI = adsServerAPI
         self.adsProviderActing = adsProviderActing
+        self.adImpressionService = adImpressionService
     }
 
     @MainActor
@@ -34,10 +37,19 @@ struct DependencyContainer: Sendable {
             urlOpener: UIApplication.shared
         )
 
+        let adImpressionService: AdImpressionServicing = {
+            if #available(iOS 17.4, *) {
+                return AdAttributionImpressionService()
+            } else {
+                return SKAdNetworkImpressionService()
+            }
+        }()
+
         return DependencyContainer(
             networking: networking,
             adsServerAPI: adsServerAPI,
-            adsProviderActing: providerActor
+            adsProviderActing: providerActor,
+            adImpressionService: adImpressionService
         )
     }
 }
