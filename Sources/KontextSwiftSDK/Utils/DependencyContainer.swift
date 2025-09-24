@@ -1,3 +1,5 @@
+import UIKit
+
 struct DependencyContainer: Sendable {
     let networking: Networking
     let adsServerAPI: AdsServerAPI
@@ -15,7 +17,8 @@ struct DependencyContainer: Sendable {
         self.adsProviderActing = adsProviderActing
         self.omService = omService
     }
-    
+
+    @MainActor
     static func defaultContainer(
         configuration: AdsProviderConfiguration,
         sessionId: String?,
@@ -32,6 +35,7 @@ struct DependencyContainer: Sendable {
             sessionId: sessionId,
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI,
+            urlOpener: UIApplication.shared,
             omService: omService
         )
 

@@ -32,6 +32,7 @@ actor AdsProviderActor {
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
+    private let urlOpener: URLOpening
     private let omService: OMServicing
     private weak var delegate: AdsProviderActingDelegate?
 
@@ -40,16 +41,17 @@ actor AdsProviderActor {
         sessionId: String? = nil,
         isDisabled: Bool,
         adsServerAPI: AdsServerAPI,
+        urlOpener: URLOpening,
         omService: OMServicing
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
         self.isDisabled = isDisabled
         self.adsServerAPI = adsServerAPI
+        self.urlOpener = urlOpener
         self.omService = omService
-        delegate = nil
-        messages = []
         bids = []
+        messages = []
         states = []
         omSessions = []
         lastPreloadUserMessageId = ""
@@ -274,26 +276,12 @@ private extension AdsProviderActor {
         api: AdsServerAPI,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
-        try await withThrowingTaskGroup(of: PreloadedData.self) { group in
-            group.addTask {
-                try await Task.sleep(seconds: TimeInterval(timeout))
-                throw CancellationError()
-            }
-
-            group.addTask {
-                try await api.preload(
-                    sessionId: sessionId,
-                    configuration: configuration,
-                    messages: messages
-                )
-            }
-
-            guard let data = try await group.next() else {
-                throw CancellationError()
-            }
-
-            group.cancelAll()
-            return data
+        try await withTimeout(TimeInterval(timeout)) {
+            try await api.preload(
+                sessionId: sessionId,
+                configuration: configuration,
+                messages: messages
+            )
         }
     }
 }
@@ -422,7 +410,11 @@ private extension AdsProviderActor {
             fallbackURL
         } {
             Task { @MainActor in
-                UIApplication.shared.open(iframeClickedURL)
+                if !urlOpener.canOpenURL(iframeClickedURL) {
+                    return
+                }
+
+                urlOpener.open(iframeClickedURL, options: [:], completionHandler: nil)
             }
         }
     }

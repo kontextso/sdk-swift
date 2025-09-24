@@ -26,6 +26,7 @@ struct AdWebViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> AdWebView {
         let view = AdWebView(
             updateIframeData: updateIFrameData,
+            eventPublisher: eventPublisher,
             onIFrameEvent: onIFrameEvent,
             onOMEvent: onOMEvent
         )

@@ -13,6 +13,8 @@ public final class InlineAdUIView: UIView {
     private var adWebView: AdWebView?
     /// Timer that periodically reports ad viewport.
     private var samplingTimer: Timer?
+    /// Height of the currently visible keyboard, otherwise 0.
+    private var keyboardHeight: CGFloat = 0
     /// Presented interstitial view controller.
     private weak var interstitialViewController: UIViewController?
     /// Sampling viewport interval in seconds
@@ -110,6 +112,12 @@ private extension InlineAdUIView {
                 }
             }
             .store(in: &cancellables)
+
+        Publishers.keyboardHeight
+            .sink { [weak self] height in
+                self?.keyboardHeight = height
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -189,7 +197,8 @@ private extension InlineAdUIView {
             containerWidth: containerWidth,
             containerHeight: containerHeight,
             containerX: originInWindow.x,
-            containerY: originInWindow.y
+            containerY: originInWindow.y,
+            keyboardHeight: keyboardHeight
         )
 
         adWebViewEventsSubject.send(.didPrepareUpdateDimensions(
