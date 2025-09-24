@@ -1,5 +1,5 @@
 import AdAttributionKit
-import StoreKit
+import Foundation
 
 // https://dev.to/arshtechpro/wwdc-adattributionkit-explained-building-on-skadnetworks-foundation-fl3
 
