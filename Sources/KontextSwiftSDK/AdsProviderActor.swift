@@ -305,7 +305,7 @@ private extension AdsProviderActor {
                 Task { @MainActor in
                     inlineEventSubject.send(
                         .didRequestStoreProductDisplay(
-                            StoreProductView.Params(appStoreId: Int(appStoreId))
+                            StoreProductView.Params(appStoreId: appStoreId)
                         )
                     )
                 }
@@ -387,7 +387,7 @@ private extension AdsProviderActor {
                 Task { @MainActor in
                     inlineEventSubject.send(
                         .didRequestStoreProductDisplay(
-                            StoreProductView.Params(appStoreId: Int(appStoreId))
+                            StoreProductView.Params(appStoreId: appStoreId)
                         )
                     )
                 }
@@ -464,7 +464,7 @@ private extension AdsProviderActor {
 
         Task { @MainActor in
             let params = SKOverlayParams(
-                appStoreId: appStoreId,
+                appStoreId: String(appStoreId),
                 position: data.position?.toModel() ?? .bottom,
                 dismissible: data.dismissible ?? true
             )

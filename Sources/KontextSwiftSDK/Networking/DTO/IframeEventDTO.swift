@@ -64,7 +64,7 @@ extension IframeEvent {
         let content: String
         let messageId: String
         let url: URL?
-        let appStoreId: String?
+        let appStoreId: Int?
     }
 
     /// Data for resize-iframe events
@@ -113,7 +113,7 @@ extension IframeEvent {
         let code: String
         let component: Component
         let timeout: TimeInterval // ms
-        let appStoreId: String?
+        let appStoreId: Int?
         let position: Position?
         let dismissible: Bool?
     }
