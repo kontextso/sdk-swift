@@ -1,5 +1,5 @@
 import Foundation
-@preconcurrency import OMSDK_Kontextso
+@preconcurrency import OMSDK_Megabrainco
 
 enum OMEvent: Sendable {
     case didStart(WKWebView, URL?)    
@@ -20,7 +20,7 @@ final class OMService: OMServicing {
     }
 
     /// Used to identify integration
-    private let partner = OMIDKontextsoPartner(
+    private let partner = OMIDMegabraincoPartner(
         name: "Kontextso",
         versionString: Constants.version
     )
@@ -31,7 +31,7 @@ final class OMService: OMServicing {
             return true
         }
 
-        OMIDKontextsoSDK.shared.activate()
+        OMIDMegabraincoSDK.shared.activate()
 
         return isActive
     }
@@ -47,14 +47,14 @@ final class OMService: OMServicing {
         }
 
         do {
-            let context = try OMIDKontextsoAdSessionContext(
+            let context = try OMIDMegabraincoAdSessionContext(
                 partner: partner,
                 webView: webView,
                 contentUrl: url?.absoluteString,
                 customReferenceIdentifier: nil
             )
 
-            let configuration = try OMIDKontextsoAdSessionConfiguration(
+            let configuration = try OMIDMegabraincoAdSessionConfiguration(
                 creativeType: .htmlDisplay,
                 impressionType: .beginToRender,
                 impressionOwner: .javaScriptOwner,
@@ -62,7 +62,7 @@ final class OMService: OMServicing {
                 isolateVerificationScripts: false
             )
 
-            let session = try OMIDKontextsoAdSession(
+            let session = try OMIDMegabraincoAdSession(
                 configuration: configuration,
                 adSessionContext: context
             )
@@ -79,17 +79,17 @@ final class OMService: OMServicing {
 
 private extension OMService {
     var isActive: Bool {
-        OMIDKontextsoSDK.shared.isActive
+        OMIDMegabraincoSDK.shared.isActive
     }
 }
 
 // MARK: - OMSession
 
 struct OMSession {
-    private let session: OMIDKontextsoAdSession
+    private let session: OMIDMegabraincoAdSession
     private let webView: WKWebView
 
-    init(session: OMIDKontextsoAdSession, webView: WKWebView) {
+    init(session: OMIDMegabraincoAdSession, webView: WKWebView) {
         self.session = session
         self.webView = webView
     }

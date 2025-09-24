@@ -1,4 +1,0 @@
-module OMSDK_Kontextso {
-    header "Headers/OMIDImports.h"
-    export *
-}
