@@ -21,7 +21,7 @@ final class OMService: OMServicing {
 
     /// Used to identify integration
     private let partner = OMIDMegabraincoPartner(
-        name: "Kontextso",
+        name: "megabrainco",
         versionString: Constants.version
     )
 
