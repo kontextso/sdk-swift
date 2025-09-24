@@ -179,7 +179,8 @@ private extension AdsProviderActor {
         // Find all bids that are associated with the ad display position
         let bids = self.bids.filter { $0.adDisplayPosition == adDisplayPosition }
         // Only take one bid for each unique code
-        let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
+        let uniqueBids = Dictionary(grouping: bids, by: { $0.code })
+            .compactMap { $0.value.first }
         // Insert new states for last message id
         let stateId = UUID()
 
@@ -300,7 +301,17 @@ private extension AdsProviderActor {
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: newState.webViewData.url)
+            if let appStoreId = clickData.appStoreId {
+                Task { @MainActor in
+                    inlineEventSubject.send(
+                        .didRequestStoreProductDisplay(
+                            StoreProductView.Params(appStoreId: Int(appStoreId))
+                        )
+                    )
+                }
+            } else {
+                openURL(from: clickData, fallbackURL: newState.webViewData.url)
+            }
 
         case .resizeIframe(let resizedData):
             guard resizedData.height != newState.preferredHeight else {
@@ -327,7 +338,7 @@ private extension AdsProviderActor {
                     await presentInterstitialAd(data, state: newState)
                 }
             case .skoverlay:
-                presentSKOverlay(data, state: newState)
+                presentSKOverlay(data)
             }
 
         case .eventIframe(let data):
@@ -348,6 +359,16 @@ private extension AdsProviderActor {
             presentationTimeoutTasks.removeValue(forKey: data.component)
             task?.cancel()
 
+        case .openComponentIframe(let data):
+            switch data.component {
+            case .modal:
+                // interstitial is already presented
+                break
+
+            case .skoverlay:
+                presentSKOverlay(data)
+            }
+
         case .closeComponentIframe(let data), .errorComponentIframe(let data):
             switch data.component {
             case .modal:
@@ -357,12 +378,22 @@ private extension AdsProviderActor {
 
             case .skoverlay:
                 Task { @MainActor in
-                    inlineEventSubject.send(.didFinishSKOverlay)
+                    interstitialEventSubject.send(.didFinishSKOverlay)
                 }
             }
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: state.webViewData.url)
+            if let appStoreId = clickData.appStoreId {
+                Task { @MainActor in
+                    inlineEventSubject.send(
+                        .didRequestStoreProductDisplay(
+                            StoreProductView.Params(appStoreId: Int(appStoreId))
+                        )
+                    )
+                }
+            } else {
+                openURL(from: clickData, fallbackURL: state.webViewData.url)
+            }
 
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
@@ -426,10 +457,7 @@ private extension AdsProviderActor {
         )
     }
 
-    func presentSKOverlay(
-        _ data: IframeEvent.OpenComponentIframeDataDTO,
-        state: AdLoadingState
-    ) {
+    func presentSKOverlay(_ data: IframeEvent.OpenComponentIframeDataDTO) {
         guard let appStoreId = data.appStoreId else {
             return
         }
