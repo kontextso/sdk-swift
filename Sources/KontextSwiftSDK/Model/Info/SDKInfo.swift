@@ -32,10 +32,8 @@ extension SDKInfo {
     static func current() -> SDKInfo {
         final class _BundleToken {}
         let bundle = Bundle(for: _BundleToken.self)
-        let name = bundle
-            .object(forInfoDictionaryKey: "CFBundleName") as? String ?? "sdk-swift"
-        let version = bundle
-            .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+        let name = "sdk-swift"
+        let version = Constants.version
         let platform = UIDevice.current.systemName
         let lowercasedPlatform = platform.lowercased()
 
