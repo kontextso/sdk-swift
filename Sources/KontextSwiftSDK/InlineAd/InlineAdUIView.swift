@@ -1,12 +1,12 @@
 import Combine
-import UIKit
+import OSLog
+import StoreKit
 import SwiftUI
+import UIKit
 
 /// A UIView that displays an inline advertisement using a web view.
 public final class InlineAdUIView: UIView {
     private var cancellables: Set<AnyCancellable> = []
-    /// The view model that manages the ad data and interactions.
-    private var viewModel: InlineAdViewModel
     /// The height constraint for the web view, allowing dynamic resizing.
     private var heightConstraint: NSLayoutConstraint?
     /// The web view that loads and displays the ad content.
@@ -21,6 +21,8 @@ public final class InlineAdUIView: UIView {
     private let samplingInterval = 0.2
     /// Events targeted for AdWebView
     private let adWebViewEventsSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
+    /// Ad to be displayed
+    private let ad: Advertisement
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
@@ -30,7 +32,7 @@ public final class InlineAdUIView: UIView {
     /// - Parameters:
     ///   - ad: Advertisement to be displayed.
     public init(ad: Advertisement) {
-        viewModel = InlineAdViewModel(ad: ad)
+        self.ad = ad
         super.init(frame: .zero)
         observeEvents()
         setupUI()
@@ -56,18 +58,19 @@ public final class InlineAdUIView: UIView {
 private extension InlineAdUIView {
     func setupUI() {
         let adWebView = AdWebView(
-            updateIframeData: viewModel.ad.webViewData.updateData,
+            updateIframeData: ad.webViewData.updateData,
             eventPublisher: adWebViewEventsSubject.eraseToAnyPublisher(),
             onIFrameEvent: { [weak self] event in
                 guard let self else {
                     return
                 }
 
-                self.viewModel.ad.webViewData.onIFrameEvent(event)
-
                 if case .resizeIframe(let resizeIframeData) = event {
                     self.heightConstraint?.constant = resizeIframeData.height
+                    self.layoutIfNeeded()
                 }
+
+                self.ad.webViewData.onIFrameEvent(event)
             }
         )
         addSubview(adWebView)
@@ -76,7 +79,7 @@ private extension InlineAdUIView {
         adWebView.translatesAutoresizingMaskIntoConstraints = false
 
         let heightConstraint = adWebView.heightAnchor.constraint(
-            equalToConstant: viewModel.ad.preferredHeight
+            equalToConstant: ad.preferredHeight
         )
         heightConstraint.priority = .defaultHigh
 
@@ -90,13 +93,13 @@ private extension InlineAdUIView {
             heightConstraint
         ])
 
-        if let url = viewModel.ad.webViewData.url {
+        if let url = ad.webViewData.url {
             adWebView.load(URLRequest(url: url))
         }
     }
 
     func observeEvents() {
-        viewModel.ad.webViewData.events
+        ad.webViewData.events
             .sink { [weak self] event in
                 guard let self else {
                     return
@@ -104,10 +107,19 @@ private extension InlineAdUIView {
 
                 switch event {
                 case .didRequestInterstitialAd(let params, let mode):
-                    self.presentInterstitialAd(params: params, presentationMode: mode)
+                    presentInterstitialAd(params: params, presentationMode: mode)
+
+                case .didRequestSKOverlay(let params):
+                    presentSKOverlay(params: params)
+
+                case .didRequestStoreProductDisplay(let params):
+                    presentAppStoreProduct(params.appStoreId)
 
                 case .didFinishInterstitialAd:
-                    self.dismissInterstitialAd()
+                    dismissInterstitialAd()
+
+                case .didFinishSKOverlay:
+                    dismissSKOverlay()
                 }
             }
             .store(in: &cancellables)
@@ -138,6 +150,50 @@ private extension InlineAdUIView {
     func dismissInterstitialAd() {
         interstitialViewController?.dismiss(animated: true)
         interstitialViewController = nil
+    }
+}
+
+// MARK: SKOverlay
+private extension InlineAdUIView {
+    func presentSKOverlay(params: SKOverlayParams) {
+        guard let scene = window?.windowScene else {
+            return
+        }
+
+        let configuration = SKOverlay.AppConfiguration(
+            appIdentifier: params.appStoreId,
+            position: params.position
+        )
+        configuration.userDismissible = params.dismissible
+
+        let overlay = SKOverlay(configuration: configuration)
+        overlay.present(in: scene)
+    }
+
+    func dismissSKOverlay() {
+        guard let scene = window?.windowScene else {
+            return
+        }
+
+        SKOverlay.dismiss(in: scene)
+    }
+}
+
+private extension InlineAdUIView {
+    func presentAppStoreProduct(_ appStoreId: Int?) {
+        let presentationController = topMostViewController
+        let viewController = SKStoreProductViewController()
+        viewController.delegate = self
+        let params = [SKStoreProductParameterITunesItemIdentifier: appStoreId]
+
+        Task {
+            do {
+                try await viewController.loadProduct(withParameters: params)
+                presentationController?.present(viewController, animated: true)
+            } catch {
+                os_log(.error, "Failed to open SKStoreProductViewController \(appStoreId ?? 0)")
+            }
+        }
     }
 }
 
@@ -203,5 +259,12 @@ private extension InlineAdUIView {
         adWebViewEventsSubject.send(.didPrepareUpdateDimensions(
             UpdateDimensionsIFrameDataDTO(data: data)
         ))
+    }
+}
+
+// MARK: - SKStoreProductViewControllerDelegate
+extension InlineAdUIView: SKStoreProductViewControllerDelegate {
+    public func productViewControllerDidFinish(_ viewController: SKStoreProductViewController) {
+        viewController.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 }

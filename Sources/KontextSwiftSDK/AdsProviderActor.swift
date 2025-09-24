@@ -5,6 +5,8 @@ import UIKit
 // MARK: - AdsProviderActor
 
 actor AdsProviderActor {
+    private let numberOfRelevantMessages = 10
+
     /// Represents a single session of interaction within a conversation.
     /// A new sessionId is generated each time the SDK is initialized—typically when the user opens or reloads the app.
     /// This helps us track discrete usage periods, even within the same ongoing conversation.
@@ -21,12 +23,11 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
-    private let numberOfRelevantMessages = 10
-
     /// Events published to interstitial and inline components
     private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
     private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
-    private var interstitialTimeoutTask: Task<Void, Never>?
+
+    private var presentationTimeoutTasks: [IframeEvent.Component: Task<Void, Never>]
 
     /// Initial configuration passed down by AdsProvider.
     private let configuration: AdsProviderConfiguration
@@ -50,6 +51,7 @@ actor AdsProviderActor {
         messages = []
         bids = []
         states = []
+        presentationTimeoutTasks = [:]
         lastPreloadUserMessageId = ""
         preloadTimeout = 60
     }
@@ -177,7 +179,8 @@ private extension AdsProviderActor {
         // Find all bids that are associated with the ad display position
         let bids = self.bids.filter { $0.adDisplayPosition == adDisplayPosition }
         // Only take one bid for each unique code
-        let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
+        let uniqueBids = Dictionary(grouping: bids, by: { $0.code })
+            .compactMap { $0.value.first }
         // Insert new states for last message id
         let stateId = UUID()
 
@@ -230,7 +233,7 @@ private extension AdsProviderActor {
                 messageId: messageId,
                 bidId: bid.bidId,
                 bidCode: bid.code,
-                otherParams: configuration.otherParams
+                otherParams: configuration.otherParams ?? [:]
             ),
             updateData: UpdateIFrameDTO(data: IframeEvent.UpdateIFrameDataDTO(
                 sdk: await SDKInfo.current().name,
@@ -298,7 +301,17 @@ private extension AdsProviderActor {
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: newState.webViewData.url)
+            if let appStoreId = clickData.appStoreId {
+                Task { @MainActor in
+                    inlineEventSubject.send(
+                        .didRequestStoreProductDisplay(
+                            StoreProductView.Params(appStoreId: appStoreId)
+                        )
+                    )
+                }
+            } else {
+                openURL(from: clickData, fallbackURL: newState.webViewData.url)
+            }
 
         case .resizeIframe(let resizedData):
             guard resizedData.height != newState.preferredHeight else {
@@ -319,8 +332,13 @@ private extension AdsProviderActor {
             notifyAboutAdChanges()
 
         case .openComponentIframe(let data):
-            Task {
-                await presentInterstitialAd(data, state: newState)
+            switch data.component {
+            case .modal:
+                Task {
+                    await presentInterstitialAd(data, state: newState)
+                }
+            case .skoverlay:
+                presentSKOverlay(data)
             }
 
         case .eventIframe(let data):
@@ -333,20 +351,49 @@ private extension AdsProviderActor {
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
         switch event {
-        case .initComponentIframe:
+        case .initComponentIframe(let data):
             Task { @MainActor in
                 interstitialEventSubject.send(.didChangeDisplay(true))
             }
-            interstitialTimeoutTask?.cancel()
-            interstitialTimeoutTask = nil
+            let task = presentationTimeoutTasks[data.component]
+            presentationTimeoutTasks.removeValue(forKey: data.component)
+            task?.cancel()
 
-        case .closeComponentIframe, .errorComponentIframe:
-            Task { @MainActor in
-                inlineEventSubject.send(.didFinishInterstitialAd)
+        case .openComponentIframe(let data):
+            switch data.component {
+            case .modal:
+                // interstitial is already presented
+                break
+
+            case .skoverlay:
+                presentSKOverlay(data)
+            }
+
+        case .closeComponentIframe(let data), .errorComponentIframe(let data):
+            switch data.component {
+            case .modal:
+                Task { @MainActor in
+                    inlineEventSubject.send(.didFinishInterstitialAd)
+                }
+
+            case .skoverlay:
+                Task { @MainActor in
+                    interstitialEventSubject.send(.didFinishSKOverlay)
+                }
             }
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: state.webViewData.url)
+            if let appStoreId = clickData.appStoreId {
+                Task { @MainActor in
+                    inlineEventSubject.send(
+                        .didRequestStoreProductDisplay(
+                            StoreProductView.Params(appStoreId: appStoreId)
+                        )
+                    )
+                }
+            } else {
+                openURL(from: clickData, fallbackURL: state.webViewData.url)
+            }
 
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
@@ -383,8 +430,8 @@ private extension AdsProviderActor {
             messageId: state.messageId,
             bidId: state.bid.bidId,
             bidCode: state.bid.code,
-            component: data.component,
-            otherParams: configuration.otherParams
+            component: data.component.rawValue,
+            otherParams: configuration.otherParams ?? [:]
         )
 
         Task { @MainActor in
@@ -403,10 +450,46 @@ private extension AdsProviderActor {
             inlineEventSubject.send(.didRequestInterstitialAd(params))
         }
 
+        sendEventIfTimeout(
+            .didFinishInterstitialAd,
+            timeout: data.timeout,
+            component: .modal
+        )
+    }
+
+    func presentSKOverlay(_ data: IframeEvent.OpenComponentIframeDataDTO) {
+        guard let appStoreId = data.appStoreId else {
+            return
+        }
+
+        Task { @MainActor in
+            let params = SKOverlayParams(
+                appStoreId: String(appStoreId),
+                position: data.position?.toModel() ?? .bottom,
+                dismissible: data.dismissible ?? true
+            )
+            inlineEventSubject.send(.didRequestSKOverlay(params))
+        }
+
+        sendEventIfTimeout(
+            .didFinishSKOverlay,
+            timeout: data.timeout,
+            component: .skoverlay
+        )
+    }
+}
+
+// MARK: Utils
+private extension AdsProviderActor {
+    func sendEventIfTimeout(
+        _ event: InlineAdEvent,
+        timeout: TimeInterval,
+        component: IframeEvent.Component
+    ) {
         // Close interstitial ad if it init component does not
         // arrive within timeout interval.
-        interstitialTimeoutTask = Task { @MainActor in
-            try? await Task.sleep(milliseconds: data.timeout + 500) // Add buffer time for displaying.
+        let timeoutTask = Task { @MainActor in
+            try? await Task.sleep(milliseconds: timeout + 500) // Add buffer time for displaying.
 
             guard !Task.isCancelled else {
                 return
@@ -414,5 +497,6 @@ private extension AdsProviderActor {
 
             inlineEventSubject.send(.didFinishInterstitialAd)
         }
+        presentationTimeoutTasks[component] = timeoutTask
     }
 }

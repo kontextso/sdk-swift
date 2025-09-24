@@ -1,8 +1,12 @@
 import Combine
+import StoreKit
 import SwiftUI
 
 enum InterstitialAdEvent {
     case didChangeDisplay(Bool)
+    case didRequestSKOverlay(SKOverlayParams)
+    case didFinishSKOverlay
+    case didRequestStoreProductDisplay(StoreProductView.Params)
 }
 
 struct InterstitialAdView: View {
@@ -13,32 +17,71 @@ struct InterstitialAdView: View {
         let onIFrameEvent: (IframeEvent) -> Void
     }
 
-    @StateObject private var viewModel: InterstitialAdViewModel
-    private var onIFrameEvent: (IframeEvent) -> Void
+    @State private var showIframe: Bool = false
+    @State private var skOverlayParams: SKOverlayParams?
+    @State private var skStoreProductParams: StoreProductView.Params?
+
+    private let params: Params
 
     init(params: Params) {
-        _viewModel = StateObject(
-            wrappedValue: InterstitialAdViewModel(
-                url: params.url,
-                events: params.events
-            )
-        )
-        self.onIFrameEvent = params.onIFrameEvent
+        self.params = params
     }
 
     var body: some View {
         ZStack {
-            if let url = viewModel.url {
+            if let url = params.url {
                 AdWebViewRepresentable(
                     url: url,
                     updateIFrameData: nil,
-                    onIFrameEvent: { onIFrameEvent($0) }
+                    onIFrameEvent: { params.onIFrameEvent($0) }
                 )
-                .opacity(viewModel.showIframe ? 1 : 0)
+                .opacity(showIframe ? 1 : 0)
             }
 
-            if !viewModel.showIframe {
+            if let params = skStoreProductParams {
+                StoreProductView(
+                    params: params,
+                    isPresented: Binding(
+                        get: { skStoreProductParams != nil },
+                        set: { newValue in
+                            if !newValue {
+                                skStoreProductParams = nil
+                            }
+                        }
+                    )
+                )
+                .frame(width: .zero, height: .zero)
+            }
+
+            if !showIframe {
                 ProgressView()
+            }
+        }
+        .appStoreOverlay(
+            isPresented: Binding(
+                get: { skOverlayParams != nil },
+                set: { newValue in
+                    if !newValue {
+                        skOverlayParams = nil
+                    }
+                }
+            )
+        ) {
+            SKOverlay.AppConfiguration(
+                appIdentifier: skOverlayParams?.appStoreId ?? "",
+                position: skOverlayParams?.position ?? .bottom
+            )
+        }
+        .onReceive(params.events) { event in
+            switch event {
+            case .didChangeDisplay(let value):
+                showIframe = value
+            case .didRequestSKOverlay(let params):
+                skOverlayParams = params
+            case .didRequestStoreProductDisplay(let params):
+                skStoreProductParams = params
+            case .didFinishSKOverlay:
+                skOverlayParams = nil
             }
         }
     }
