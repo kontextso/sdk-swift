@@ -91,7 +91,7 @@ git push origin 1.0.0
 ## 8. Publish to CocoaPods trunk
 
 ```bash
-pod trunk push KontextSDK.podspec --allow-warnings
+pod trunk push KontextSwiftSDK.podspec --allow-warnings
 ```
 
 ## 9. Create GitHub release
