@@ -19,7 +19,7 @@ struct AdsProviderTests {
             .values
 
         do {
-            try await withThrowingTaskGroup { groupTask in
+            try await withThrowingTaskGroup(of: Void.self) { groupTask in
                 groupTask.addTask {
                     try await withTimeout(timeout) {
                         for await event in stream {
@@ -55,7 +55,7 @@ struct AdsProviderTests {
             .values
 
         do {
-            try await withThrowingTaskGroup { groupTask in
+            try await withThrowingTaskGroup(of: Void.self) { groupTask in
                 groupTask.addTask {
                     try await withTimeout(timeout) {
                         for await event in stream {
@@ -94,7 +94,7 @@ struct AdsProviderTests {
             .values
 
         do {
-            try await withThrowingTaskGroup { groupTask in
+            try await withThrowingTaskGroup(of: Void.self) { groupTask in
                 groupTask.addTask {
                     try await withTimeout(timeout) {
                         var didHideIframe = false
@@ -136,7 +136,7 @@ struct AdsProviderTests {
             .values
 
         do {
-            try await withThrowingTaskGroup { groupTask in
+            try await withThrowingTaskGroup(of: Void.self) { groupTask in
                 groupTask.addTask {
                     try await withTimeout(timeout) {
                         var didHideIframe = false
@@ -186,7 +186,7 @@ struct AdsProviderTests {
             .values
 
         do {
-            try await withThrowingTaskGroup { groupTask in
+            try await withThrowingTaskGroup(of: Void.self) { groupTask in
                 groupTask.addTask {
                     try await withTimeout(0.1) {
                         for await event in stream {
@@ -234,7 +234,7 @@ struct AdsProviderTests {
             .values
 
         do {
-            try await withThrowingTaskGroup { groupTask in
+            try await withThrowingTaskGroup(of: Void.self) { groupTask in
                 groupTask.addTask {
                     try await withTimeout(timeout) {
                         var didSendError = false
@@ -289,7 +289,7 @@ struct AdsProviderTests {
         )
 
         do {
-            try await withThrowingTaskGroup { groupTask in
+            try await withThrowingTaskGroup(of: Void.self) { groupTask in
                 groupTask.addTask {
                     try await withTimeout(timeout) {
                         for await event in stream {

@@ -335,14 +335,14 @@ private extension AdsProviderActor {
         switch event {
         case .initComponentIframe:
             Task { @MainActor in
-                interstitialEventSubject.send(.didChangeDisplay(true))
+                await interstitialEventSubject.send(.didChangeDisplay(true))
             }
             interstitialTimeoutTask?.cancel()
             interstitialTimeoutTask = nil
 
         case .closeComponentIframe, .errorComponentIframe:
             Task { @MainActor in
-                inlineEventSubject.send(.didFinishInterstitialAd)
+                await inlineEventSubject.send(.didFinishInterstitialAd)
             }
 
         case .clickIframe(let clickData):
@@ -388,7 +388,7 @@ private extension AdsProviderActor {
         )
 
         Task { @MainActor in
-            let params = InterstitialAdView.Params(
+            let params = await InterstitialAdView.Params(
                 url: url,
                 events: interstitialEventSubject.eraseToAnyPublisher(),
                 onIFrameEvent: { [weak self] event in
@@ -400,7 +400,7 @@ private extension AdsProviderActor {
                     }
                 }
             )
-            inlineEventSubject.send(.didRequestInterstitialAd(params))
+            await inlineEventSubject.send(.didRequestInterstitialAd(params))
         }
 
         // Close interstitial ad if it init component does not
@@ -412,7 +412,7 @@ private extension AdsProviderActor {
                 return
             }
 
-            inlineEventSubject.send(.didFinishInterstitialAd)
+            await inlineEventSubject.send(.didFinishInterstitialAd)
         }
     }
 }

@@ -3,6 +3,8 @@ import UIKit
 
 struct SDKInfo  {
     static let defaultAdServerURL: URL = URL(string: "https://server.megabrain.co")!
+    static let sdkName = "sdk-swift"
+    static let sdkVersion = "1.1.4"
 
     /// Name of the SDK's bundle, should be sdk-swift
     let name: String
@@ -31,17 +33,12 @@ extension SDKInfo {
     /// Creates a SDKInfo instance with current SDK information
     static func current() -> SDKInfo {
         final class _BundleToken {}
-        let bundle = Bundle(for: _BundleToken.self)
-        let name = bundle
-            .object(forInfoDictionaryKey: "CFBundleName") as? String ?? "sdk-swift"
-        let version = bundle
-            .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
         let platform = UIDevice.current.systemName
         let lowercasedPlatform = platform.lowercased()
 
         return SDKInfo(
-            name: name,
-            version: version,
+            name: Self.sdkName,
+            version: Self.sdkVersion,
             platform: platform,
             lowercasedPlatform: lowercasedPlatform
         )
