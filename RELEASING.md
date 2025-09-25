@@ -65,8 +65,6 @@ struct SDKInfo {
 }
 ```
 
-SDKInfo
-
 ## 5. Commit changes
 
 Commit the CHANGELOG.md and KontextSDK.podspec to `release/1.0.0` branch
