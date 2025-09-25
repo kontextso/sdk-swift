@@ -25,7 +25,7 @@
 Edit CHANGELOG.md to include the new release notes in following format
 
 ```markdown
-## [1.1.0](https://github.com//kontextso/sdk-swift/releases/tag/1.1.0)
+## [1.0.0](https://github.com//kontextso/sdk-swift/releases/tag/1.0.0)
 
 Released on 2025-09-16.
 
@@ -52,7 +52,23 @@ s.version = "1.0.0"
 
 ```
 
-## 4. Commit changes
+## 4. Update SDKInfo
+
+Update the version in SDKInfo.swift to match the new version:
+
+
+```swift
+
+struct SDKInfo {
+    ...
+    static let sdkVersion = "1.1.4"
+    ...
+}
+```
+
+SDKInfo
+
+## 5. Commit changes
 
 Commit the CHANGELOG.md and KontextSDK.podspec to `release/1.0.0` branch
 
@@ -61,27 +77,27 @@ git add CHANGELOG.md KontextSDK.podspec
 git commit -m "Prepare release 1.0.0"
 ```
 
-## 5. Open pull requests
+## 6. Open pull requests
 
 1. Create a PR to develop named: "Release version 1.0.0" and use the last changelog entry as the PR description.
 2. Merge the PR to develop.
 3. Create a PR to master with same attributes.
 4. Merge the PR to master.
 
-## 6. Create an annotated tag
+## 7. Create an annotated tag
 
 ```bash
 git tag -a 1.0.0 -m "Release 1.0.0"
 git push origin 1.0.0
 ```
 
-## 7. Publish to CocoaPods trunk
+## 8. Publish to CocoaPods trunk
 
 ```bash
 pod trunk push KontextSDK.podspec --allow-warnings
 ```
 
-## 8. Create GitHub release
+## 9. Create GitHub release
 
 1. Go GitHub releases (under tags)
 2. Draft a new release
@@ -90,7 +106,7 @@ pod trunk push KontextSDK.podspec --allow-warnings
 5. Choose a proper version tag you just created
 6. Publish release
 
-## 9. Verify
+## 10. Verify
 
 1. Check that the version is available on the [CocoaPods page](https://cocoapods.org/pods/KontextSDK).
 2. Integrate the new version into the internal testing app and confirm it builds and runs.
