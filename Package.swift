@@ -14,9 +14,14 @@ let package = Package(
     targets: [
         .target(
             name: "KontextSwiftSDK",
+            dependencies: ["OMSDK_Megabrainco"],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
             ]
+        ),
+        .binaryTarget(
+            name: "OMSDK_Megabrainco",
+            path: "Frameworks/OMSDK_Megabrainco.xcframework"
         ),
         .testTarget(
             name: "KontextSwiftSDKTests",

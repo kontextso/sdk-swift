@@ -1,0 +1,4 @@
+module OMSDK_Megabrainco {
+    header "Headers/OMIDImports.h"
+    export *
+}

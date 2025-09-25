@@ -16,6 +16,7 @@ final class AdWebView: WKWebView {
     private let updateIframeData: UpdateIFrameDTO?
     private let eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>?
     private let onIFrameEvent: (IframeEvent) -> Void
+    private let onOMEvent: (OMEvent) -> Void
 
     private var cancellables: Set<AnyCancellable> = []
     private var scriptHandler: AdScriptMessageHandler?
@@ -24,10 +25,12 @@ final class AdWebView: WKWebView {
         frame: CGRect = .zero,
         updateIframeData: UpdateIFrameDTO?,
         eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>? = nil,
-        onIFrameEvent: @escaping (IframeEvent) -> Void
+        onIFrameEvent: @escaping (IframeEvent) -> Void,
+        onOMEvent: @escaping (OMEvent) -> Void
     ) {
-        self.onIFrameEvent = onIFrameEvent
         self.eventPublisher = eventPublisher
+        self.onIFrameEvent = onIFrameEvent
+        self.onOMEvent = onOMEvent
 
         let js = """
         window.addEventListener('message', function(event) {
@@ -52,6 +55,7 @@ final class AdWebView: WKWebView {
         isOpaque = false
         backgroundColor = .clear
         scrollView.isScrollEnabled = false
+        navigationDelegate = self
 
         scriptHandler = AdScriptMessageHandler(adWebView: self)
         if let scriptHandler {
@@ -66,7 +70,7 @@ final class AdWebView: WKWebView {
     }
 
     deinit {
-        scriptHandler = nil
+        scriptHandler = nil        
     }
 
     override func removeFromSuperview() {
@@ -80,7 +84,8 @@ final class AdWebView: WKWebView {
     }
 }
 
-// MARK: Private
+// MARK: - Events
+
 private extension AdWebView {
     func observeEvents() {
         eventPublisher?
@@ -125,6 +130,14 @@ private extension AdWebView {
         } catch {
             os_log(.error, "[Ad]: Failed to postMessage with error: \(error)")
         }
+    }
+}
+
+// MARK: - WKNavigationDelegate
+
+extension AdWebView: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        onOMEvent(.didStart(webView, url))
     }
 }
 

@@ -20,6 +20,7 @@ actor AdsProviderActor {
     private var messages: [AdsMessage]
     private var bids: [Bid]
     private var states: [AdLoadingState]
+    private var omSessions: [OMSessionState]
 
     private let numberOfRelevantMessages = 10
 
@@ -32,6 +33,7 @@ actor AdsProviderActor {
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
     private let urlOpener: URLOpening
+    private let omService: OMServicing
     private weak var delegate: AdsProviderActingDelegate?
 
     init(
@@ -39,17 +41,19 @@ actor AdsProviderActor {
         sessionId: String? = nil,
         isDisabled: Bool,
         adsServerAPI: AdsServerAPI,
-        urlOpener: URLOpening
+        urlOpener: URLOpening,
+        omService: OMServicing
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
         self.isDisabled = isDisabled
         self.adsServerAPI = adsServerAPI
         self.urlOpener = urlOpener
-        delegate = nil
-        messages = []
+        self.omService = omService
         bids = []
+        messages = []
         states = []
+        omSessions = []
         lastPreloadUserMessageId = ""
         preloadTimeout = 60
     }
@@ -131,11 +135,20 @@ extension AdsProviderActor: AdsProviderActing {
     func reset() {
         bids = []
         states = []
+
+        // OM requires web view to be alive 1 second after finish is called.
+        Task { await resetOmStates() }
     }
 }
 
 // MARK: Data processing
 private extension AdsProviderActor {
+    func resetOmStates() async {
+        omSessions.forEach { $0.session.finish() }
+        try? await Task.sleep(seconds: 1)
+        omSessions = []
+    }
+
     func bindBidsToLastUserMessage() async {
         await bindBidsToLastMessage(
             forRole: .user,
@@ -187,13 +200,13 @@ private extension AdsProviderActor {
                 id: stateId,
                 bid: bid,
                 messageId: lastMessageId,
-                show: true,
-                preferredHeight: nil, // Use default preferred height
                 webViewData: await prepareWebViewData(
                     stateId: stateId,
                     messageId: lastMessageId,
                     bid: bid
-                )
+                ),
+                show: true,
+                preferredHeight: nil, // Use default preferred height
             ))
         }
 
@@ -242,6 +255,11 @@ private extension AdsProviderActor {
             onIFrameEvent: { [weak self] event in
                 Task {
                     await self?.handleInlineIframeEvent(event: event, stateId: stateId)
+                }
+            },
+            onOMEvent: { [weak self] event in
+                Task {
+                    await self?.handleOMEvent(event: event, stateId: stateId)
                 }
             },
             events: inlineEventSubject.eraseToAnyPublisher()
@@ -357,6 +375,32 @@ private extension AdsProviderActor {
     }
 }
 
+// MARK: OM Events
+private extension AdsProviderActor {
+    func handleOMEvent(event: OMEvent, stateId: UUID) {
+        let newState = omSessions.first(where: { $0.stateId == stateId })
+
+        guard newState == nil else {
+            // Finish and remove existing session if it exists.
+            newState?.session.finish()
+            omSessions.removeAll { $0.stateId == stateId }
+            return
+        }
+
+        switch event {
+        case .didStart(let webView, let url):
+            do {
+                let omSession = try omService.createSession(webView, url: url)
+                let newState = OMSessionState(stateId: stateId, session: omSession)
+                omSessions.append(newState)
+                omSession.start()
+            } catch {
+                os_log("OM failed to start: \(error)")
+            }
+        }
+    }
+}
+
 // MARK: Present actions
 private extension AdsProviderActor {
     func openURL(from data: IframeEvent.ClickIframeDataDTO, fallbackURL: URL?) {
@@ -390,12 +434,21 @@ private extension AdsProviderActor {
         Task { @MainActor in
             let params = await InterstitialAdView.Params(
                 url: url,
+                omService: omService,
                 events: interstitialEventSubject.eraseToAnyPublisher(),
                 onIFrameEvent: { [weak self] event in
                     Task {
                         await self?.handleInterstitialIframeEvent(
                             event: event,
                             state: state
+                        )
+                    }
+                },
+                onOMEvent: { [weak self] event in
+                    Task {
+                        await self?.handleOMEvent(
+                            event: event,
+                            stateId: state.id
                         )
                     }
                 }
