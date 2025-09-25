@@ -9,7 +9,6 @@
 
 ---
 
-
 ## 1. Create a release branch and test
 
 1. Checkout branch `develop`
@@ -111,6 +110,3 @@ pod trunk push KontextSDK.podspec --allow-warnings
 1. Check that the version is available on the [CocoaPods page](https://cocoapods.org/pods/KontextSDK).
 2. Integrate the new version into the internal testing app and confirm it builds and runs.
 3. Release the internal testing app with updated SDK version.
-
-
-
