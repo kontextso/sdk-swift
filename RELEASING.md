@@ -24,7 +24,7 @@
 Edit CHANGELOG.md to include the new release notes in following format
 
 ```markdown
-## [1.1.0](https://github.com//kontextso/sdk-swift/releases/tag/1.1.0)
+## [1.0.0](https://github.com//kontextso/sdk-swift/releases/tag/1.0.0)
 
 Released on 2025-09-16.
 
@@ -64,8 +64,6 @@ struct SDKInfo {
     ...
 }
 ```
-
-SDKInfo
 
 ## 5. Commit changes
 
@@ -107,6 +105,6 @@ pod trunk push KontextSDK.podspec --allow-warnings
 
 ## 10. Verify
 
-1. Check that the version is available on the [CocoaPods page](https://cocoapods.org/pods/KontextSDK).
+1. Check that the version is available on the [CocoaPods page](https://cocoapods.org/pods/KontextSwiftSDK).
 2. Integrate the new version into the internal testing app and confirm it builds and runs.
 3. Release the internal testing app with updated SDK version.
