@@ -61,7 +61,7 @@ Update the version in SDKInfo.swift to match the new version:
 
 struct SDKInfo {
     ...
-    static let sdkVersion = "1.1.4"
+    static let sdkVersion = "1.0.0"
     ...
 }
 ```
