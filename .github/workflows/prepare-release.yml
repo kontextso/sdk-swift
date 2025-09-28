@@ -1,0 +1,68 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.2.3)'
+        required: true
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Run Release Drafter to update draft notes
+      - name: Run Release Drafter
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Get release notes for latest draft
+      - name: Fetch draft release notes
+        id: notes
+        run: |
+          notes=$(gh api repos/${{ github.repository }}/releases --jq 'map(select(.draft == true)) | .[0].body')
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$notes" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Update CHANGELOG.md
+      - name: Update CHANGELOG.md
+        run: |
+          echo "## [${{ github.event.inputs.version }}](https://github.com/${{ github.repository }}/releases/tag/${{ github.event.inputs.version }})" > new-changelog.md
+          echo "" >> new-changelog.md
+          echo "Released on $(date +'%Y-%m-%d')." >> new-changelog.md
+          echo "" >> new-changelog.md
+          echo "${{ steps.notes.outputs.notes }}" >> new-changelog.md
+          echo "" >> new-changelog.md
+          cat CHANGELOG.md >> new-changelog.md || true
+          mv new-changelog.md CHANGELOG.md
+
+      # Update Podspec version
+      - name: Update Podspec
+        run: |
+          sed -i "s/^\(\s*s.version *= *\).*/\1\"${{ github.event.inputs.version }}\"/" KontextSDK.podspec
+
+      # Update SDKInfo.swift version
+      - name: Update SDKInfo.swift
+        run: |
+          sed -i "s/^\(\s*static let sdkVersion *= *\).*/\1\"${{ github.event.inputs.version }}\"/" Sources/**/SDKInfo.swift
+
+      # Commit & open PR
+      - name: Create PR with release changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: release/${{ github.event.inputs.version }}
+          title: "chore: prepare release ${{ github.event.inputs.version }}"
+          body: |
+            Updates CHANGELOG.md, KontextSDK.podspec, and SDKInfo.swift for version ${{ github.event.inputs.version }}.
+          commit-message: "chore: prepare release ${{ github.event.inputs.version }}"
+          base: develop

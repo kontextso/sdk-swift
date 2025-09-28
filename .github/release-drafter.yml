@@ -1,0 +1,20 @@
+name-template: 'Release $NEXT_PATCH_VERSION'
+tag-template: '$NEXT_PATCH_VERSION'
+categories:
+  - title: "Added"
+    labels: ["feature", "documentation"]
+  - title: "Fixed"
+    labels: ["fix"]
+  - title: "Updated"
+    labels: ["chore"]
+  - title: "Removed"
+    labels: ["cleanup"]
+change-template: "- $TITLE (#$NUMBER)"
+change-title-escapes: '\<*_&' # to avoid formatting issues
+version-resolver:
+  major:
+    labels: ["major"]
+  minor:
+    labels: ["minor"]
+  patch:
+    labels: ["patch"]
