@@ -49,7 +49,7 @@ jobs:
       # Update Podspec version
       - name: Update Podspec
         run: |
-          sed -i "s/^\(\s*s.version *= *\).*/\1\"${{ github.event.inputs.version }}\"/" KontextSDK.podspec
+          sed -i "s/^\(\s*s.version *= *\).*/\1\"${{ github.event.inputs.version }}\"/" KontextSwiftSDK.podspec
 
       # Update SDKInfo.swift version
       - name: Update SDKInfo.swift
