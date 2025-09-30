@@ -108,7 +108,7 @@ extension AdsProviderActor: AdsProviderActing {
             sessionId = preloadedData.sessionId
 
             // No bids are available, report status.
-            guard preloadedData.bids != nil else {
+            guard let bids = preloadedData.bids, !bids.isEmpty else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id)
                 return
             }
