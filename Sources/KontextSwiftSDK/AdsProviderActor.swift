@@ -99,9 +99,11 @@ extension AdsProviderActor: AdsProviderActing {
                 messages: messagesToSend
             )
 
-            if preloadedData.permanentError == true {
+            guard preloadedData.permanentError != true else {
+                notifyAdNotAvailable(messageId: lastUserMessage.id)
                 isDisabled = true
                 reset()
+                return
             }
 
             bids = preloadedData.bids ?? []
@@ -116,6 +118,7 @@ extension AdsProviderActor: AdsProviderActing {
             await bindBidsToLastUserMessage()
             await bindBidsToLastAssistantMessage()
         } catch {
+            notifyAdNotAvailable(messageId: lastUserMessage.id)
             delegate?.adsProviderActing(
                 self,
                 didReceiveEvent: .error(
