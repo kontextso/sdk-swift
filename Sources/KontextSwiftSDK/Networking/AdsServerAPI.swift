@@ -81,7 +81,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             headers: [.acceptType(.json), .contentType(.json)],
             body: requestDTO
         )
-        return responseDTO.preloadedData
+        return responseDTO.toModel()
     }
 
     @MainActor
