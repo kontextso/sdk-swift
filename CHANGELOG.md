@@ -1,8 +1,16 @@
 # Changelog
 
+> This lists was started with version 1.1.0 and therefore no previous changes are listed here.
+
 List of changes by respective version.
 
-> This lists was started with version 1.1.0 and therefore no previous changes are listed here.
+## [1.2.0](https://github.com//kontextso/sdk-swift/releases/tag/1.2.0)
+
+Released on 2025-10-02.
+
+## Fixed
+
+- Always send ad.no-fill event when ads are not avilable.
 
 ## [1.1.5](https://github.com//kontextso/sdk-swift/releases/tag/1.1.5)
 
