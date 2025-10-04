@@ -197,7 +197,8 @@ struct AdsProviderTests {
                                             id: ad.bid.bidId,
                                             content: "content",
                                             messageId: ad.messageId,
-                                            url: testURL
+                                            url: testURL,
+                                            appStoreId: nil
                                         )
                                     )
                                 )
@@ -353,7 +354,7 @@ private extension AdsProviderTests {
         behaviour: MockAdsServerAPISimulationBehaviour,
         urlOpener: URLOpening
     ) -> DependencyContainer {
-        let networking = Network()
+        let networking = Network(session: configuration.urlSession)
         let adsServerAPI = MockAdsServerAPI(behaviour)
         let providerActor = AdsProviderActor(
             configuration: configuration,

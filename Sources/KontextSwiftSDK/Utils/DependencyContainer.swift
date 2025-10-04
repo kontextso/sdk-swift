@@ -21,7 +21,7 @@ struct DependencyContainer: Sendable {
         sessionId: String?,
         isDisabled: Bool
     ) -> DependencyContainer {
-        let networking = Network()
+        let networking = Network(session: configuration.urlSession)
         let adsServerAPI = BaseURLAdsServerAPI(
             baseURL: configuration.adServerUrl,
             networking: networking

@@ -86,7 +86,7 @@ protocol Networking: Sendable {
 final class Network: Networking {
     private let session: URLSession
     
-    init(session: URLSession = .shared) {
+    init(session: URLSession) {
         self.session = session
     }
     

@@ -355,8 +355,7 @@ private extension AdsProviderActor {
             Task { @MainActor in
                 interstitialEventSubject.send(.didChangeDisplay(true))
             }
-            let task = presentationTimeoutTasks[data.component]
-            presentationTimeoutTasks.removeValue(forKey: data.component)
+            let task = presentationTimeoutTasks.removeValue(forKey: data.component)
             task?.cancel()
 
         case .openComponentIframe(let data):

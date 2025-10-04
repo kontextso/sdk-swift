@@ -41,6 +41,8 @@ public struct AdsProviderConfiguration: Sendable {
     /// URL of the server from which the ads are served.
     /// Defaults to https://server.megabrain.co/
     public let adServerUrl: URL
+    /// URLSession or a custom to be used for network requests.
+    public let urlSession: URLSession
     /// Information about regulatory requirements that apply.
     public let regulatory: Regulatory?
     ///   An arbitrary key-value collection of values that the publisher can send.
@@ -71,6 +73,7 @@ public struct AdsProviderConfiguration: Sendable {
         advertisingId: String? = nil,
         vendorId: String? = nil,
         adServerUrl: URL? = nil,
+        urlSession: URLSession = .shared,
         regulatory: Regulatory? = nil,
         otherParams: [String: String]? = nil
     ) {
@@ -83,6 +86,7 @@ public struct AdsProviderConfiguration: Sendable {
         self.advertisingId = advertisingId
         self.vendorId = vendorId
         self.adServerUrl = adServerUrl ?? SDKInfo.defaultAdServerURL
+        self.urlSession = urlSession
         self.regulatory = regulatory
         self.otherParams = otherParams
     }
