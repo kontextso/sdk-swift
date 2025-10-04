@@ -188,7 +188,7 @@ private extension InlineAdUIView {
 
         Task {
             do {
-                try await viewController.loadProduct(withParameters: params)
+                try await viewController.loadProduct(withParameters: params as [String : Any])
                 presentationController?.present(viewController, animated: true)
             } catch {
                 os_log(.error, "Failed to open SKStoreProductViewController \(appStoreId ?? 0)")

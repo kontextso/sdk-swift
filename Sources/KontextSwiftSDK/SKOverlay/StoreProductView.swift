@@ -60,7 +60,7 @@ final class StoreProductViewController: UIViewController {
         Task {
             do {
                 let parameters = [SKStoreProductParameterITunesItemIdentifier: appStoreId]
-                try await viewController.loadProduct(withParameters: parameters)
+                try await viewController.loadProduct(withParameters: parameters as [String : Any])
                 present(viewController, animated: true)
                 didPresent = true
             } catch {
@@ -72,6 +72,7 @@ final class StoreProductViewController: UIViewController {
 
 
 // MARK: - SKStoreProductViewControllerDelegate
+
 extension StoreProductViewController: SKStoreProductViewControllerDelegate {
     func productViewControllerDidFinish(_ viewController: SKStoreProductViewController) {
         viewController.presentingViewController?.dismiss(animated: true, completion: nil)
