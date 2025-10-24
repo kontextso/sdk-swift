@@ -72,7 +72,7 @@ public struct AdsProviderConfiguration: Sendable {
         vendorId: String? = nil,
         adServerUrl: URL? = nil,
         regulatory: Regulatory? = nil,
-        otherParams: [String: String]
+        otherParams: [String: String] = [:]
     ) {
         self.publisherToken = publisherToken
         self.userId = userId
