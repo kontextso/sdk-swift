@@ -63,7 +63,9 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         let preloadUrlConvertible = BaseURLConvertible(
             baseURL: baseURL,
             pathComponents: ["preload"],
-            queryItems: nil
+            queryItems: [
+                URLQueryItem(name: "publisherToken", value: configuration.publisherToken)
+            ]
         )
         let app = AppInfo.current()
         let sdk = await SDKInfo.current()
