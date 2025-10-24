@@ -61,6 +61,7 @@ public struct AdsProviderConfiguration: Sendable {
     ///     - adServerUrl: URL of the server from which the ads are served. Defaults to https://server.megabrain.co/
     ///     - regulatory: Information about regulatory requirements that apply.
     ///     - otherParams: An arbitrary key-value collection of values that the publisher can send. It varies per publisher, but all publishers provide at least the theme parameter.
+    ///     - userEmail: Email of the user.
     public init(
         publisherToken: String,
         userId: String,
@@ -72,10 +73,12 @@ public struct AdsProviderConfiguration: Sendable {
         vendorId: String? = nil,
         adServerUrl: URL? = nil,
         regulatory: Regulatory? = nil,
-        otherParams: [String: String]
+        otherParams: [String: String],
+        userEmail: String? = nil
     ) {
         self.publisherToken = publisherToken
         self.userId = userId
+        self.userEmail = userEmail
         self.conversationId = conversationId
         self.character = character
         self.enabledPlacementCodes = enabledPlacementCodes
