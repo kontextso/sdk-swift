@@ -46,6 +46,8 @@ public struct AdsProviderConfiguration: Sendable {
     ///   An arbitrary key-value collection of values that the publisher can send.
     ///   It varies per publisher, but all publishers provide at least the theme parameter.
     public let otherParams: [String: String]
+    /// Email of the user.
+    public let userEmail: String?
 
     /// Initializes a new AdsProviderConfiguration to be later passed to the AdsProvider.
     ///
