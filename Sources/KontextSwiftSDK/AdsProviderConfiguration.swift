@@ -75,12 +75,11 @@ public struct AdsProviderConfiguration: Sendable {
         vendorId: String? = nil,
         adServerUrl: URL? = nil,
         regulatory: Regulatory? = nil,
-        otherParams: [String: String],
+        otherParams: [String: String] = [:],
         userEmail: String? = nil
     ) {
         self.publisherToken = publisherToken
         self.userId = userId
-        self.userEmail = userEmail
         self.conversationId = conversationId
         self.character = character
         self.enabledPlacementCodes = enabledPlacementCodes
@@ -90,5 +89,6 @@ public struct AdsProviderConfiguration: Sendable {
         self.adServerUrl = adServerUrl ?? SDKInfo.defaultAdServerURL
         self.regulatory = regulatory
         self.otherParams = otherParams
+        self.userEmail = userEmail
     }
 }
