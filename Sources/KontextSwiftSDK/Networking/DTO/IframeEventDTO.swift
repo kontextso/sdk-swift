@@ -110,12 +110,13 @@ extension IframeEvent {
 
     /// Data for open component iframe events
     struct OpenComponentIframeDataDTO: Decodable, Hashable {
-        let code: String
-        let component: Component
-        let timeout: TimeInterval // ms
-        let appStoreId: Int?
-        let position: Position?
-        let dismissible: Bool?
+        let code: String // Modal + SKOverlay
+        let component: Component // Modal + SKOverlay
+        let timeout: TimeInterval // ms unused
+
+        let appStoreId: String? // SKOverlay
+        let position: Position? // SKOverlay
+        let dismissible: Bool?  // SKOverlay
     }
 
     /// Data for general component iframe events
