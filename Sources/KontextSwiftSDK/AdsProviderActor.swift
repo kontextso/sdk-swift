@@ -21,8 +21,6 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
-    private let numberOfRelevantMessages = 10
-
     /// Events published to interstitial and inline components
     private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
     private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
@@ -72,7 +70,6 @@ extension AdsProviderActor: AdsProviderActing {
         }
 
         let newUserMessages = messages.filter { $0.role == .user }
-        let messagesToSend = Array(messages.suffix(numberOfRelevantMessages))
 
         guard let lastUserMessage = newUserMessages.last else {
             return
@@ -96,7 +93,7 @@ extension AdsProviderActor: AdsProviderActing {
                 sessionId: sessionId,
                 configuration: configuration,
                 api: adsServerAPI,
-                messages: messagesToSend
+                messages: messages
             )
 
             guard preloadedData.permanentError != true else {
@@ -239,7 +236,7 @@ private extension AdsProviderActor {
                 sdk: await SDKInfo.current().name,
                 code: bid.code,
                 messageId: messageId,
-                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
+                messages: messages.map { MessageDTO (from: $0) },
                 otherParams: configuration.otherParams
             )),
             onIFrameEvent: { [weak self] event in
