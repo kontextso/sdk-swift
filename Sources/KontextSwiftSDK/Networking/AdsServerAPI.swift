@@ -69,13 +69,15 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         )
         let app = AppInfo.current()
         let sdk = await SDKInfo.current()
+        let mergedRegulatory = TransparencyConsentFrameworkService.mergedRegulatory(from: configuration.regulatory)
         let requestDTO = PreloadRequestDTO(
             sessionId: sessionId,
             configuration: configuration,
             sdkInfo: sdk,
             appinfo: app,
             device: await DeviceInfo.current(appInfo: app),
-            messages: messages
+            messages: messages,
+            regulatoryOverride: mergedRegulatory
         )
         let responseDTO: PreloadResponseDTO = try await networking.request(
             method: .post,

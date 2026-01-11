@@ -22,7 +22,8 @@ struct PreloadRequestDTO: Encodable {
         sdkInfo: SDKInfo,
         appinfo: AppInfo,
         device: DeviceInfo,
-        messages: [AdsMessage]
+        messages: [AdsMessage],
+        regulatoryOverride: Regulatory? = nil
     ) {
         publisherToken = configuration.publisherToken
         conversationId = configuration.conversationId
@@ -38,6 +39,6 @@ struct PreloadRequestDTO: Encodable {
         self.sdk = sdkInfo.toModel()
         self.app = appinfo.toModel()
         self.device = device.toModel()
-        self.regulatory = RegulatoryDTO(from: configuration.regulatory)
+        self.regulatory = RegulatoryDTO(from: regulatoryOverride ?? configuration.regulatory)
     }
 }
