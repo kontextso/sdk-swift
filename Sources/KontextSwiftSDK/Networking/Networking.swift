@@ -158,7 +158,7 @@ final class Network: Networking {
             throw APIError.requestFailed(error)
         }
 
-        print("🔍 RESPONSE")
+        print("🔍 RAW RESPONSE")
         print(String(data: data, encoding: .utf8) ?? "No data")
         
         // Check HTTP status code
