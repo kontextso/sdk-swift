@@ -2,6 +2,7 @@ struct PreloadRequestDTO: Encodable {
     let publisherToken: String
     let conversationId: String
     let userId: String
+    let userEmail: String?
     let messages: [MessageDTO]
     let variantId: String?
     let character: CharacterDTO?
@@ -26,6 +27,7 @@ struct PreloadRequestDTO: Encodable {
         publisherToken = configuration.publisherToken
         conversationId = configuration.conversationId
         userId = configuration.userId
+        userEmail = configuration.userEmail
         self.messages = messages.map(MessageDTO.init)
         self.enabledPlacementCodes = configuration.enabledPlacementCodes
         variantId = configuration.variantId

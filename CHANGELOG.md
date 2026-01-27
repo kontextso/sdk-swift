@@ -1,8 +1,28 @@
 # Changelog
 
+> This lists was started with version 1.1.0 and therefore no previous changes are listed here.
+
 List of changes by respective version.
 
-> This lists was started with version 1.1.0 and therefore no previous changes are listed here.
+## [1.2.0](https://github.com//kontextso/sdk-swift/releases/tag/1.2.0)
+
+Released on 2025-10-02.
+
+## Fixed
+
+- Always send ad.no-fill event when ads are not avilable.
+
+## [1.1.5](https://github.com//kontextso/sdk-swift/releases/tag/1.1.5)
+
+Released on 2025-09-25.
+
+## Updated
+
+- Simplified README.md.
+
+## Fixed
+
+- SDK name and version reported to backend. It used name and version of containing app previously.
 
 ## [1.1.4](https://github.com//kontextso/sdk-swift/releases/tag/1.1.4)
 
@@ -61,4 +81,3 @@ Released on 2025-09-04.
 ### Removed
 
 - `AdsProviderDelegate`'s methods for `didChangeAvailableAdsTo`, `didEncounterError`, `didUpdateHeightForAd`, `didReceiveEvent ` and respective `AdsProviderEvent`s.
-

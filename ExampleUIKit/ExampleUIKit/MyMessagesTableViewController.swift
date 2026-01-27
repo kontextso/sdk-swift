@@ -132,6 +132,7 @@ private extension MyMessagesTableViewController {
 
 extension MyMessagesTableViewController: AdsProviderDelegate {
     func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {
+        print(event.name)
         switch event {
         case .filled(let ads):
             self.ads = ads

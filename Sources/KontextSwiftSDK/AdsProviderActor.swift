@@ -22,8 +22,6 @@ actor AdsProviderActor {
     private var states: [AdLoadingState]
     private var omSessions: [OMSessionState]
 
-    private let numberOfRelevantMessages = 10
-
     /// Events published to interstitial and inline components
     private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
     private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
@@ -76,7 +74,6 @@ extension AdsProviderActor: AdsProviderActing {
         }
 
         let newUserMessages = messages.filter { $0.role == .user }
-        let messagesToSend = Array(messages.suffix(numberOfRelevantMessages))
 
         guard let lastUserMessage = newUserMessages.last else {
             return
@@ -100,19 +97,21 @@ extension AdsProviderActor: AdsProviderActing {
                 sessionId: sessionId,
                 configuration: configuration,
                 api: adsServerAPI,
-                messages: messagesToSend
+                messages: messages
             )
 
-            if preloadedData.permanentError == true {
+            guard preloadedData.permanentError != true else {
+                notifyAdNotAvailable(messageId: lastUserMessage.id)
                 isDisabled = true
                 reset()
+                return
             }
 
             bids = preloadedData.bids ?? []
             sessionId = preloadedData.sessionId
 
             // No bids are available, report status.
-            guard preloadedData.bids != nil else {
+            guard let bids = preloadedData.bids, !bids.isEmpty else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id)
                 return
             }
@@ -120,6 +119,7 @@ extension AdsProviderActor: AdsProviderActing {
             await bindBidsToLastUserMessage()
             await bindBidsToLastAssistantMessage()
         } catch {
+            notifyAdNotAvailable(messageId: lastUserMessage.id)
             delegate?.adsProviderActing(
                 self,
                 didReceiveEvent: .error(
@@ -249,7 +249,7 @@ private extension AdsProviderActor {
                 sdk: await SDKInfo.current().name,
                 code: bid.code,
                 messageId: messageId,
-                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
+                messages: messages.map { MessageDTO (from: $0) },
                 otherParams: configuration.otherParams
             )),
             onIFrameEvent: { [weak self] event in
@@ -364,14 +364,14 @@ private extension AdsProviderActor {
         switch event {
         case .initComponentIframe:
             Task { @MainActor in
-                interstitialEventSubject.send(.didChangeDisplay(true))
+                await interstitialEventSubject.send(.didChangeDisplay(true))
             }
             interstitialTimeoutTask?.cancel()
             interstitialTimeoutTask = nil
 
         case .closeComponentIframe, .errorComponentIframe:
             Task { @MainActor in
-                inlineEventSubject.send(.didFinishInterstitialAd)
+                await inlineEventSubject.send(.didFinishInterstitialAd)
             }
 
         case .clickIframe(let clickData):
@@ -443,7 +443,7 @@ private extension AdsProviderActor {
         )
 
         Task { @MainActor in
-            let params = InterstitialAdView.Params(
+            let params = await InterstitialAdView.Params(
                 url: url,
                 omService: omService,
                 events: interstitialEventSubject.eraseToAnyPublisher(),
@@ -464,7 +464,7 @@ private extension AdsProviderActor {
                     }
                 }
             )
-            inlineEventSubject.send(.didRequestInterstitialAd(params))
+            await inlineEventSubject.send(.didRequestInterstitialAd(params))
         }
 
         // Close interstitial ad if it init component does not
@@ -476,7 +476,7 @@ private extension AdsProviderActor {
                 return
             }
 
-            inlineEventSubject.send(.didFinishInterstitialAd)
+            await inlineEventSubject.send(.didFinishInterstitialAd)
         }
     }
 }

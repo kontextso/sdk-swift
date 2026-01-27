@@ -63,5 +63,27 @@ struct AdsProviderActorTests {
         await provider.setDisabled(false)
         await provider.setMessages(messages: AdsMessage.variation1)
         #expect(adsServerAPI.preloadCalled == true, "Preload should be called when enabled")
-    }    
+    }
+
+    @Test
+    func testAdNoFillSent() async throws {
+        let adsServerAPI = MockAdsServerAPI(.adNotAvailable)
+        let delegate = MockAdsProviderActingDelegate()
+        let provider = await AdsProviderActor(
+            configuration: .minimal,
+            sessionId: nil,
+            isDisabled: false,
+            adsServerAPI: adsServerAPI,
+            urlOpener: MockURLOpener()
+        )
+        await provider.setDelegate(delegate: delegate)
+        await provider.setMessages(messages: AdsMessage.variation1)
+
+        #expect(adsServerAPI.preloadCalled == true, "Preload should be called when enabled")
+        if case .noFill(let data) = delegate.lastEvent {
+            #expect(data.messageId == "3")
+        } else {
+            #expect(Bool(false), "Expected ad.no-fill event")
+        }
+    }
 }
