@@ -276,13 +276,24 @@ private extension AdsProviderActor {
         api: AdsServerAPI,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
-        try await withTimeout(TimeInterval(timeout)) {
+
+        print("➡️ PRELOAD REQUEST")
+        print("sessionId:", sessionId ?? "nil")
+        print("configuration:", configuration)
+        print("messages:", messages)
+
+        let response = try await withTimeout(TimeInterval(timeout)) {
             try await api.preload(
                 sessionId: sessionId,
                 configuration: configuration,
                 messages: messages
             )
         }
+
+        print("⬅️ PRELOAD RESPONSE")
+        print(response)
+
+        return response
     }
 }
 

@@ -31,7 +31,7 @@ final class MyMessagesTableViewController: UITableViewController {
         viewModels = []
         adsProvider = AdsProvider(configuration: AdsProviderConfiguration(
             // Replace publisher token with your own to try out
-            publisherToken: "{publisher-token}",
+            publisherToken: "iab-dev",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
