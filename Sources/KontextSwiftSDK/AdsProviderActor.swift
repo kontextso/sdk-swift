@@ -410,6 +410,13 @@ private extension AdsProviderActor {
                 let omSession = try await MainActor.run {
                     let session = try omService.createSession(webView, url: url)
                     session.start()
+
+                    print("🔍 OM session started")
+
+                    try session.signalLoadedOnce()
+
+                    print("🔍 OM session signaled loaded")
+
                     return session
                 }
 

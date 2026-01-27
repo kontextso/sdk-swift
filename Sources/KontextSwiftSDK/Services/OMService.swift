@@ -71,7 +71,7 @@ final class OMService: OMServicing {
             )
 
             session.mainAdView = webView
-            return OMSession(session: session, webView: webView)
+            return try OMSession(session: session, webView: webView)
         } catch {
             throw OMError.sessionCreationFailed(error.localizedDescription)
         }
@@ -88,17 +88,32 @@ private extension OMService {
 
 // MARK: - OMSession
 
-struct OMSession {
+final class OMSession {
     private let session: OMIDMegabraincoAdSession
     private let webView: WKWebView
+    private let adEvents: OMIDMegabraincoAdEvents
 
-    init(session: OMIDMegabraincoAdSession, webView: WKWebView) {
+    private var didLoad = false
+
+    init(session: OMIDMegabraincoAdSession, webView: WKWebView) throws {
         self.session = session
         self.webView = webView
+        self.adEvents = try OMIDMegabraincoAdEvents(adSession: session)
     }
 
     func start() {
         session.start()
+    }
+
+    func signalLoadedOnce() throws {
+        guard !didLoad else { return }
+        didLoad = true
+        do {
+            try adEvents.loaded()
+        } catch {
+            // use os_log in real code
+            print("OM loaded() failed: \(error)")
+        }
     }
 
     func finish() {
