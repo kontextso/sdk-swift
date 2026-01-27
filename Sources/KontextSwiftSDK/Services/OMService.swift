@@ -31,7 +31,10 @@ final class OMService: OMServicing {
             return true
         }
 
-        OMIDMegabraincoSDK.shared.activate()
+        let result = OMIDMegabraincoSDK.shared.activate()
+
+        print("🔍 OM SDK ACTIVATED")
+        print(result)
 
         return isActive
     }
@@ -57,7 +60,7 @@ final class OMService: OMServicing {
             let configuration = try OMIDMegabraincoAdSessionConfiguration(
                 creativeType: .htmlDisplay,
                 impressionType: .beginToRender,
-                impressionOwner: .javaScriptOwner,
+                impressionOwner: .nativeOwner,
                 mediaEventsOwner: .noneOwner,
                 isolateVerificationScripts: false
             )
