@@ -31,11 +31,12 @@ final class MyMessagesTableViewController: UITableViewController {
         viewModels = []
         adsProvider = AdsProvider(configuration: AdsProviderConfiguration(
             // Replace publisher token with your own to try out
-            publisherToken: "iab-dev",
+            publisherToken: "nexus-dev",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
-            otherParams: ["theme": "dark"]
+            adServerUrl: URL(string: "http://localhost:3002")!,
+            otherParams: ["theme": "dark"],
         ))
         super.init(style: .plain)
         adsProvider.delegate = self
@@ -90,7 +91,7 @@ private extension MyMessagesTableViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello my smart helpful assistant, how are you?",
+            content: "Hello, how are you?",
             createdAt: Date()
         )
         messages.append(message)
