@@ -388,25 +388,36 @@ private extension AdsProviderActor {
 
 // MARK: OM Events
 private extension AdsProviderActor {
-    func handleOMEvent(event: OMEvent, stateId: UUID) {
-        let newState = omSessions.first(where: { $0.stateId == stateId })
+    func handleOMEvent(event: OMEvent, stateId: UUID) async {
+        // 1) Check current state in the actor (safe)
+        if let existingIndex = omSessions.firstIndex(where: { $0.stateId == stateId }) {
+            let existingSession = omSessions[existingIndex].session
 
-        guard newState == nil else {
-            // Finish and remove existing session if it exists.
-            newState?.session.finish()
-            omSessions.removeAll { $0.stateId == stateId }
+            // 2) OMID must be touched on MainActor
+            await MainActor.run {
+                existingSession.finish()
+            }
+
+            // 3) Mutate actor state after
+            omSessions.remove(at: existingIndex)
             return
         }
 
         switch event {
         case .didStart(let webView, let url):
             do {
-                let omSession = try omService.createSession(webView, url: url)
+                // 4) Create + start must be on MainActor
+                let omSession = try await MainActor.run {
+                    let session = try omService.createSession(webView, url: url)
+                    session.start()
+                    return session
+                }
+
+                // 5) Store session in actor state
                 let newState = OMSessionState(stateId: stateId, session: omSession)
                 omSessions.append(newState)
-                omSession.start()
             } catch {
-                os_log("OM failed to start: \(error)")
+                os_log("OM failed to start: \(String(describing: error))")
             }
         }
     }
