@@ -299,6 +299,11 @@ private extension AdsProviderActor {
 
 // MARK: iFrame events
 private extension AdsProviderActor {
+
+    private func omSession(for stateId: UUID) -> OMSession? {
+        return omSessions.first(where: { $0.stateId == stateId })?.session
+    }
+
     func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) {
         guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
             return
@@ -314,6 +319,15 @@ private extension AdsProviderActor {
                 newState.show = true
                 states[stateIndex] = newState
                 notifyAboutAdChanges()
+            }
+
+            print("🔍 Show iframe")
+
+            if let om = omSession(for: stateId) {
+                Task { @MainActor in
+                    try? await om.signalImpressionOnce()
+                    print("🔍 OM session signaled impression")
+                }
             }
 
         case .hideIframe:

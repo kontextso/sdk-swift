@@ -94,6 +94,7 @@ final class OMSession {
     private let adEvents: OMIDMegabraincoAdEvents
 
     private var didLoad = false
+    private var didImpress = false
 
     init(session: OMIDMegabraincoAdSession, webView: WKWebView) throws {
         self.session = session
@@ -113,6 +114,16 @@ final class OMSession {
         } catch {
             // use os_log in real code
             print("OM loaded() failed: \(error)")
+        }
+    }
+
+    func signalImpressionOnce() throws {
+        guard !didImpress else { return }
+        didImpress = true
+        do {
+            try adEvents.impressionOccurred()
+        } catch {
+            print("OM impressionOccurred failed: \(error)")
         }
     }
 
