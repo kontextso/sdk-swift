@@ -31,7 +31,7 @@ final class MyMessagesTableViewController: UITableViewController {
         viewModels = []
         adsProvider = AdsProvider(configuration: AdsProviderConfiguration(
             // Replace publisher token with your own to try out
-            publisherToken: "nexus-dev",
+            publisherToken: "iab-dev",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
@@ -91,7 +91,7 @@ private extension MyMessagesTableViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello, how are you?",
+            content: "kontextso ad_format:image",
             createdAt: Date()
         )
         messages.append(message)
