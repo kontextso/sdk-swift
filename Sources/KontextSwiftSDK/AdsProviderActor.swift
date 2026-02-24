@@ -389,7 +389,7 @@ private extension AdsProviderActor {
             messageId: state.messageId,
             bidId: state.bid.bidId,
             bidCode: state.bid.code,
-            component: data.component.rawValue,
+            component: data.component,
             otherParams: configuration.otherParams
         )
 
