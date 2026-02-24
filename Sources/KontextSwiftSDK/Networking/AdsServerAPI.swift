@@ -6,6 +6,7 @@ protocol AdsServerAPI: Sendable {
     func preload(
         sessionId: String?,
         configuration: AdsProviderConfiguration,
+        isDisabled: Bool,
         messages: [AdsMessage]
     ) async throws -> PreloadedData
 
@@ -58,14 +59,13 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     func preload(
         sessionId: String?,
         configuration: AdsProviderConfiguration,
+        isDisabled: Bool,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
         let preloadUrlConvertible = BaseURLConvertible(
             baseURL: baseURL,
             pathComponents: ["preload"],
-            queryItems: [
-                URLQueryItem(name: "publisherToken", value: configuration.publisherToken)
-            ]
+            queryItems: nil
         )
         let app = AppInfo.current()
         let sdk = await SDKInfo.current()
@@ -80,7 +80,12 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         let responseDTO: PreloadResponseDTO = try await networking.request(
             method: .post,
             urlConvertible: preloadUrlConvertible,
-            headers: [.acceptType(.json), .contentType(.json)],
+            headers: [
+                .acceptType(.json), 
+                .contentType(.json),
+                .publisherToken(configuration.publisherToken),
+                .isDisabled(isDisabled)
+            ],
             body: requestDTO
         )
         return responseDTO.toModel()

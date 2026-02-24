@@ -92,6 +92,7 @@ extension AdsProviderActor: AdsProviderActing {
                 timeout: preloadTimeout,
                 sessionId: sessionId,
                 configuration: configuration,
+                isDisabled: isDisabled,
                 api: adsServerAPI,
                 messages: messages
             )
@@ -255,6 +256,7 @@ private extension AdsProviderActor {
         timeout: Int,
         sessionId: String?,
         configuration: AdsProviderConfiguration,
+        isDisabled: Bool,
         api: AdsServerAPI,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
@@ -262,6 +264,7 @@ private extension AdsProviderActor {
             try await api.preload(
                 sessionId: sessionId,
                 configuration: configuration,
+                isDisabled: isDisabled,
                 messages: messages
             )
         }
