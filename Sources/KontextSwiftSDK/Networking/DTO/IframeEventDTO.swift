@@ -20,6 +20,9 @@ enum IframeEvent: Decodable, Hashable, Sendable {
     /// The ad has been viewed by the user
     case viewIframe(ViewIframeDataDTO)
 
+    /// The ad finished rendering and is ready for impression attribution
+    case adDoneIframe
+
     /// The ad has been clicked by the user
     case clickIframe(ClickIframeDataDTO)
 
@@ -130,6 +133,8 @@ extension IframeEvent {
             self = .viewIframe(
                 try container.decode(ViewIframeDataDTO.self, forKey: .data)
             )
+        case "ad-done-iframe":
+            self = .adDoneIframe
         case "click-iframe":
             self = .clickIframe(
                 try container.decode(ClickIframeDataDTO.self, forKey: .data)

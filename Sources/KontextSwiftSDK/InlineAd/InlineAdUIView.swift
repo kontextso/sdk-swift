@@ -41,6 +41,7 @@ public final class InlineAdUIView: UIView {
 
         guard newWindow != nil else {
             stopSampling()
+            viewModel.disposeCurrentAttributionIfNeeded()
             return
         }
 
