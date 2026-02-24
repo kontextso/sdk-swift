@@ -97,7 +97,7 @@ extension AdsProviderActor: AdsProviderActing {
             )
 
             guard preloadedData.permanentError != true else {
-                notifyAdNotAvailable(messageId: lastUserMessage.id)
+                notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)
                 isDisabled = true
                 reset()
                 return
@@ -108,7 +108,7 @@ extension AdsProviderActor: AdsProviderActing {
 
             // No bids are available, report status.
             guard let bids = preloadedData.bids, !bids.isEmpty else {
-                notifyAdNotAvailable(messageId: lastUserMessage.id)
+                notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)
                 return
             }
 
@@ -213,10 +213,10 @@ private extension AdsProviderActor {
         )
     }
 
-    func notifyAdNotAvailable(messageId: String) {
+    func notifyAdNotAvailable(messageId: String, skipCode: String? = nil) {
         delegate?.adsProviderActing(
             self,
-            didReceiveEvent: .noFill(.init(messageId: messageId))
+            didReceiveEvent: .noFill(.init(messageId: messageId, skipCode: skipCode))
         )
     }
 
@@ -383,7 +383,7 @@ private extension AdsProviderActor {
             messageId: state.messageId,
             bidId: state.bid.bidId,
             bidCode: state.bid.code,
-            component: data.component,
+            component: data.component.rawValue,
             otherParams: configuration.otherParams
         )
 
