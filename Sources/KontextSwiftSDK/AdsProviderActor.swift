@@ -106,6 +106,12 @@ extension AdsProviderActor: AdsProviderActing {
             bids = preloadedData.bids ?? []
             sessionId = preloadedData.sessionId
 
+            // Skip response
+            if preloadedData.skip == true {
+                notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode ?? "unknown")
+                return
+            }
+
             // No bids are available, report status.
             guard let bids = preloadedData.bids, !bids.isEmpty else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)

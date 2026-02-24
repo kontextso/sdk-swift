@@ -7,6 +7,8 @@ struct PreloadedData {
     let remoteLogLevel: String?
     /// Ads should stop being shown and prevent future preloading
     let permanentError: Bool?
+    /// Skip
+    let skip: Bool?
     /// Skip code
     let skipCode: String?
 }
