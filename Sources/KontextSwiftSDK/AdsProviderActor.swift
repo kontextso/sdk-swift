@@ -407,7 +407,7 @@ private extension AdsProviderActor {
             messageId: state.messageId,
             bidId: state.bid.bidId,
             bidCode: state.bid.code,
-            component: data.component,
+            component: data.component.rawValue,
             otherParams: configuration.otherParams
         )
 

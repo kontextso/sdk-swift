@@ -87,15 +87,19 @@ extension IframeEvent {
 
     /// Data for open component iframe events
     struct OpenComponentIframeDataDTO: Decodable, Hashable {
+        enum Component: String, Decodable {
+            case modal
+        }
+
         let code: String
-        let component: String
+        let component: Component
         let timeout: TimeInterval // ms
     }
 
     /// Data for general component iframe events
     struct ComponentIframeDataDTO: Decodable, Hashable {
         let code: String
-        let component: String
+        let component: OpenComponentIframeDataDTO.Component
     }
 
     /// Data for unknown events
@@ -139,24 +143,29 @@ extension IframeEvent {
                 try? container.decode(ErrorDataDTO.self, forKey: .data)
             )
         case "open-component-iframe":
-            self = .openComponentIframe(
-                try container.decode(
-                    OpenComponentIframeDataDTO.self,
-                    forKey: .data
-                )
-            )
+            guard let data = try? container.decode(OpenComponentIframeDataDTO.self, forKey: .data) else {
+                self = .unknown(type)
+                return
+            }
+            self = .openComponentIframe(data)
         case "close-component-iframe":
-            self = .closeComponentIframe(
-                try container.decode(ComponentIframeDataDTO.self, forKey: .data)
-            )
+            guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
+                self = .unknown(type)
+                return
+            }
+            self = .closeComponentIframe(data)
         case "init-component-iframe":
-            self = .initComponentIframe(
-                try container.decode(ComponentIframeDataDTO.self, forKey: .data)
-            )
+            guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
+                self = .unknown(type)
+                return
+            }
+            self = .initComponentIframe(data)
         case "error-component-iframe":
-            self = .errorComponentIframe(
-                try container.decode(ComponentIframeDataDTO.self, forKey: .data)
-            )
+            guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
+                self = .unknown(type)
+                return
+            }
+            self = .errorComponentIframe(data)
         case "event-iframe":
             self = .eventIframe(
                 try container.decode(EventIframeDataDTO.self, forKey: .data)
