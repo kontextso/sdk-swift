@@ -19,6 +19,8 @@ struct PreloadRequestDTO: Encodable {
     init(
         sessionId: String?,
         configuration: AdsProviderConfiguration,
+        advertisingId: String?,
+        vendorId: String?,
         sdkInfo: SDKInfo,
         appinfo: AppInfo,
         device: DeviceInfo,
@@ -32,8 +34,8 @@ struct PreloadRequestDTO: Encodable {
         self.enabledPlacementCodes = configuration.enabledPlacementCodes
         variantId = configuration.variantId
         character = CharacterDTO(from: configuration.character)
-        advertisingId = configuration.advertisingId
-        vendorId = configuration.vendorId
+        self.advertisingId = advertisingId
+        self.vendorId = vendorId
         self.sessionId = sessionId
         self.sdk = sdkInfo.toModel()
         self.app = appinfo.toModel()

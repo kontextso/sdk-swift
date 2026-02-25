@@ -63,6 +63,17 @@ public final class AdsProvider: @unchecked Sendable {
         Task {
             await dependencies.adsProviderActing.setDelegate(delegate: self)
         }
+
+        Task {
+            let result = await IFACollector.collect(
+                manualAdvertisingId: configuration.advertisingId,
+                manualVendorId: configuration.vendorId
+            )
+            await dependencies.adsProviderActing.setIFA(
+                advertisingId: result.advertisingId,
+                vendorId: result.vendorId
+            )
+        }
     }
 
     /// Internal init used for unit testing.
