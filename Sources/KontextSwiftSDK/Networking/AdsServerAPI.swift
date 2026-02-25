@@ -69,7 +69,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         )
         let app = AppInfo.current()
         let sdk = await SDKInfo.current()
-        let mergedRegulatory = TransparencyConsentFrameworkService.mergedRegulatory(from: configuration.regulatory)
+        let mergedRegulatory = TCFInfo.current().mergedRegulatory(from: configuration.regulatory)
         let requestDTO = PreloadRequestDTO(
             sessionId: sessionId,
             configuration: configuration,

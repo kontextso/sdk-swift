@@ -1,36 +1,30 @@
 import Foundation
 
-struct TransparencyConsentFrameworkData: Sendable {
+struct TCFInfo {
     let gdpr: Int?
     let gdprConsent: String?
 
     var isEmpty: Bool {
         gdpr == nil && gdprConsent == nil
     }
-}
 
-enum TransparencyConsentFrameworkService {
-    static func getTCFData(userDefaults: UserDefaults = .standard) -> TransparencyConsentFrameworkData {
+    static func current(userDefaults: UserDefaults = .standard) -> TCFInfo {
         let tcString = userDefaults.string(forKey: "IABTCF_TCString")
         let gdprApplies = userDefaults.object(forKey: "IABTCF_gdprApplies")
 
-        let gdpr = normalizedGDPRFlag(from: gdprApplies)
-        let gdprConsent = (tcString?.isEmpty == false) ? tcString : nil
-
-        return TransparencyConsentFrameworkData(gdpr: gdpr, gdprConsent: gdprConsent)
+        return TCFInfo(
+            gdpr: normalizedGDPRFlag(from: gdprApplies),
+            gdprConsent: (tcString?.isEmpty == false) ? tcString : nil
+        )
     }
 
-    static func mergedRegulatory(
-        from regulatory: Regulatory?,
-        userDefaults: UserDefaults = .standard
-    ) -> Regulatory? {
-        let tcfData = getTCFData(userDefaults: userDefaults)
-        guard !tcfData.isEmpty else { return regulatory }
+    func mergedRegulatory(from regulatory: Regulatory?) -> Regulatory? {
+        guard !isEmpty else { return regulatory }
 
         if let regulatory {
             return Regulatory(
-                gdpr: tcfData.gdpr ?? regulatory.gdpr,
-                gdprConsent: tcfData.gdprConsent ?? regulatory.gdprConsent,
+                gdpr: gdpr ?? regulatory.gdpr,
+                gdprConsent: gdprConsent ?? regulatory.gdprConsent,
                 coppa: regulatory.coppa,
                 usPrivacy: regulatory.usPrivacy,
                 gpp: regulatory.gpp,
@@ -38,7 +32,7 @@ enum TransparencyConsentFrameworkService {
             )
         }
 
-        return Regulatory(gdpr: tcfData.gdpr, gdprConsent: tcfData.gdprConsent)
+        return Regulatory(gdpr: gdpr, gdprConsent: gdprConsent)
     }
 
     private static func normalizedGDPRFlag(from rawValue: Any?) -> Int? {
