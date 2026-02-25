@@ -14,6 +14,10 @@ let package = Package(
     targets: [
         .target(
             name: "KontextSwiftSDK",
+            linkerSettings: [
+                .linkedFramework("AdSupport"),
+                .linkedFramework("AppTrackingTransparency"),
+            ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
             ]
