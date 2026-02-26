@@ -27,9 +27,8 @@ final class OSInfo: Sendable {
         OSInfo(
             name:  UIDevice.current.systemName.lowercased(),
             version: UIDevice.current.systemVersion,
-            locale: Locale.current.identifier,
+            locale: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"),
             timezone: TimeZone.current.identifier
         )
     }
 }
-
