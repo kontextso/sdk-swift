@@ -67,6 +67,21 @@ extension IframeEvent {
         let content: String
         let messageId: String
         let url: URL?
+        let appStoreId: String?
+
+        init(
+            id: String,
+            content: String,
+            messageId: String,
+            url: URL?,
+            appStoreId: String? = nil
+        ) {
+            self.id = id
+            self.content = content
+            self.messageId = messageId
+            self.url = url
+            self.appStoreId = appStoreId
+        }
     }
 
     /// Data for resize-iframe events
@@ -179,6 +194,12 @@ extension IframeEvent {
     }
 
     private struct CloseSKOverlayIframeDataAliasDTO: Decodable {}
+
+    private struct OpenSKStoreProductIframeDataAliasDTO: Decodable {
+        let appStoreId: String?
+    }
+
+    private struct CloseSKStoreProductIframeDataAliasDTO: Decodable {}
 }
 
 // MARK: - Event Parsing
@@ -235,6 +256,16 @@ extension IframeEvent {
                 position: aliasData.position,
                 dismissible: aliasData.dismissible
             ))
+        case "open-skstoreproduct-iframe":
+            let aliasData = try container.decode(
+                OpenSKStoreProductIframeDataAliasDTO.self,
+                forKey: .data
+            )
+            self = .openComponentIframe(.init(
+                code: "",
+                component: "skstoreproduct",
+                appStoreId: aliasData.appStoreId
+            ))
         case "close-component-iframe":
             guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
                 self = .unknown(type)
@@ -250,6 +281,16 @@ extension IframeEvent {
             self = .closeComponentIframe(.init(
                 code: "",
                 component: "skoverlay"
+            ))
+        case "close-skstoreproduct-iframe":
+            let aliasData = try? container.decode(
+                CloseSKStoreProductIframeDataAliasDTO.self,
+                forKey: .data
+            )
+            _ = aliasData
+            self = .closeComponentIframe(.init(
+                code: "",
+                component: "skstoreproduct"
             ))
         case "init-component-iframe":
             guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {

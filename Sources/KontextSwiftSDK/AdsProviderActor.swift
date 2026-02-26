@@ -35,6 +35,7 @@ actor AdsProviderActor {
     private let urlOpener: URLOpening
     private let skAdNetworkManager: any SKAdNetworkManaging
     private let skOverlayPresenter: any SKOverlayPresenting
+    private let skStoreProductPresenter: any SKStoreProductPresenting
     private weak var delegate: AdsProviderActingDelegate?
     private var skanOwner: (stateId: UUID, bidId: String)?
 
@@ -48,7 +49,8 @@ actor AdsProviderActor {
         adsServerAPI: AdsServerAPI,
         urlOpener: URLOpening,
         skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared,
-        skOverlayPresenter: any SKOverlayPresenting = DefaultSKOverlayPresenter()
+        skOverlayPresenter: any SKOverlayPresenting = DefaultSKOverlayPresenter(),
+        skStoreProductPresenter: any SKStoreProductPresenting = DefaultSKStoreProductPresenter()
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
@@ -57,6 +59,7 @@ actor AdsProviderActor {
         self.urlOpener = urlOpener
         self.skAdNetworkManager = skAdNetworkManager
         self.skOverlayPresenter = skOverlayPresenter
+        self.skStoreProductPresenter = skStoreProductPresenter
         delegate = nil
         messages = []
         bids = []
@@ -70,6 +73,10 @@ private struct NormalizedSKOverlayRequest {
     let appStoreId: String
     let position: SKOverlayDisplayPosition
     let dismissible: Bool
+}
+
+private struct NormalizedSKStoreProductRequest {
+    let appStoreId: String
 }
 
 // MARK: Implementation
@@ -356,7 +363,13 @@ private extension AdsProviderActor {
             }
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: newState.webViewData.url)
+            Task {
+                await handleClickIframe(
+                    clickData,
+                    source: .inline(newState),
+                    fallbackURL: newState.webViewData.url
+                )
+            }
 
         case .resizeIframe(let resizedData):
             guard resizedData.height != newState.preferredHeight else {
@@ -441,7 +454,13 @@ private extension AdsProviderActor {
             }
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: state.webViewData.url)
+            Task {
+                await handleClickIframe(
+                    clickData,
+                    source: .interstitial(state),
+                    fallbackURL: state.webViewData.url
+                )
+            }
 
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
@@ -481,8 +500,14 @@ private extension AdsProviderActor {
         case (.close, .skoverlay, _):
             await dismissSKOverlay(source: source)
 
-        case (_, .skstoreproduct, _):
-            os_log(.info, "[Component]: Unsupported component requested: skstoreproduct")
+        case (.open, .skstoreproduct, _):
+            guard case .open(let data) = request else {
+                return
+            }
+            await presentSKStoreProduct(from: data, source: source)
+
+        case (.close, .skstoreproduct, _):
+            await dismissSKStoreProduct(source: source)
 
         case (_, .unknown(let componentName), _):
             os_log(.info, "[Component]: Unknown component requested: \(componentName)")
@@ -517,6 +542,19 @@ private extension AdsProviderActor {
         )
     }
 
+    func normalizeSKStoreProductRequest(
+        from data: IframeEvent.OpenComponentIframeDataDTO
+    ) -> NormalizedSKStoreProductRequest? {
+        guard let appStoreId = data.appStoreId?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !appStoreId.isEmpty else {
+            os_log(.error, "[SKStoreProduct]: appStoreId is required")
+            return nil
+        }
+
+        return NormalizedSKStoreProductRequest(appStoreId: appStoreId)
+    }
+
     func presentSKOverlay(
         from data: IframeEvent.OpenComponentIframeDataDTO,
         source: IframeComponentSource
@@ -536,7 +574,7 @@ private extension AdsProviderActor {
         }
 
         emitSKOverlayUpdate(
-            code: skOverlayPlacementCode(from: source),
+            code: componentPlacementCode(from: source),
             open: true,
             source: source
         )
@@ -549,13 +587,62 @@ private extension AdsProviderActor {
         }
 
         emitSKOverlayUpdate(
-            code: skOverlayPlacementCode(from: source),
+            code: componentPlacementCode(from: source),
             open: false,
             source: source
         )
     }
 
-    func skOverlayPlacementCode(from source: IframeComponentSource) -> String {
+    func presentSKStoreProduct(
+        from data: IframeEvent.OpenComponentIframeDataDTO,
+        source: IframeComponentSource
+    ) async {
+        guard let request = normalizeSKStoreProductRequest(from: data) else {
+            return
+        }
+
+        await presentSKStoreProduct(
+            appStoreId: request.appStoreId,
+            source: source
+        )
+    }
+
+    func presentSKStoreProduct(
+        appStoreId: String,
+        source: IframeComponentSource
+    ) async -> Bool {
+        let trimmedAppStoreId = appStoreId.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        let success = await skStoreProductPresenter.present(appStoreId: trimmedAppStoreId)
+        guard success else {
+            return false
+        }
+
+        emitSKStoreProductUpdate(
+            code: componentPlacementCode(from: source),
+            open: true,
+            source: source
+        )
+
+        return true
+    }
+
+    func dismissSKStoreProduct(source: IframeComponentSource) async {
+        let success = await skStoreProductPresenter.dismiss()
+        guard success else {
+            return
+        }
+
+        emitSKStoreProductUpdate(
+            code: componentPlacementCode(from: source),
+            open: false,
+            source: source
+        )
+    }
+
+    func componentPlacementCode(from source: IframeComponentSource) -> String {
         switch source {
         case .inline(let state):
             state.bid.code
@@ -585,11 +672,33 @@ private extension AdsProviderActor {
         }
     }
 
+    func emitSKStoreProductUpdate(
+        code: String,
+        open: Bool,
+        source: IframeComponentSource
+    ) {
+        let update = UpdateSKStoreProductIFrameDataDTO(
+            data: .init(code: code, open: open)
+        )
+
+        switch source {
+        case .inline:
+            Task { @MainActor in
+                await inlineEventSubject.send(.didUpdateSKStoreProduct(update))
+            }
+        case .interstitial:
+            Task { @MainActor in
+                await interstitialEventSubject.send(.didUpdateSKStoreProduct(update))
+            }
+        }
+    }
+
     func closeInterstitialAndNativeComponents(for state: AdLoadingState) async {
         interstitialTimeoutTask?.cancel()
         interstitialTimeoutTask = nil
 
         await dismissSKOverlay(source: .interstitial(state))
+        await dismissSKStoreProduct(source: .interstitial(state))
 
         Task { @MainActor in
             await inlineEventSubject.send(.didFinishInterstitialAd)
@@ -650,19 +759,54 @@ private extension AdsProviderActor {
 
 // MARK: Present actions
 private extension AdsProviderActor {
-    func openURL(from data: IframeEvent.ClickIframeDataDTO, fallbackURL: URL?) {
-        if let iframeClickedURL = if let clickDataURL = data.url {
-            adsServerAPI.redirectURL(relativeURL: clickDataURL)
-        } else {
-            fallbackURL
-        } {
-            Task { @MainActor in
-                if !urlOpener.canOpenURL(iframeClickedURL) {
-                    return
-                }
+    func handleClickIframe(
+        _ data: IframeEvent.ClickIframeDataDTO,
+        source: IframeComponentSource,
+        fallbackURL: URL?
+    ) async {
+        let clickedURL = resolvedClickURL(from: data, fallbackURL: fallbackURL)
+        let trimmedAppStoreId = data.appStoreId?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
 
-                urlOpener.open(iframeClickedURL, options: [:], completionHandler: nil)
+        guard let trimmedAppStoreId, !trimmedAppStoreId.isEmpty else {
+            openURL(clickedURL)
+            return
+        }
+
+        let storeProductOpened = await presentSKStoreProduct(
+            appStoreId: trimmedAppStoreId,
+            source: source
+        )
+
+        guard !storeProductOpened else {
+            return
+        }
+
+        openURL(clickedURL)
+    }
+
+    func resolvedClickURL(
+        from data: IframeEvent.ClickIframeDataDTO,
+        fallbackURL: URL?
+    ) -> URL? {
+        if let clickDataURL = data.url {
+            return adsServerAPI.redirectURL(relativeURL: clickDataURL)
+        }
+
+        return fallbackURL
+    }
+
+    func openURL(_ url: URL?) {
+        guard let url else {
+            return
+        }
+
+        Task { @MainActor in
+            if !urlOpener.canOpenURL(url) {
+                return
             }
+
+            urlOpener.open(url, options: [:], completionHandler: nil)
         }
     }
 

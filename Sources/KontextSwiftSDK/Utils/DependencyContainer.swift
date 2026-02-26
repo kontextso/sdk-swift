@@ -32,7 +32,8 @@ struct DependencyContainer: Sendable {
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI,
             urlOpener: UIApplication.shared,
-            skOverlayPresenter: SKOverlayManager.shared
+            skOverlayPresenter: SKOverlayManager.shared,
+            skStoreProductPresenter: SKStoreProductManager.shared
         )
 
         return DependencyContainer(
