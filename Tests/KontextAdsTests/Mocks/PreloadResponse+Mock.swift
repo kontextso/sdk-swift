@@ -11,13 +11,17 @@ extension PreloadedData {
             Bid.bid5,
         ],
         remoteLogLevel: nil,
-        permanentError: nil
+        permanentError: nil,
+        skip: nil,
+        skipCode: nil
     )
 
     static let data2 = PreloadedData(
         sessionId: "sessionId1",
         bids: nil,
         remoteLogLevel: nil,
-        permanentError: nil
+        permanentError: nil,
+        skip: nil,
+        skipCode: nil
     )
 }

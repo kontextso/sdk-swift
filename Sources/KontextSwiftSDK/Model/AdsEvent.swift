@@ -57,6 +57,7 @@ public extension AdsEvent {
 
     struct NoFillData: Sendable {
         public let messageId: String
+        public let skipCode: String?
     }
 }
 
