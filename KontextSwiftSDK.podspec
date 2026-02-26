@@ -17,5 +17,6 @@ Pod::Spec.new do |spec|
 
     spec.source               = { :git => 'https://github.com/kontextso/sdk-swift.git', :tag => spec.version.to_s }
     spec.source_files         = 'Sources/**/*.swift'
+    spec.resource_bundles     = { 'KontextSwiftSDKPrivacy' => ['Sources/KontextSwiftSDK/PrivacyInfo.xcprivacy'] }
     spec.frameworks           = ['UIKit', 'WebKit', 'SwiftUI']
 end
