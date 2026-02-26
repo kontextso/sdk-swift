@@ -65,10 +65,6 @@ extension AdsProviderActor: AdsProviderActing {
     }
 
     func setMessages(messages: [AdsMessage]) async {
-        guard !isDisabled else {
-            return
-        }
-
         let newUserMessages = messages.filter { $0.role == .user }
 
         guard let lastUserMessage = newUserMessages.last else {
@@ -106,6 +102,11 @@ extension AdsProviderActor: AdsProviderActing {
 
             bids = preloadedData.bids ?? []
             sessionId = preloadedData.sessionId
+
+            // Skip everything else if ads are disabled manually
+            if isDisabled {
+                return
+            }
 
             // Skip response
             if preloadedData.skip == true {
