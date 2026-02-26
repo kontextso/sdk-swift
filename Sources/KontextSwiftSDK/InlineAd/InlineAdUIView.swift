@@ -108,6 +108,12 @@ private extension InlineAdUIView {
 
                 case .didFinishInterstitialAd:
                     self.dismissInterstitialAd()
+
+                case .didUpdateSKOverlay(let data):
+                    guard data.data.code == self.viewModel.ad.placementCode else {
+                        return
+                    }
+                    self.adWebViewEventsSubject.send(.didUpdateSKOverlay(data))
                 }
             }
             .store(in: &cancellables)

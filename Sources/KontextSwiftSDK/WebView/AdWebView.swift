@@ -7,6 +7,7 @@ import WebKit
 /// Events targeted for AdWebView
 enum AdWebViewUpdateEvent {
     case didPrepareUpdateDimensions(UpdateDimensionsIFrameDataDTO)
+    case didUpdateSKOverlay(UpdateSKOverlayIFrameDataDTO)
 }
 
 // MARK: - AdWebView
@@ -87,6 +88,8 @@ private extension AdWebView {
             .sink { [weak self] event in
                 switch event {
                 case .didPrepareUpdateDimensions(let data):
+                    self?.sendUpdateIframe(data: data)
+                case .didUpdateSKOverlay(let data):
                     self?.sendUpdateIframe(data: data)
                 }
             }
