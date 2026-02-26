@@ -120,6 +120,7 @@ final class Network: Networking {
         // Decode response body
         do {
             let jsonDecoder = JSONDecoder()
+            jsonDecoder.dateDecodingStrategy = .millisecondsSince1970
             return try jsonDecoder.decode(DecodableResponse.self, from: data)
         } catch {
             throw APIError.decodingError(error)
@@ -143,6 +144,7 @@ final class Network: Networking {
             request.httpMethod = method.rawValue
             headers.forEach { request.setValue($0.headerValue, forHTTPHeaderField: $0.headerKey) }
             let jsonEncoder = JSONEncoder()
+            jsonEncoder.dateEncodingStrategy = .millisecondsSince1970
             request.httpBody = try jsonEncoder.encode(body)
         } catch {
             throw APIError.encodingError(error)
