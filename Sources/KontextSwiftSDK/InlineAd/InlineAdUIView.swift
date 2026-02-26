@@ -114,6 +114,12 @@ private extension InlineAdUIView {
                         return
                     }
                     self.adWebViewEventsSubject.send(.didUpdateSKOverlay(data))
+
+                case .didUpdateSKStoreProduct(let data):
+                    guard data.data.code == self.viewModel.ad.placementCode else {
+                        return
+                    }
+                    self.adWebViewEventsSubject.send(.didUpdateSKStoreProduct(data))
                 }
             }
             .store(in: &cancellables)

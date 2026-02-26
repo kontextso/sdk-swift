@@ -4,6 +4,7 @@ import SwiftUI
 enum InterstitialAdEvent {
     case didChangeDisplay(Bool)
     case didUpdateSKOverlay(UpdateSKOverlayIFrameDataDTO)
+    case didUpdateSKStoreProduct(UpdateSKStoreProductIFrameDataDTO)
 }
 
 struct InterstitialAdView: View {
@@ -58,6 +59,11 @@ struct InterstitialAdView: View {
                     return
                 }
                 adWebViewEventsSubject.send(.didUpdateSKOverlay(data))
+            case .didUpdateSKStoreProduct(let data):
+                guard data.data.code == placementCode else {
+                    return
+                }
+                adWebViewEventsSubject.send(.didUpdateSKStoreProduct(data))
             }
         }
     }

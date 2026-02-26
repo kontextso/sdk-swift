@@ -8,6 +8,7 @@ import WebKit
 enum AdWebViewUpdateEvent {
     case didPrepareUpdateDimensions(UpdateDimensionsIFrameDataDTO)
     case didUpdateSKOverlay(UpdateSKOverlayIFrameDataDTO)
+    case didUpdateSKStoreProduct(UpdateSKStoreProductIFrameDataDTO)
 }
 
 // MARK: - AdWebView
@@ -90,6 +91,8 @@ private extension AdWebView {
                 case .didPrepareUpdateDimensions(let data):
                     self?.sendUpdateIframe(data: data)
                 case .didUpdateSKOverlay(let data):
+                    self?.sendUpdateIframe(data: data)
+                case .didUpdateSKStoreProduct(let data):
                     self?.sendUpdateIframe(data: data)
                 }
             }

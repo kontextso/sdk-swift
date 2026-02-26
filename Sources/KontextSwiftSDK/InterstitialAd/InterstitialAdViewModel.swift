@@ -22,6 +22,8 @@ final class InterstitialAdViewModel: ObservableObject {
                     self?.showIframe = showIframe
                 case .didUpdateSKOverlay:
                     break
+                case .didUpdateSKStoreProduct:
+                    break
                 }
             }
             .store(in: &cancellables)
