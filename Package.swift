@@ -14,6 +14,9 @@ let package = Package(
     targets: [
         .target(
             name: "KontextSwiftSDK",
+            resources: [
+                .copy("PrivacyInfo.xcprivacy")
+            ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
             ],
