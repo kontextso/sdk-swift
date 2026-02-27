@@ -1,6 +1,7 @@
 import CoreTelephony
 import Foundation
 import Network
+import WebKit
 
 enum NetworkType: String, Encodable {
     case wifi
@@ -47,11 +48,7 @@ extension NetworkInfo {
         osInfo: OSInfo,
         hardwareInfo: HardwareInfo
     ) async -> NetworkInfo {
-        let userAgent = currentUserAgent(
-            appInfo: appInfo,
-            osInfo: osInfo,
-            hardwareInfo: hardwareInfo
-        )
+        let userAgent = await currentUserAgent()
         let carrierName = carrierName
         let networkType = await networkType()
         let networkDetail = await networkDetail()
@@ -86,6 +83,24 @@ private extension NetworkInfo {
             .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "UnknownDevice"
 
         return "\(appName)/\(appVersion) (\(deviceModel); \(osName) \(osVersion))"
+    }
+
+    private static var cachedUserAgent: String?
+
+    static func currentUserAgent() async -> String? {
+        if let cached = cachedUserAgent {
+            return cached
+        }
+        let ua = await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                let webView = WKWebView(frame: .zero)
+                webView.evaluateJavaScript("navigator.userAgent") { value, _ in
+                    continuation.resume(returning: value as? String)
+                }
+            }
+        }
+        cachedUserAgent = ua
+        return ua
     }
 
     /// Returns the carrier name of the device, or nil if unavailable
