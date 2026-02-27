@@ -7,8 +7,6 @@ enum InlineAdEvent {
         UIModalPresentationStyle = .fullScreen
     )
     case didFinishInterstitialAd
-    case didUpdateSKOverlay(UpdateSKOverlayIFrameDataDTO)
-    case didUpdateSKStoreProduct(UpdateSKStoreProductIFrameDataDTO)
 }
 
 /// SwiftUI view that represents an inline ad in the chat UI.
@@ -68,16 +66,6 @@ public struct InlineAdView: View {
                 interstitialParams = params
             case .didFinishInterstitialAd:
                 interstitialParams = nil
-            case .didUpdateSKOverlay(let data):
-                guard data.data.code == viewModel.ad.placementCode else {
-                    return
-                }
-                adWebViewEventsSubject.send(.didUpdateSKOverlay(data))
-            case .didUpdateSKStoreProduct(let data):
-                guard data.data.code == viewModel.ad.placementCode else {
-                    return
-                }
-                adWebViewEventsSubject.send(.didUpdateSKStoreProduct(data))
             }
         }
     }

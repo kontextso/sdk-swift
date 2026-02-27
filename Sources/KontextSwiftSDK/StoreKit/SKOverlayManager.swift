@@ -16,12 +16,12 @@ final class SKOverlayManager: NSObject, SKOverlayPresenting {
     private var pendingDismissContinuation: CheckedContinuation<Bool, Never>?
 
     func present(
-        appStoreId: String,
+        skan: Skan,
         position: SKOverlayDisplayPosition,
         dismissible: Bool
     ) async -> Bool {
-        guard !appStoreId.isEmpty else {
-            os_log(.error, "[SKOverlay]: appStoreId cannot be empty")
+        guard #available(iOS 16.0, *) else {
+            os_log(.error, "[SKOverlay]: SKOverlay requires iOS 16.0 or later")
             return false
         }
 
@@ -48,11 +48,25 @@ final class SKOverlayManager: NSObject, SKOverlayPresenting {
             return false
         }
 
+        let trimmedItunesItem = skan.itunesItem.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedItunesItem.isEmpty else {
+            os_log(.error, "[SKOverlay]: itunesItem cannot be empty")
+            return false
+        }
+
         let config = SKOverlay.AppConfiguration(
-            appIdentifier: appStoreId,
+            appIdentifier: trimmedItunesItem,
             position: position.asStoreKitPosition
         )
         config.userDismissible = dismissible
+
+        guard Self.applyImpression(skan, to: config) else {
+            os_log(
+                .error,
+                "[SKOverlay]: Failed to apply SKAN impression (missing or invalid fidelity-1 data)"
+            )
+            return false
+        }
 
         let overlay = SKOverlay(configuration: config)
         overlay.delegate = self
@@ -65,6 +79,10 @@ final class SKOverlayManager: NSObject, SKOverlayPresenting {
     }
 
     func dismiss() async -> Bool {
+        guard #available(iOS 16.0, *) else {
+            return false
+        }
+
         guard pendingDismissContinuation == nil else {
             os_log(.error, "[SKOverlay]: Dismiss operation already in progress")
             return false
@@ -94,6 +112,71 @@ final class SKOverlayManager: NSObject, SKOverlayPresenting {
 extension SKOverlayManager: @unchecked Sendable {}
 
 private extension SKOverlayManager {
+    @available(iOS 16.0, *)
+    static func fidelity1Values(
+        from skan: Skan
+    ) -> (nonce: String, timestamp: NSNumber, signature: String)? {
+        guard let fidelities = skan.fidelities,
+              let f1 = fidelities.first(where: { $0.fidelity == 1 }),
+              !f1.nonce.isEmpty,
+              !f1.signature.isEmpty else {
+            return nil
+        }
+
+        let timestamp: NSNumber
+        if let intTimestamp = Int(f1.timestamp) {
+            timestamp = NSNumber(value: intTimestamp)
+        } else {
+            return nil
+        }
+
+        return (
+            nonce: f1.nonce,
+            timestamp: timestamp,
+            signature: f1.signature
+        )
+    }
+
+    static func applyImpression(
+        _ skan: Skan,
+        to config: SKOverlay.AppConfiguration
+    ) -> Bool {
+        guard #available(iOS 16.0, *) else {
+            return false
+        }
+
+        guard
+            !skan.version.isEmpty,
+            !skan.network.isEmpty,
+            let itunesItem = Int(skan.itunesItem),
+            let f1 = fidelity1Values(from: skan)
+        else {
+            return false
+        }
+
+        let sourceAppInt = Int(skan.sourceApp) ?? 0
+        let campaignInt = skan.campaign.flatMap { Int($0) } ?? 0
+
+        let impression = SKAdImpression()
+        impression.version = skan.version
+        impression.adNetworkIdentifier = skan.network
+        impression.advertisedAppStoreItemIdentifier = NSNumber(value: itunesItem)
+        impression.sourceAppStoreItemIdentifier = NSNumber(value: sourceAppInt)
+        impression.adCampaignIdentifier = NSNumber(value: campaignInt)
+        impression.adImpressionIdentifier = f1.nonce
+        impression.timestamp = f1.timestamp
+        impression.signature = f1.signature
+
+        if #available(iOS 16.1, *),
+           let sourceIdentifier = skan.sourceIdentifier,
+           let sourceIdentifierInt = Int(sourceIdentifier) {
+            impression.sourceIdentifier = NSNumber(value: sourceIdentifierInt)
+        }
+
+        config.setAdImpression(impression)
+        return true
+    }
+
     func activeScene() -> UIWindowScene? {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
@@ -118,6 +201,7 @@ private extension SKOverlayManager {
 
 @MainActor
 private extension SKOverlayDisplayPosition {
+    @available(iOS 16.0, *)
     var asStoreKitPosition: SKOverlay.Position {
         switch self {
         case .bottom:

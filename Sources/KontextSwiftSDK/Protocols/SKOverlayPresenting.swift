@@ -8,7 +8,7 @@ enum SKOverlayDisplayPosition: Sendable {
 @MainActor
 protocol SKOverlayPresenting: Sendable {
     func present(
-        appStoreId: String,
+        skan: Skan,
         position: SKOverlayDisplayPosition,
         dismissible: Bool
     ) async -> Bool
@@ -18,12 +18,12 @@ protocol SKOverlayPresenting: Sendable {
 
 struct DefaultSKOverlayPresenter: SKOverlayPresenting {
     func present(
-        appStoreId: String,
+        skan: Skan,
         position: SKOverlayDisplayPosition,
         dismissible: Bool
     ) async -> Bool {
         await SKOverlayManager.shared.present(
-            appStoreId: appStoreId,
+            skan: skan,
             position: position,
             dismissible: dismissible
         )

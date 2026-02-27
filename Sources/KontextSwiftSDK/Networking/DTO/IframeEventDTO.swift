@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 
 /// Represents different types of events that can be received from the InlineAd iframe
 enum IframeEvent: Decodable, Hashable, Sendable {
@@ -108,7 +107,6 @@ extension IframeEvent {
         enum Component: String, Decodable {
             case modal
             case skoverlay
-            case skstoreproduct
         }
 
         static let defaultTimeoutMilliseconds: TimeInterval = 5000
@@ -189,18 +187,11 @@ extension IframeEvent {
     }
 
     private struct OpenSKOverlayIframeDataAliasDTO: Decodable {
-        let appStoreId: String?
         let position: String?
         let dismissible: Bool?
     }
 
     private struct CloseSKOverlayIframeDataAliasDTO: Decodable {}
-
-    private struct OpenSKStoreProductIframeDataAliasDTO: Decodable {
-        let appStoreId: String?
-    }
-
-    private struct CloseSKStoreProductIframeDataAliasDTO: Decodable {}
 }
 
 // MARK: - Event Parsing
@@ -256,22 +247,8 @@ extension IframeEvent {
             self = .openComponentIframe(.init(
                 code: "",
                 component: .skoverlay,
-                appStoreId: aliasData.appStoreId,
                 position: aliasData.position,
                 dismissible: aliasData.dismissible
-            ))
-        case "open-skstoreproduct-iframe":
-            guard let aliasData = try? container.decode(
-                OpenSKStoreProductIframeDataAliasDTO.self,
-                forKey: .data
-            ) else {
-                self = .unknown(type)
-                return
-            }
-            self = .openComponentIframe(.init(
-                code: "",
-                component: .skstoreproduct,
-                appStoreId: aliasData.appStoreId
             ))
         case "close-component-iframe":
             guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
@@ -288,16 +265,6 @@ extension IframeEvent {
             self = .closeComponentIframe(.init(
                 code: "",
                 component: .skoverlay
-            ))
-        case "close-skstoreproduct-iframe":
-            let aliasData = try? container.decode(
-                CloseSKStoreProductIframeDataAliasDTO.self,
-                forKey: .data
-            )
-            _ = aliasData
-            self = .closeComponentIframe(.init(
-                code: "",
-                component: .skstoreproduct
             ))
         case "init-component-iframe":
             guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {

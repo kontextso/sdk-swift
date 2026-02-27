@@ -15,18 +15,18 @@ final class SKStoreProductManager: NSObject, SKStoreProductPresenting {
     private var pendingPresentContinuation: CheckedContinuation<Bool, Never>?
     private var pendingDismissContinuation: CheckedContinuation<Bool, Never>?
 
-    func present(appStoreId: String) async -> Bool {
-        let trimmedAppStoreId = appStoreId.trimmingCharacters(
+    func present(skan: Skan) async -> Bool {
+        let trimmedItunesItem = skan.itunesItem.trimmingCharacters(
             in: .whitespacesAndNewlines
         )
 
-        guard !trimmedAppStoreId.isEmpty else {
-            os_log(.error, "[SKStoreProduct]: appStoreId cannot be empty")
+        guard !trimmedItunesItem.isEmpty else {
+            os_log(.error, "[SKStoreProduct]: itunesItem cannot be empty")
             return false
         }
 
-        guard let itemId = Int(trimmedAppStoreId) else {
-            os_log(.error, "[SKStoreProduct]: appStoreId must be a valid integer string")
+        guard let itemId = Int(trimmedItunesItem) else {
+            os_log(.error, "[SKStoreProduct]: itunesItem must be a valid integer string")
             return false
         }
 
@@ -52,9 +52,10 @@ final class SKStoreProductManager: NSObject, SKStoreProductPresenting {
         let viewController = SKStoreProductViewController()
         viewController.delegate = self
 
-        let params: [String: Any] = [
+        var params: [String: Any] = [
             SKStoreProductParameterITunesItemIdentifier: NSNumber(value: itemId)
         ]
+        Self.applySkanParams(skan, into: &params)
 
         return await withCheckedContinuation { continuation in
             pendingPresentContinuation = continuation
@@ -143,6 +144,57 @@ extension SKStoreProductManager: SKStoreProductViewControllerDelegate {
 }
 
 private extension SKStoreProductManager {
+    static func fidelity1Values(
+        from skan: Skan
+    ) -> (nonce: UUID, timestamp: String, signature: String)? {
+        guard let fidelities = skan.fidelities,
+              let f1 = fidelities.first(where: { $0.fidelity == 1 }),
+              !f1.nonce.isEmpty,
+              let nonce = UUID(uuidString: f1.nonce),
+              !f1.timestamp.isEmpty,
+              !f1.signature.isEmpty else {
+            return nil
+        }
+
+        return (
+            nonce: nonce,
+            timestamp: f1.timestamp,
+            signature: f1.signature
+        )
+    }
+
+    static func applySkanParams(_ skan: Skan, into params: inout [String: Any]) {
+        guard #available(iOS 14.0, *) else {
+            return
+        }
+
+        guard
+            !skan.version.isEmpty,
+            !skan.network.isEmpty,
+            let f1 = fidelity1Values(from: skan)
+        else {
+            return
+        }
+
+        let sourceAppInt = Int(skan.sourceApp) ?? 0
+        let campaignInt = skan.campaign.flatMap { Int($0) } ?? 0
+        let timestampInt = Int(f1.timestamp) ?? 0
+
+        params[SKStoreProductParameterAdNetworkVersion] = skan.version
+        params[SKStoreProductParameterAdNetworkIdentifier] = skan.network
+        params[SKStoreProductParameterAdNetworkSourceAppStoreIdentifier] = NSNumber(value: sourceAppInt)
+        params[SKStoreProductParameterAdNetworkCampaignIdentifier] = NSNumber(value: campaignInt)
+        params[SKStoreProductParameterAdNetworkTimestamp] = NSNumber(value: timestampInt)
+        params[SKStoreProductParameterAdNetworkAttributionSignature] = f1.signature
+        params[SKStoreProductParameterAdNetworkNonce] = f1.nonce
+
+        if #available(iOS 16.1, *),
+           let sourceIdentifier = skan.sourceIdentifier,
+           let sourceIdentifierInt = Int(sourceIdentifier) {
+            params[SKStoreProductParameterAdNetworkSourceIdentifier] = NSNumber(value: sourceIdentifierInt)
+        }
+    }
+
     func completePresent(_ success: Bool) {
         let continuation = pendingPresentContinuation
         pendingPresentContinuation = nil

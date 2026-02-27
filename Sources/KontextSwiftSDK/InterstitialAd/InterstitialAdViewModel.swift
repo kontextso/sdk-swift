@@ -20,10 +20,6 @@ final class InterstitialAdViewModel: ObservableObject {
                 switch event {
                 case .didChangeDisplay(let showIframe):
                     self?.showIframe = showIframe
-                case .didUpdateSKOverlay:
-                    break
-                case .didUpdateSKStoreProduct:
-                    break
                 }
             }
             .store(in: &cancellables)

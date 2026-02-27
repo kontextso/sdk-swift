@@ -3,7 +3,6 @@ import Foundation
 enum IframeComponentKind {
     case modal
     case skoverlay
-    case skstoreproduct
 
     init(component: IframeEvent.OpenComponentIframeDataDTO.Component) {
         switch component {
@@ -11,8 +10,6 @@ enum IframeComponentKind {
             self = .modal
         case .skoverlay:
             self = .skoverlay
-        case .skstoreproduct:
-            self = .skstoreproduct
         }
     }
 }

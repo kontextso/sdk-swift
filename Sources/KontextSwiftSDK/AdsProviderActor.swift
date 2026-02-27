@@ -70,13 +70,9 @@ actor AdsProviderActor {
 }
 
 private struct NormalizedSKOverlayRequest {
-    let appStoreId: String
+    let skan: Skan
     let position: SKOverlayDisplayPosition
     let dismissible: Bool
-}
-
-private struct NormalizedSKStoreProductRequest {
-    let appStoreId: String
 }
 
 // MARK: Implementation
@@ -498,16 +494,7 @@ private extension AdsProviderActor {
             await presentSKOverlay(from: data, source: source)
 
         case (.close, .skoverlay, _):
-            await dismissSKOverlay(source: source)
-
-        case (.open, .skstoreproduct, _):
-            guard case .open(let data) = request else {
-                return
-            }
-            await presentSKStoreProduct(from: data, source: source)
-
-        case (.close, .skstoreproduct, _):
-            await dismissSKStoreProduct(source: source)
+            await dismissSKOverlay()
 
         default:
             break
@@ -515,12 +502,15 @@ private extension AdsProviderActor {
     }
 
     func normalizeSKOverlayRequest(
-        from data: IframeEvent.OpenComponentIframeDataDTO
+        from data: IframeEvent.OpenComponentIframeDataDTO,
+        source: IframeComponentSource
     ) -> NormalizedSKOverlayRequest? {
-        guard let appStoreId = data.appStoreId?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-              !appStoreId.isEmpty else {
-            os_log(.error, "[SKOverlay]: appStoreId is required")
+        guard let skan = bidSkan(from: source) else {
+            os_log(.error, "[SKOverlay]: SKAN data is required")
+            return nil
+        }
+        guard hasFidelity1(skan) else {
+            os_log(.error, "[SKOverlay]: fidelity-1 SKAN data is required")
             return nil
         }
 
@@ -533,169 +523,60 @@ private extension AdsProviderActor {
         }
 
         return NormalizedSKOverlayRequest(
-            appStoreId: appStoreId,
+            skan: skan,
             position: position,
             dismissible: data.dismissible ?? true
         )
-    }
-
-    func normalizeSKStoreProductRequest(
-        from data: IframeEvent.OpenComponentIframeDataDTO
-    ) -> NormalizedSKStoreProductRequest? {
-        guard let appStoreId = data.appStoreId?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-              !appStoreId.isEmpty else {
-            os_log(.error, "[SKStoreProduct]: appStoreId is required")
-            return nil
-        }
-
-        return NormalizedSKStoreProductRequest(appStoreId: appStoreId)
     }
 
     func presentSKOverlay(
         from data: IframeEvent.OpenComponentIframeDataDTO,
         source: IframeComponentSource
     ) async {
-        guard let request = normalizeSKOverlayRequest(from: data) else {
+        guard let request = normalizeSKOverlayRequest(from: data, source: source) else {
             return
         }
 
-        let success = await skOverlayPresenter.present(
-            appStoreId: request.appStoreId,
+        _ = await skOverlayPresenter.present(
+            skan: request.skan,
             position: request.position,
             dismissible: request.dismissible
         )
-
-        guard success else {
-            return
-        }
-
-        emitSKOverlayUpdate(
-            code: componentPlacementCode(from: source),
-            open: true,
-            source: source
-        )
     }
 
-    func dismissSKOverlay(source: IframeComponentSource) async {
-        let success = await skOverlayPresenter.dismiss()
-        guard success else {
-            return
-        }
-
-        emitSKOverlayUpdate(
-            code: componentPlacementCode(from: source),
-            open: false,
-            source: source
-        )
+    func dismissSKOverlay() async {
+        _ = await skOverlayPresenter.dismiss()
     }
 
     func presentSKStoreProduct(
-        from data: IframeEvent.OpenComponentIframeDataDTO,
-        source: IframeComponentSource
-    ) async {
-        guard let request = normalizeSKStoreProductRequest(from: data) else {
-            return
-        }
-
-        await presentSKStoreProduct(
-            appStoreId: request.appStoreId,
-            source: source
-        )
-    }
-
-    func presentSKStoreProduct(
-        appStoreId: String,
-        source: IframeComponentSource
+        skan: Skan
     ) async -> Bool {
-        let trimmedAppStoreId = appStoreId.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-
-        let success = await skStoreProductPresenter.present(appStoreId: trimmedAppStoreId)
-        guard success else {
-            return false
-        }
-
-        emitSKStoreProductUpdate(
-            code: componentPlacementCode(from: source),
-            open: true,
-            source: source
-        )
-
-        return true
+        await skStoreProductPresenter.present(skan: skan)
     }
 
-    func dismissSKStoreProduct(source: IframeComponentSource) async {
-        let success = await skStoreProductPresenter.dismiss()
-        guard success else {
-            return
-        }
-
-        emitSKStoreProductUpdate(
-            code: componentPlacementCode(from: source),
-            open: false,
-            source: source
-        )
+    func dismissSKStoreProduct() async {
+        _ = await skStoreProductPresenter.dismiss()
     }
 
-    func componentPlacementCode(from source: IframeComponentSource) -> String {
+    func bidSkan(from source: IframeComponentSource) -> Skan? {
         switch source {
         case .inline(let state):
-            state.bid.code
+            state.bid.skan
         case .interstitial(let state):
-            state.bid.code
+            state.bid.skan
         }
     }
 
-    func emitSKOverlayUpdate(
-        code: String,
-        open: Bool,
-        source: IframeComponentSource
-    ) {
-        let update = UpdateSKOverlayIFrameDataDTO(
-            data: .init(code: code, open: open)
-        )
-
-        switch source {
-        case .inline:
-            Task { @MainActor in
-                await inlineEventSubject.send(.didUpdateSKOverlay(update))
-            }
-        case .interstitial:
-            Task { @MainActor in
-                await interstitialEventSubject.send(.didUpdateSKOverlay(update))
-            }
-        }
+    func hasFidelity1(_ skan: Skan) -> Bool {
+        skan.fidelities?.contains(where: { $0.fidelity == 1 }) ?? false
     }
 
-    func emitSKStoreProductUpdate(
-        code: String,
-        open: Bool,
-        source: IframeComponentSource
-    ) {
-        let update = UpdateSKStoreProductIFrameDataDTO(
-            data: .init(code: code, open: open)
-        )
-
-        switch source {
-        case .inline:
-            Task { @MainActor in
-                await inlineEventSubject.send(.didUpdateSKStoreProduct(update))
-            }
-        case .interstitial:
-            Task { @MainActor in
-                await interstitialEventSubject.send(.didUpdateSKStoreProduct(update))
-            }
-        }
-    }
-
-    func closeInterstitialAndNativeComponents(for state: AdLoadingState) async {
+    func closeInterstitialAndNativeComponents(for _: AdLoadingState) async {
         interstitialTimeoutTask?.cancel()
         interstitialTimeoutTask = nil
 
-        await dismissSKOverlay(source: .interstitial(state))
-        await dismissSKStoreProduct(source: .interstitial(state))
+        await dismissSKOverlay()
+        await dismissSKStoreProduct()
 
         Task { @MainActor in
             await inlineEventSubject.send(.didFinishInterstitialAd)
@@ -762,18 +643,13 @@ private extension AdsProviderActor {
         fallbackURL: URL?
     ) async {
         let clickedURL = resolvedClickURL(from: data, fallbackURL: fallbackURL)
-        let trimmedAppStoreId = data.appStoreId?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard let trimmedAppStoreId, !trimmedAppStoreId.isEmpty else {
+        guard let skan = bidSkan(from: source), hasFidelity1(skan) else {
             openURL(clickedURL)
             return
         }
 
-        let storeProductOpened = await presentSKStoreProduct(
-            appStoreId: trimmedAppStoreId,
-            source: source
-        )
+        let storeProductOpened = await presentSKStoreProduct(skan: skan)
 
         guard !storeProductOpened else {
             return
@@ -822,7 +698,6 @@ private extension AdsProviderActor {
         Task { @MainActor in
             let params = await InterstitialAdView.Params(
                 url: url,
-                placementCode: state.bid.code,
                 events: interstitialEventSubject.eraseToAnyPublisher(),
                 onIFrameEvent: { [weak self] event in
                     Task {
