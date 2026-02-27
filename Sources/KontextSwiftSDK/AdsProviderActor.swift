@@ -33,20 +33,27 @@ actor AdsProviderActor {
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
     private let urlOpener: URLOpening
+    private let skAdNetworkManager: any SKAdNetworkManaging
     private weak var delegate: AdsProviderActingDelegate?
+    private var skanOwner: (stateId: UUID, bidId: String)?
+
+    // stateId waiting for start after init
+    private var pendingStart: UUID?
 
     init(
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
         isDisabled: Bool,
         adsServerAPI: AdsServerAPI,
-        urlOpener: URLOpening
+        urlOpener: URLOpening,
+        skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
         self.isDisabled = isDisabled
         self.adsServerAPI = adsServerAPI
         self.urlOpener = urlOpener
+        self.skAdNetworkManager = skAdNetworkManager
         delegate = nil
         messages = []
         bids = []
@@ -78,7 +85,7 @@ extension AdsProviderActor: AdsProviderActing {
         self.messages = messages
 
         if shouldPreload {
-            reset()
+            await reset()
             notifyAboutAdChanges()
         } else {
             await bindBidsToLastAssistantMessage()
@@ -101,7 +108,7 @@ extension AdsProviderActor: AdsProviderActing {
             guard preloadedData.permanentError != true else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)
                 isDisabled = true
-                reset()
+                await reset()
                 return
             }
 
@@ -141,7 +148,8 @@ extension AdsProviderActor: AdsProviderActing {
         }
     }
 
-    func reset() {
+    func reset() async {
+        await cleanupSKAdNetwork()
         bids = []
         states = []
     }
@@ -262,6 +270,14 @@ private extension AdsProviderActor {
                     await self?.handleInlineIframeEvent(event: event, stateId: stateId)
                 }
             },
+            onDispose: { [weak self] in
+                Task {
+                    await self?.handleInlineWebViewDispose(
+                        stateId: stateId,
+                        bidId: bid.bidId
+                    )
+                }
+            },
             events: inlineEventSubject.eraseToAnyPublisher()
         )
     }
@@ -294,7 +310,7 @@ private extension AdsProviderActor {
 
 // MARK: iFrame events
 private extension AdsProviderActor {
-    func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) {
+    func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) async {
         guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
             return
         }
@@ -302,7 +318,7 @@ private extension AdsProviderActor {
 
         switch event {
         case .initIframe:
-            break // Handled by InlineAdWebView
+            await initializeSKAdNetwork(for: newState)
 
         case .showIframe:
             if !newState.show {
@@ -320,6 +336,15 @@ private extension AdsProviderActor {
 
         case .viewIframe(let viewData):
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
+
+        case .adDoneIframe:
+            if newState.bid.impressionTrigger == .immediate {
+                if skanOwner?.stateId == newState.id {
+                    await startSKAdNetwork(for: newState)
+                } else {
+                    pendingStart = newState.id // init not done yet
+                }
+            }
 
         case .clickIframe(let clickData):
             openURL(from: clickData, fallbackURL: newState.webViewData.url)
@@ -339,10 +364,16 @@ private extension AdsProviderActor {
 
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message?.message ?? "unknown")")
-            reset()
+            await reset()
             notifyAboutAdChanges()
 
         case .openComponentIframe(let data):
+            if
+                newState.bid.impressionTrigger == .component,
+                data.component == .modal
+            {
+                await startSKAdNetwork(for: newState)
+            }
             Task {
                 await presentInterstitialAd(data, state: newState)
             }
@@ -353,6 +384,10 @@ private extension AdsProviderActor {
         default:
             break
         }
+    }
+
+    func handleInlineWebViewDispose(stateId: UUID, bidId: String) async {
+        await cleanupSKAdNetwork(stateId: stateId, bidId: bidId)
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
@@ -378,6 +413,57 @@ private extension AdsProviderActor {
         default:
             break
         }
+    }
+}
+
+// MARK: SKAdNetwork
+private extension AdsProviderActor {
+    func initializeSKAdNetwork(for state: AdLoadingState) async {
+        guard let skan = state.bid.skan else {
+            return
+        }
+
+        let didInitialize = await skAdNetworkManager.initImpression(skan)
+        if didInitialize {
+            skanOwner = (stateId: state.id, bidId: state.bid.bidId)
+            if pendingStart == state.id {
+                pendingStart = nil
+                await skAdNetworkManager.startImpression()
+            }
+        } else {
+            if pendingStart == state.id {
+                pendingStart = nil
+            }
+        }
+    }
+
+    func startSKAdNetwork(for state: AdLoadingState) async {
+        guard
+            skanOwner?.stateId == state.id,
+            skanOwner?.bidId == state.bid.bidId
+        else {
+            return
+        }
+
+        await skAdNetworkManager.startImpression()
+    }
+
+    func cleanupSKAdNetwork(stateId: UUID, bidId: String) async {
+        guard skanOwner?.stateId == stateId, skanOwner?.bidId == bidId else {
+            return
+        }
+
+        await cleanupSKAdNetwork()
+    }
+
+    func cleanupSKAdNetwork() async {
+        pendingStart = nil
+        guard skanOwner != nil else {
+            return
+        }
+        skanOwner = nil
+        await skAdNetworkManager.endImpression()
+        await skAdNetworkManager.dispose()
     }
 }
 

@@ -41,6 +41,7 @@ public final class InlineAdUIView: UIView {
 
         guard newWindow != nil else {
             stopSampling()
+            viewModel.disposeCurrentAttributionIfNeeded()
             return
         }
 
@@ -127,11 +128,15 @@ private extension InlineAdUIView {
         presentationMode: UIModalPresentationStyle
     ) {
         let presentationController = topMostViewController
+        // Use overFullScreen to avoid detaching the presenting hierarchy during modal transitions.
+        let effectiveMode: UIModalPresentationStyle = presentationMode == .fullScreen
+            ? .overFullScreen
+            : presentationMode
         let viewController = UIHostingController(
             rootView: InterstitialAdView(params: params)
         )
         interstitialViewController = viewController
-        viewController.modalPresentationStyle = presentationMode
+        viewController.modalPresentationStyle = effectiveMode
         presentationController?.present(viewController, animated: true)
     }
 

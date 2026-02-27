@@ -15,6 +15,7 @@ extension AdLoadingState {
         let url: URL?
         let updateData: UpdateIFrameDTO?
         let onIFrameEvent: @Sendable (IframeEvent) -> Void
+        let onDispose: @Sendable () -> Void
         let events: AnyPublisher<InlineAdEvent, Never>
 
         func hash(into hasher: inout Hasher) {
