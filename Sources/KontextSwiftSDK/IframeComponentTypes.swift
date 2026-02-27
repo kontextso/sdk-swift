@@ -4,18 +4,15 @@ enum IframeComponentKind {
     case modal
     case skoverlay
     case skstoreproduct
-    case unknown(String)
 
-    init(componentName: String) {
-        switch componentName.lowercased() {
-        case "modal":
+    init(component: IframeEvent.OpenComponentIframeDataDTO.Component) {
+        switch component {
+        case .modal:
             self = .modal
-        case "skoverlay":
+        case .skoverlay:
             self = .skoverlay
-        case "skstoreproduct":
+        case .skstoreproduct:
             self = .skstoreproduct
-        default:
-            self = .unknown(componentName)
         }
     }
 }
@@ -46,9 +43,9 @@ enum IframeComponentRequest {
     var kind: IframeComponentKind {
         switch self {
         case .open(let data):
-            IframeComponentKind(componentName: data.component)
+            IframeComponentKind(component: data.component)
         case .close(let data):
-            IframeComponentKind(componentName: data.component)
+            IframeComponentKind(component: data.component)
         }
     }
 

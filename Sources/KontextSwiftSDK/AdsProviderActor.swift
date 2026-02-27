@@ -509,9 +509,6 @@ private extension AdsProviderActor {
         case (.close, .skstoreproduct, _):
             await dismissSKStoreProduct(source: source)
 
-        case (_, .unknown(let componentName), _):
-            os_log(.info, "[Component]: Unknown component requested: \(componentName)")
-
         default:
             break
         }

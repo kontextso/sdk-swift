@@ -107,6 +107,8 @@ extension IframeEvent {
     struct OpenComponentIframeDataDTO: Decodable, Hashable {
         enum Component: String, Decodable {
             case modal
+            case skoverlay
+            case skstoreproduct
         }
 
         static let defaultTimeoutMilliseconds: TimeInterval = 5000
@@ -120,7 +122,7 @@ extension IframeEvent {
 
         init(
             code: String,
-            component: String,
+            component: Component,
             timeout: TimeInterval = OpenComponentIframeDataDTO.defaultTimeoutMilliseconds,
             appStoreId: String? = nil,
             position: String? = nil,
@@ -137,7 +139,7 @@ extension IframeEvent {
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             code = try container.decode(String.self, forKey: .code)
-            component = try container.decode(String.self, forKey: .component)
+            component = try container.decode(Component.self, forKey: .component)
             timeout = Self.decodeTimeout(from: container)
             appStoreId = try container.decodeIfPresent(String.self, forKey: .appStoreId)
             position = try container.decodeIfPresent(String.self, forKey: .position)
@@ -171,12 +173,11 @@ extension IframeEvent {
     }
 
     /// Data for general component iframe events
-    // TODO: Fix component - is not String anymore
     struct ComponentIframeDataDTO: Decodable, Hashable {
         let code: String
         let component: OpenComponentIframeDataDTO.Component
 
-        init(code: String, component: String) {
+        init(code: String, component: OpenComponentIframeDataDTO.Component) {
             self.code = code
             self.component = component
         }
@@ -245,25 +246,31 @@ extension IframeEvent {
             }
             self = .openComponentIframe(data)
         case "open-skoverlay-iframe":
-            let aliasData = try container.decode(
+            guard let aliasData = try? container.decode(
                 OpenSKOverlayIframeDataAliasDTO.self,
                 forKey: .data
-            )
+            ) else {
+                self = .unknown(type)
+                return
+            }
             self = .openComponentIframe(.init(
                 code: "",
-                component: "skoverlay",
+                component: .skoverlay,
                 appStoreId: aliasData.appStoreId,
                 position: aliasData.position,
                 dismissible: aliasData.dismissible
             ))
         case "open-skstoreproduct-iframe":
-            let aliasData = try container.decode(
+            guard let aliasData = try? container.decode(
                 OpenSKStoreProductIframeDataAliasDTO.self,
                 forKey: .data
-            )
+            ) else {
+                self = .unknown(type)
+                return
+            }
             self = .openComponentIframe(.init(
                 code: "",
-                component: "skstoreproduct",
+                component: .skstoreproduct,
                 appStoreId: aliasData.appStoreId
             ))
         case "close-component-iframe":
@@ -280,7 +287,7 @@ extension IframeEvent {
             _ = aliasData
             self = .closeComponentIframe(.init(
                 code: "",
-                component: "skoverlay"
+                component: .skoverlay
             ))
         case "close-skstoreproduct-iframe":
             let aliasData = try? container.decode(
@@ -290,7 +297,7 @@ extension IframeEvent {
             _ = aliasData
             self = .closeComponentIframe(.init(
                 code: "",
-                component: "skstoreproduct"
+                component: .skstoreproduct
             ))
         case "init-component-iframe":
             guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
