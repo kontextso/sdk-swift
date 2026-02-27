@@ -5,18 +5,18 @@ struct AppInfo  {
     let bundleId: String?
     let version: String
     let storeUrl: String?
-    let installTime: Double?
-    let updateTime: Double?
-    let startTime: Double
+    let installTime: Int64?
+    let updateTime: Int64?
+    let startTime: Int64
 
     init(
         name: String,
         bundleId: String?,
         version: String,
         storeUrl: String?,
-        installTime: Double?,
-        updateTime: Double?,
-        startTime: Double
+        installTime: Int64?,
+        updateTime: Int64?,
+        startTime: Int64    
     ) {
         self.name = name
         self.bundleId = bundleId
@@ -52,7 +52,7 @@ extension AppInfo {
 }
 
 private extension AppInfo {
-    static var installTime: Double? {
+    static var installTime: Int64? {
         // Determine install time as the first creation of the user documents folder.
         if let documentsURL = FileManager.default.urls(
             for: .documentDirectory,
@@ -60,25 +60,25 @@ private extension AppInfo {
         ).first {
             if let attributes = try? FileManager.default.attributesOfItem(atPath: documentsURL.path),
                let creationDate = attributes[.creationDate] as? Date {
-                return creationDate.timeIntervalSince1970
+                return Int64(creationDate.timeIntervalSince1970 * 1000)
             }
         }
         return nil
     }
 
-    static var updateTime: Double? {
+    static var updateTime: Int64? {
         // Determine install time as the last modification of the user documents folder.
         let bundleURL = Bundle.main.bundleURL
         if let attributes = try? FileManager.default.attributesOfItem(atPath: bundleURL.path),
            let modificationDate = attributes[.modificationDate] as? Date {
-            return modificationDate.timeIntervalSince1970
+            return Int64(modificationDate.timeIntervalSince1970 * 1000)
         }
         return nil
     }
 
-    static var startTime: Double {
+    static var startTime: Int64 {
         let uptime = ProcessInfo.processInfo.systemUptime
         let now = Date()
-        return now.addingTimeInterval(-uptime).timeIntervalSince1970
+        return Int64(now.addingTimeInterval(-uptime).timeIntervalSince1970 * 1000)
     }
 }
