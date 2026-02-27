@@ -90,12 +90,7 @@ final class SKAdNetworkManager: SKAdNetworkManaging, @unchecked Sendable {
         let timestamp = num(skan.timestamp)
         let signature = skan.signature
 
-        let hasFidelities: Bool = {
-            guard #available(iOS 16.1, *) else {
-                return false
-            }
-            return !(skan.fidelities?.isEmpty ?? true)
-        }()
+        let hasFidelities = !(skan.fidelities?.isEmpty ?? true)
 
         guard
             !isBlank(version),
@@ -134,10 +129,10 @@ final class SKAdNetworkManager: SKAdNetworkManaging, @unchecked Sendable {
                 if let sourceIdentifier {
                     impression.sourceIdentifier = sourceIdentifier
                 }
+            }
 
-                if hasFidelities, let fidelities = skan.fidelities {
-                    parseFidelities(fidelities, into: impression)
-                }
+            if hasFidelities, let fidelities = skan.fidelities {
+                parseFidelities(fidelities, into: impression)
             }
 
             skImpression = impression
@@ -151,6 +146,11 @@ final class SKAdNetworkManager: SKAdNetworkManaging, @unchecked Sendable {
             impression.timestamp = timestamp ?? NSNumber(value: 0)
             impression.signature = signature ?? ""
             impression.version = version
+
+            if hasFidelities, let fidelities = skan.fidelities {
+                parseFidelities(fidelities, into: impression)
+            }
+
             skImpression = impression
         }
 
@@ -228,7 +228,7 @@ private extension SKAdNetworkManager {
         }
     }
 
-    @available(iOS 16.1, *)
+    @available(iOS 14.5, *)
     func parseFidelities(_ fidelities: [AttributionFidelity], into impression: SKAdImpression) {
         guard let f0 = fidelities.first(where: { $0.fidelity == 0 }) else { return }
         if impression.adImpressionIdentifier.isEmpty {
