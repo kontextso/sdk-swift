@@ -27,7 +27,7 @@ enum HTTPHeaderField {
     
     case acceptType(AcceptType)
     case contentType(ContentType)
-    case userAgent(String) 
+    case userAgent(String)
     case publisherToken(String)
     case isDisabled(Bool)
     
@@ -35,7 +35,7 @@ enum HTTPHeaderField {
         switch self {
         case .acceptType: "Accept"
         case .contentType: "Content-Type"
-        case .userAgent: "User-Agent" 
+        case .userAgent: "User-Agent"
         case .publisherToken: "Kontextso-Publisher-Token"
         case .isDisabled: "Kontextso-Is-Disabled"
         }
@@ -45,7 +45,7 @@ enum HTTPHeaderField {
         switch self {
         case .acceptType(let type): type.rawValue
         case .contentType(let type): type.rawValue
-        case .userAgent(let ua): ua 
+        case .userAgent(let ua): ua
         case .publisherToken(let token): token
         case .isDisabled(let value): value ? "1" : "0"
         }

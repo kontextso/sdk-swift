@@ -49,7 +49,6 @@ extension NetworkInfo {
         hardwareInfo: HardwareInfo
     ) async -> NetworkInfo {
         let userAgent = await currentUserAgent()
-        print("userAgent: \(userAgent)")
         let carrierName = carrierName
         let networkType = await networkType()
         let networkDetail = await networkDetail()
