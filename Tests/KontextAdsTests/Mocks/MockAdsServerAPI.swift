@@ -13,7 +13,9 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     private(set) var preloadConfiguration: AdsProviderConfiguration?
     private(set) var preloadMessages: [AdsMessage] = []
     private(set) var preloadIsDisabled: Bool = false
-    
+    private(set) var preloadAdvertisingId: String?
+    private(set) var preloadVendorId: String?
+
     var preloadError: Error?
 
     private(set) var frameURLCalls: [(messageId: String, bidId: String, bidCode: String)] = []
@@ -36,6 +38,8 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         sessionId: String?,
         configuration: AdsProviderConfiguration,
         isDisabled: Bool,
+        advertisingId: String?,
+        vendorId: String?,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
         preloadCalled = true
@@ -43,6 +47,9 @@ final class MockAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         preloadConfiguration = configuration
         preloadMessages = messages
         preloadIsDisabled = isDisabled
+        preloadAdvertisingId = advertisingId
+        preloadVendorId = vendorId
+
         if let error = preloadError {
             throw error
         }

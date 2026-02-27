@@ -7,6 +7,8 @@ protocol AdsServerAPI: Sendable {
         sessionId: String?,
         configuration: AdsProviderConfiguration,
         isDisabled: Bool,
+        advertisingId: String?,
+        vendorId: String?,
         messages: [AdsMessage]
     ) async throws -> PreloadedData
 
@@ -60,6 +62,8 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         sessionId: String?,
         configuration: AdsProviderConfiguration,
         isDisabled: Bool,
+        advertisingId: String?,
+        vendorId: String?,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
         let preloadUrlConvertible = BaseURLConvertible(
@@ -72,6 +76,8 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         let requestDTO = PreloadRequestDTO(
             sessionId: sessionId,
             configuration: configuration,
+            advertisingId: advertisingId,
+            vendorId: vendorId,
             sdkInfo: sdk,
             appinfo: app,
             device: await DeviceInfo.current(appInfo: app),
@@ -81,7 +87,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             method: .post,
             urlConvertible: preloadUrlConvertible,
             headers: [
-                .acceptType(.json), 
+                .acceptType(.json),
                 .contentType(.json),
                 .publisherToken(configuration.publisherToken),
                 .isDisabled(isDisabled)

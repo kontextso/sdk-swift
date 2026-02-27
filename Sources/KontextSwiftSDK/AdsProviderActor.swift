@@ -21,6 +21,9 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
+    private var resolvedAdvertisingId: String?
+    private var resolvedVendorId: String?
+
     /// Events published to interstitial and inline components
     private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
     private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
@@ -89,6 +92,8 @@ extension AdsProviderActor: AdsProviderActing {
                 sessionId: sessionId,
                 configuration: configuration,
                 isDisabled: isDisabled,
+                advertisingId: resolvedAdvertisingId,
+                vendorId: resolvedVendorId,
                 api: adsServerAPI,
                 messages: messages
             )
@@ -139,6 +144,11 @@ extension AdsProviderActor: AdsProviderActing {
     func reset() {
         bids = []
         states = []
+    }
+
+    func setIFA(advertisingId: String?, vendorId: String?) {
+        resolvedAdvertisingId = advertisingId
+        resolvedVendorId = vendorId
     }
 }
 
@@ -264,6 +274,8 @@ private extension AdsProviderActor {
         sessionId: String?,
         configuration: AdsProviderConfiguration,
         isDisabled: Bool,
+        advertisingId: String?,
+        vendorId: String?,
         api: AdsServerAPI,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
@@ -272,6 +284,8 @@ private extension AdsProviderActor {
                 sessionId: sessionId,
                 configuration: configuration,
                 isDisabled: isDisabled,
+                advertisingId: advertisingId,
+                vendorId: vendorId,
                 messages: messages
             )
         }
