@@ -49,6 +49,7 @@ extension NetworkInfo {
         hardwareInfo: HardwareInfo
     ) async -> NetworkInfo {
         let userAgent = await currentUserAgent()
+        print("userAgent: \(userAgent)")
         let carrierName = carrierName
         let networkType = await networkType()
         let networkDetail = await networkDetail()
@@ -74,6 +75,7 @@ private extension NetworkInfo {
                 let webView = WKWebView(frame: .zero)
                 webView.evaluateJavaScript("navigator.userAgent") { value, _ in
                     continuation.resume(returning: value as? String)
+                    _ = webView // retain webView until callback fires
                 }
             }
         }
