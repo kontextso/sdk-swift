@@ -63,29 +63,7 @@ extension NetworkInfo {
 }
 
 private extension NetworkInfo {
-    /// Returns a User-Agent string representing the device and app
-    static func currentUserAgent(
-        appInfo: AppInfo,
-        osInfo: OSInfo,
-        hardwareInfo: HardwareInfo
-    ) -> String? {
-        let appName = appInfo.name
-        let appVersion = appInfo.version
-        guard
-            let osName = osInfo.name
-                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-            let osVersion = osInfo.version
-                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-        else {
-            return nil
-        }
-        let deviceModel = hardwareInfo.model
-            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "UnknownDevice"
-
-        return "\(appName)/\(appVersion) (\(deviceModel); \(osName) \(osVersion))"
-    }
-
-    private static var cachedUserAgent: String?
+    static var cachedUserAgent: String?
 
     static func currentUserAgent() async -> String? {
         if let cached = cachedUserAgent {
