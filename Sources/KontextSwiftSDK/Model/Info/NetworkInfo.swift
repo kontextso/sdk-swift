@@ -1,6 +1,7 @@
 import CoreTelephony
 import Foundation
 import Network
+import WebKit
 
 enum NetworkType: String, Encodable {
     case wifi
@@ -47,11 +48,7 @@ extension NetworkInfo {
         osInfo: OSInfo,
         hardwareInfo: HardwareInfo
     ) async -> NetworkInfo {
-        let userAgent = currentUserAgent(
-            appInfo: appInfo,
-            osInfo: osInfo,
-            hardwareInfo: hardwareInfo
-        )
+        let userAgent = await currentUserAgent()
         let carrierName = carrierName
         let networkType = await networkType()
         let networkDetail = await networkDetail()
@@ -66,26 +63,23 @@ extension NetworkInfo {
 }
 
 private extension NetworkInfo {
-    /// Returns a User-Agent string representing the device and app
-    static func currentUserAgent(
-        appInfo: AppInfo,
-        osInfo: OSInfo,
-        hardwareInfo: HardwareInfo
-    ) -> String? {
-        let appName = appInfo.name
-        let appVersion = appInfo.version
-        guard
-            let osName = osInfo.name
-                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-            let osVersion = osInfo.version
-                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-        else {
-            return nil
-        }
-        let deviceModel = hardwareInfo.model
-            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "UnknownDevice"
+    static var cachedUserAgent: String?
 
-        return "\(appName)/\(appVersion) (\(deviceModel); \(osName) \(osVersion))"
+    static func currentUserAgent() async -> String? {
+        if let cached = cachedUserAgent {
+            return cached
+        }
+        let ua = await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                let webView = WKWebView(frame: .zero)
+                webView.evaluateJavaScript("navigator.userAgent") { value, _ in
+                    continuation.resume(returning: value as? String)
+                    _ = webView // retain webView until callback fires
+                }
+            }
+        }
+        cachedUserAgent = ua
+        return ua
     }
 
     /// Returns the carrier name of the device, or nil if unavailable
