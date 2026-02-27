@@ -3,12 +3,14 @@ struct BidDTO: Decodable {
     let code: String
     let adDisplayPosition: AdDisplayPosition
     let skan: SkanDTO?
+    let impressionTrigger: ImpressionTrigger
 
     private enum CodingKeys: String, CodingKey {
         case bidId
         case code
         case adDisplayPosition
         case skan
+        case impressionTrigger
     }
 
     init(from decoder: any Decoder) throws {
@@ -24,6 +26,13 @@ struct BidDTO: Decodable {
         } catch {
             skan = nil
         }
+        let decodedImpressionTrigger = try? container.decodeIfPresent(
+            String.self,
+            forKey: .impressionTrigger
+        )
+        impressionTrigger = ImpressionTrigger(
+            rawValue: decodedImpressionTrigger ?? ""
+        ) ?? .immediate
     }
     
     var model: Bid {
@@ -31,7 +40,8 @@ struct BidDTO: Decodable {
             bidId: bidId,
             code: code,
             adDisplayPosition: adDisplayPosition,
-            skan: skan?.model
+            skan: skan?.model,
+            impressionTrigger: impressionTrigger
         )
     }
 }

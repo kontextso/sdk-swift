@@ -335,7 +335,9 @@ private extension AdsProviderActor {
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .adDoneIframe:
-            await startSKAdNetwork(for: newState)
+            if newState.bid.impressionTrigger == .immediate {
+                await startSKAdNetwork(for: newState)
+            }
 
         case .clickIframe(let clickData):
             openURL(from: clickData, fallbackURL: newState.webViewData.url)
@@ -359,6 +361,12 @@ private extension AdsProviderActor {
             notifyAboutAdChanges()
 
         case .openComponentIframe(let data):
+            if
+                newState.bid.impressionTrigger == .component,
+                data.component == .modal
+            {
+                await startSKAdNetwork(for: newState)
+            }
             Task {
                 await presentInterstitialAd(data, state: newState)
             }

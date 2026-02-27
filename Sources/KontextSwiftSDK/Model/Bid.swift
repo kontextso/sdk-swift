@@ -1,5 +1,10 @@
 import Foundation
 
+public enum ImpressionTrigger: String, Sendable {
+    case immediate
+    case component
+}
+
 public struct AttributionFidelity: Sendable, Hashable {
     public let fidelity: Int
     public let signature: String
@@ -29,16 +34,20 @@ public struct Bid: Sendable, Hashable {
     let adDisplayPosition: AdDisplayPosition
     /// SKAdNetwork attribution payload for iOS impression reporting
     public let skan: Skan?
+    /// Determines when impression attribution should be started
+    public let impressionTrigger: ImpressionTrigger
 
     init(
         bidId: String,
         code: String,
         adDisplayPosition: AdDisplayPosition,
-        skan: Skan? = nil
+        skan: Skan? = nil,
+        impressionTrigger: ImpressionTrigger = .immediate
     ) {
         self.bidId = bidId
         self.code = code
         self.adDisplayPosition = adDisplayPosition
         self.skan = skan
+        self.impressionTrigger = impressionTrigger
     }
 }
