@@ -52,7 +52,7 @@ extension AppInfo {
 }
 
 private extension AppInfo {
-    static var installTime: Double? {
+    static var installTime: Int64? {
         // Determine install time as the first creation of the user documents folder.
         if let documentsURL = FileManager.default.urls(
             for: .documentDirectory,
@@ -66,7 +66,7 @@ private extension AppInfo {
         return nil
     }
 
-    static var updateTime: Double? {
+    static var updateTime: Int64? {
         // Determine install time as the last modification of the user documents folder.
         let bundleURL = Bundle.main.bundleURL
         if let attributes = try? FileManager.default.attributesOfItem(atPath: bundleURL.path),
@@ -76,7 +76,7 @@ private extension AppInfo {
         return nil
     }
 
-    static var startTime: Double {
+    static var startTime: Int64 {
         let uptime = ProcessInfo.processInfo.systemUptime
         let now = Date()
         return Int64(now.addingTimeInterval(-uptime).timeIntervalSince1970 * 1000)
