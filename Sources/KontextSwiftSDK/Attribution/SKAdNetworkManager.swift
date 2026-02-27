@@ -230,18 +230,15 @@ private extension SKAdNetworkManager {
 
     @available(iOS 16.1, *)
     func parseFidelities(_ fidelities: [AttributionFidelity], into impression: SKAdImpression) {
-        for fidelity in fidelities {
-            if impression.adImpressionIdentifier.isEmpty {
-                impression.adImpressionIdentifier = fidelity.nonce
-            }
-
-            if impression.timestamp == NSNumber(value: 0), let timestamp = Int(fidelity.timestamp) {
-                impression.timestamp = NSNumber(value: timestamp)
-            }
-
-            if impression.signature.isEmpty {
-                impression.signature = fidelity.signature
-            }
+        guard let f0 = fidelities.first(where: { $0.fidelity == 0 }) else { return }
+        if impression.adImpressionIdentifier.isEmpty {
+            impression.adImpressionIdentifier = f0.nonce
+        }
+        if impression.timestamp == NSNumber(value: 0), let ts = Int(f0.timestamp) {
+            impression.timestamp = NSNumber(value: ts)
+        }
+        if impression.signature.isEmpty {
+            impression.signature = f0.signature
         }
     }
 }
