@@ -369,7 +369,7 @@ private extension AdsProviderActor {
 
         case .openComponentIframe(let data):
             if
-                newState.bid.impressionTrigger == .immediate,
+                newState.bid.impressionTrigger == .component,
                 data.component == .modal
             {
                 await startSKAdNetwork(for: newState)
