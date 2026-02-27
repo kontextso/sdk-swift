@@ -7,9 +7,9 @@ struct AppDTO: Encodable {
     /// App store deeplink URL
     let storeUrl: String?
     /// First installation time as a timestamp
-    let firstInstallTime: Double?
+    let firstInstallTime: Int64?
     /// Last update time as a timestamp
-    let lastUpdateTime: Double?
+    let lastUpdateTime: Int64?
     /// Current process start time as a timestamp
-    let startTime: Double?
+    let startTime: Int64?
 }
