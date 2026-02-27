@@ -37,6 +37,9 @@ actor AdsProviderActor {
     private weak var delegate: AdsProviderActingDelegate?
     private var skanOwner: (stateId: UUID, bidId: String)?
 
+    // stateId waiting for start after init
+    private var pendingStart: UUID?
+
     init(
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
@@ -336,7 +339,11 @@ private extension AdsProviderActor {
 
         case .adDoneIframe:
             if newState.bid.impressionTrigger == .immediate {
-                await startSKAdNetwork(for: newState)
+                if skanOwner?.stateId == newState.id {
+                    await startSKAdNetwork(for: newState)
+                } else {
+                    pendingStart = newState.id // init not done yet
+                }
             }
 
         case .clickIframe(let clickData):
@@ -362,7 +369,7 @@ private extension AdsProviderActor {
 
         case .openComponentIframe(let data):
             if
-                newState.bid.impressionTrigger == .component,
+                newState.bid.impressionTrigger == .immediate,
                 data.component == .modal
             {
                 await startSKAdNetwork(for: newState)
@@ -419,6 +426,14 @@ private extension AdsProviderActor {
         let didInitialize = await skAdNetworkManager.initImpression(skan)
         if didInitialize {
             skanOwner = (stateId: state.id, bidId: state.bid.bidId)
+            if pendingStart == state.id {
+                pendingStart = nil
+                await skAdNetworkManager.startImpression()
+            }
+        } else {
+            if pendingStart == state.id {
+                pendingStart = nil
+            }
         }
     }
 
@@ -442,6 +457,7 @@ private extension AdsProviderActor {
     }
 
     func cleanupSKAdNetwork() async {
+        pendingStart = nil
         guard skanOwner != nil else {
             return
         }
