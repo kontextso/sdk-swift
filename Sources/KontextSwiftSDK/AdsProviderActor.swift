@@ -316,6 +316,16 @@ private extension AdsProviderActor {
         }
         var newState = states[stateIndex]
 
+        // TEST OVERRIDE — remove before release
+        newState = AdLoadingState(
+            id: newState.id,
+            bid: testBid(from: newState.bid),
+            messageId: newState.messageId,
+            show: newState.show,
+            preferredHeight: newState.preferredHeight,
+            webViewData: newState.webViewData
+        )
+
         switch event {
         case .initIframe:
             await initializeSKAdNetwork(for: newState)
@@ -423,6 +433,8 @@ private extension AdsProviderActor {
             return
         }
 
+        print("[SKAN] initializeSKAdNetwork — bidId: \(state.bid.bidId), trigger: \(state.bid.impressionTrigger)")
+
         let didInitialize = await skAdNetworkManager.initImpression(skan)
         if didInitialize {
             skanOwner = (stateId: state.id, bidId: state.bid.bidId)
@@ -457,6 +469,7 @@ private extension AdsProviderActor {
     }
 
     func cleanupSKAdNetwork() async {
+        print("[SKAN] cleanupSKAdNetwork — pendingStart: \(pendingStart != nil)")
         pendingStart = nil
         guard skanOwner != nil else {
             return
@@ -525,4 +538,29 @@ private extension AdsProviderActor {
             await inlineEventSubject.send(.didFinishInterstitialAd)
         }
     }
+}
+
+// TEST OVERRIDE — remove before release
+private func testBid(from bid: Bid) -> Bid {
+    Bid(
+        bidId: bid.bidId,
+        code: bid.code,
+        adDisplayPosition: bid.adDisplayPosition,
+        skan: Skan(
+            version: "4.0",
+            network: "your-network-id.skadnetwork",
+            itunesItem: "284882215",
+            sourceApp: "284882215",
+            sourceIdentifier: "1234",
+            campaign: "42",
+            fidelities: [
+                AttributionFidelity(fidelity: 0, signature: "MEQCIBkSd...", nonce: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", timestamp: "1700000000000"),
+                AttributionFidelity(fidelity: 1, signature: "MEQCIAxyz...", nonce: "ffffffff-1111-2222-3333-444444444444", timestamp: "1700000000000")
+            ],
+            nonce: nil,
+            timestamp: nil,
+            signature: nil
+        ),
+        impressionTrigger: .component 
+    )
 }
