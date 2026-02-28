@@ -352,7 +352,7 @@ private extension AdsProviderActor {
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .adDoneIframe:
-            if newState.bid.impressionTrigger == .immediate {
+            if newState.bid.impressionTrigger == .immediate, newState.bid.skan != nil {
                 if skanOwner?.stateId == newState.id {
                     await startSKAdNetwork(for: newState)
                 } else {
