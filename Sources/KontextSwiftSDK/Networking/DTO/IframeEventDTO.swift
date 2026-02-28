@@ -66,21 +66,6 @@ extension IframeEvent {
         let content: String
         let messageId: String
         let url: URL?
-        let appStoreId: String?
-
-        init(
-            id: String,
-            content: String,
-            messageId: String,
-            url: URL?,
-            appStoreId: String? = nil
-        ) {
-            self.id = id
-            self.content = content
-            self.messageId = messageId
-            self.url = url
-            self.appStoreId = appStoreId
-        }
     }
 
     /// Data for resize-iframe events
@@ -114,7 +99,6 @@ extension IframeEvent {
         let code: String
         let component: Component
         let timeout: TimeInterval // ms
-        let appStoreId: String?
         let position: String?
         let dismissible: Bool?
 
@@ -122,14 +106,12 @@ extension IframeEvent {
             code: String,
             component: Component,
             timeout: TimeInterval = OpenComponentIframeDataDTO.defaultTimeoutMilliseconds,
-            appStoreId: String? = nil,
             position: String? = nil,
             dismissible: Bool? = nil
         ) {
             self.code = code
             self.component = component
             self.timeout = timeout > 0 ? timeout : Self.defaultTimeoutMilliseconds
-            self.appStoreId = appStoreId
             self.position = position
             self.dismissible = dismissible
         }
@@ -139,7 +121,6 @@ extension IframeEvent {
             code = try container.decode(String.self, forKey: .code)
             component = try container.decode(Component.self, forKey: .component)
             timeout = Self.decodeTimeout(from: container)
-            appStoreId = try container.decodeIfPresent(String.self, forKey: .appStoreId)
             position = try container.decodeIfPresent(String.self, forKey: .position)
             dismissible = try container.decodeIfPresent(Bool.self, forKey: .dismissible)
         }
@@ -148,7 +129,6 @@ extension IframeEvent {
             case code
             case component
             case timeout
-            case appStoreId
             case position
             case dismissible
         }
