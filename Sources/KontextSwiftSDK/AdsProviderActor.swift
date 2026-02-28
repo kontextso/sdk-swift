@@ -161,6 +161,7 @@ extension AdsProviderActor: AdsProviderActing {
     }
 
     func reset() async {
+        testBidOverrides.removeAll()
         await cleanupSKAdNetwork()
         await dismissSKOverlay()
         await dismissSKStoreProduct()
@@ -333,7 +334,7 @@ private extension AdsProviderActor {
         // TEST OVERRIDE — remove before release
         newState = AdLoadingState(
             id: newState.id,
-            bid: testBid(from: newState.bid),
+            bid: testBid(from: newState.bid, stateId: newState.id),
             messageId: newState.messageId,
             show: newState.show,
             preferredHeight: newState.preferredHeight,
@@ -362,7 +363,7 @@ private extension AdsProviderActor {
             os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .adDoneIframe:
-            if newState.bid.impressionTrigger == .immediate {
+            if newState.bid.impressionTrigger == .immediate, newState.bid.skan != nil {
                 if skanOwner?.stateId == newState.id {
                     await startSKAdNetwork(for: newState)
                 } else {
@@ -746,13 +747,22 @@ private extension AdsProviderActor {
     }
 }
 
-// TEST OVERRIDE — remove before release
-private func testBid(from bid: Bid) -> Bid {
-    Bid(
+// Inside AdsProviderActor — TEST OVERRIDE, remove before release
+private var testBidOverrides: [UUID: (useSkan: Bool, trigger: ImpressionTrigger)] = [:]
+
+private func testBid(from bid: Bid, stateId: UUID) -> Bid {
+    let override = testBidOverrides[stateId] ?? {
+        let o = (useSkan: Bool.random(), trigger: ImpressionTrigger.immediate)
+        testBidOverrides[stateId] = o
+        print("[TEST] testBid — stateId: \(stateId), skan: \(o.useSkan ? "enabled" : "disabled"), trigger: \(o.trigger)")
+        return o
+    }()
+
+    return Bid(
         bidId: bid.bidId,
         code: bid.code,
         adDisplayPosition: bid.adDisplayPosition,
-        skan: Skan(
+        skan: override.useSkan ? Skan(
             version: "4.0",
             network: "your-network-id.skadnetwork",
             itunesItem: "284882215",
@@ -766,7 +776,7 @@ private func testBid(from bid: Bid) -> Bid {
             nonce: nil,
             timestamp: nil,
             signature: nil
-        ),
-        impressionTrigger: .immediate 
+        ) : nil,
+        impressionTrigger: override.trigger
     )
 }
