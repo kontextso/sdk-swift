@@ -162,6 +162,8 @@ extension AdsProviderActor: AdsProviderActing {
 
     func reset() async {
         await cleanupSKAdNetwork()
+        await dismissSKOverlay()
+        await dismissSKStoreProduct()
         bids = []
         states = []
     }
@@ -417,6 +419,8 @@ private extension AdsProviderActor {
 
     func handleInlineWebViewDispose(stateId: UUID, bidId: String) async {
         await cleanupSKAdNetwork(stateId: stateId, bidId: bidId)
+        await dismissSKOverlay()
+        await dismissSKStoreProduct()
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
