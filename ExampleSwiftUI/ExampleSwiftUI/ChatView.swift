@@ -82,6 +82,8 @@ struct ChatView: View {
             switch event {
             case .filled(let newAds):
                 ads = newAds
+            case .cleared:
+                ads = []
             case .adHeight(let newAd):
                 guard let index = ads.firstIndex(where: { $0.id == newAd.id }) else {
                     return
