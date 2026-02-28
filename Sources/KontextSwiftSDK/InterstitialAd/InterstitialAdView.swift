@@ -14,6 +14,7 @@ struct InterstitialAdView: View {
     }
 
     @StateObject private var viewModel: InterstitialAdViewModel
+    private let events: AnyPublisher<InterstitialAdEvent, Never>
     private var onIFrameEvent: (IframeEvent) -> Void
 
     init(params: Params) {
@@ -23,6 +24,7 @@ struct InterstitialAdView: View {
                 events: params.events
             )
         )
+        self.events = params.events
         self.onIFrameEvent = params.onIFrameEvent
     }
 
@@ -32,6 +34,7 @@ struct InterstitialAdView: View {
                 AdWebViewRepresentable(
                     url: url,
                     updateIFrameData: nil,
+                    eventPublisher: nil,
                     onIFrameEvent: { onIFrameEvent($0) }
                 )
                 .opacity(viewModel.showIframe ? 1 : 0)
@@ -39,6 +42,12 @@ struct InterstitialAdView: View {
 
             if !viewModel.showIframe {
                 ProgressView()
+            }
+        }
+        .onReceive(events) { event in
+            switch event {
+            case .didChangeDisplay:
+                break
             }
         }
     }
