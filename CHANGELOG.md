@@ -4,6 +4,37 @@
 
 List of changes by respective version.
 
+## [2.0.0](https://github.com//kontextso/sdk-swift/releases/tag/2.0.0)
+
+Released on 2026-03-01.
+
+### Breaking Changes
+
+- Added new `AdsEvent.cleared` event that is emitted when previously displayed ads are removed and a new preload is in progress. Integrations using exhaustive `switch` on `AdsEvent` without a `default` case must handle the new `.cleared` case.
+
+### Added
+
+- SKAdNetwork (SKAN) support for privacy-preserving install attribution.
+- SKOverlay and SKStoreProductViewController support for native App Store presentation.
+- App Tracking Transparency (ATT) and IFA collection support.
+- Transparency & Consent Framework (TCF/GDPR) support.
+- `skipCode` parameter added to `AdsEvent.noFill` payload.
+- Request headers added to preload API calls.
+
+### Updated
+
+- `isDisabled` functionality — preload request still fires when disabled for session tracking, but no ad events are emitted.
+- UserAgent is now stable and consistent across all SDKs.
+- Timestamp values are now consistent across all SDKs.
+- Locale format updated to BCP 47 standard.
+
+### Fixed
+
+- Battery level no longer reports `-100` when battery state is unknown on simulator.
+- Muted detection now uses `< 0.01` threshold instead of float equality.
+- Date format parsing corrected.
+- Component prop value parsing fixed.
+
 ## [1.2.0](https://github.com//kontextso/sdk-swift/releases/tag/1.2.0)
 
 Released on 2025-10-02.
