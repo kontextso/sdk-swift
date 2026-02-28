@@ -396,7 +396,7 @@ private extension AdsProviderActor {
         case .errorIframe(let message):
             os_log(.error, "[InlineAd]: Error: \(message?.message ?? "unknown")")
             await reset()
-            notifyAboutAdChanges()
+            notifyAdsCleared()
 
         case .openComponentIframe(let data):
             if
