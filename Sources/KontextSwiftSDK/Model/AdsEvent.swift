@@ -2,8 +2,6 @@ import Foundation
 
 /// Event received from an ad.
 public enum AdsEvent: Sendable {
-    /// Event received when ads have been cleared.
-    case cleared
     /// Event received when ad is available or ads have changed.
     case filled([Advertisement])
     /// Event received when ad is not available.
@@ -67,7 +65,6 @@ public extension AdsEvent {
     /// Name of the event for diagnostics.
     var name: String {
         switch self {
-        case .cleared: "ad.cleared"
         case .filled: "ad.filled"
         case .noFill: "ad.no-fill"
         case .adHeight: "ad.height"

@@ -98,7 +98,7 @@ extension AdsProviderActor: AdsProviderActing {
 
         if shouldPreload {
             await reset()
-            notifyAdsCleared()
+            notifyAboutAdChanges()
         } else {
             await bindBidsToLastAssistantMessage()
             return
@@ -250,13 +250,6 @@ private extension AdsProviderActor {
         delegate?.adsProviderActing(
             self,
             didReceiveEvent: AdsEvent.filled(ads)
-        )
-    }
-
-    func notifyAdsCleared() {
-        delegate?.adsProviderActing(
-            self,
-            didReceiveEvent: AdsEvent.cleared
         )
     }
 
