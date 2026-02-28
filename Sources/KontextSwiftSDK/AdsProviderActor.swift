@@ -98,7 +98,11 @@ extension AdsProviderActor: AdsProviderActing {
 
         if shouldPreload {
             await reset()
-            notifyAdsCleared()
+            if !isDisabled {
+                // Do not notify when disabled — preload still happens for 
+                // session tracking, but no ad events should be emitted.
+                notifyAdsCleared()
+            }
         } else {
             await bindBidsToLastAssistantMessage()
             return
