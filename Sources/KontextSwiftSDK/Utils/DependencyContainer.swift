@@ -31,7 +31,9 @@ struct DependencyContainer: Sendable {
             sessionId: sessionId,
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI,
-            urlOpener: UIApplication.shared
+            urlOpener: UIApplication.shared,
+            skOverlayPresenter: SKOverlayManager.shared,
+            skStoreProductPresenter: SKStoreProductManager.shared
         )
 
         return DependencyContainer(

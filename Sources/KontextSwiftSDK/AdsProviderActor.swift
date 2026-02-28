@@ -34,6 +34,8 @@ actor AdsProviderActor {
     private let adsServerAPI: AdsServerAPI
     private let urlOpener: URLOpening
     private let skAdNetworkManager: any SKAdNetworkManaging
+    private let skOverlayPresenter: any SKOverlayPresenting
+    private let skStoreProductPresenter: any SKStoreProductPresenting
     private weak var delegate: AdsProviderActingDelegate?
     private var skanOwner: (stateId: UUID, bidId: String)?
 
@@ -46,7 +48,9 @@ actor AdsProviderActor {
         isDisabled: Bool,
         adsServerAPI: AdsServerAPI,
         urlOpener: URLOpening,
-        skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared
+        skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared,
+        skOverlayPresenter: any SKOverlayPresenting = DefaultSKOverlayPresenter(),
+        skStoreProductPresenter: any SKStoreProductPresenting = DefaultSKStoreProductPresenter()
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
@@ -54,6 +58,8 @@ actor AdsProviderActor {
         self.adsServerAPI = adsServerAPI
         self.urlOpener = urlOpener
         self.skAdNetworkManager = skAdNetworkManager
+        self.skOverlayPresenter = skOverlayPresenter
+        self.skStoreProductPresenter = skStoreProductPresenter
         delegate = nil
         messages = []
         bids = []
@@ -61,6 +67,12 @@ actor AdsProviderActor {
         lastPreloadUserMessageId = ""
         preloadTimeout = 60
     }
+}
+
+private struct NormalizedSKOverlayRequest {
+    let skan: Skan
+    let position: SKOverlayDisplayPosition
+    let dismissible: Bool
 }
 
 // MARK: Implementation
@@ -150,6 +162,8 @@ extension AdsProviderActor: AdsProviderActing {
 
     func reset() async {
         await cleanupSKAdNetwork()
+        await dismissSKOverlay()
+        await dismissSKStoreProduct()
         bids = []
         states = []
     }
@@ -357,7 +371,13 @@ private extension AdsProviderActor {
             }
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: newState.webViewData.url)
+            Task {
+                await handleClickIframe(
+                    clickData,
+                    source: .inline(newState),
+                    fallbackURL: newState.webViewData.url
+                )
+            }
 
         case .resizeIframe(let resizedData):
             guard resizedData.height != newState.preferredHeight else {
@@ -385,7 +405,18 @@ private extension AdsProviderActor {
                 await startSKAdNetwork(for: newState)
             }
             Task {
-                await presentInterstitialAd(data, state: newState)
+                await handleComponentIframe(
+                    request: .open(data),
+                    source: .inline(newState)
+                )
+            }
+
+        case .closeComponentIframe(let data):
+            Task {
+                await handleComponentIframe(
+                    request: .close(data),
+                    source: .inline(newState)
+                )
             }
 
         case .eventIframe(let data):
@@ -398,6 +429,8 @@ private extension AdsProviderActor {
 
     func handleInlineWebViewDispose(stateId: UUID, bidId: String) async {
         await cleanupSKAdNetwork(stateId: stateId, bidId: bidId)
+        await dismissSKOverlay()
+        await dismissSKStoreProduct()
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
@@ -409,19 +442,158 @@ private extension AdsProviderActor {
             interstitialTimeoutTask?.cancel()
             interstitialTimeoutTask = nil
 
-        case .closeComponentIframe, .errorComponentIframe:
-            Task { @MainActor in
-                await inlineEventSubject.send(.didFinishInterstitialAd)
+        case .openComponentIframe(let data):
+            Task {
+                await handleComponentIframe(
+                    request: .open(data),
+                    source: .interstitial(state)
+                )
+            }
+
+        case .closeComponentIframe(let data):
+            Task {
+                await handleComponentIframe(
+                    request: .close(data),
+                    source: .interstitial(state)
+                )
+            }
+
+        case .errorComponentIframe:
+            Task {
+                await closeInterstitialAndNativeComponents(for: state)
             }
 
         case .clickIframe(let clickData):
-            openURL(from: clickData, fallbackURL: state.webViewData.url)
+            Task {
+                await handleClickIframe(
+                    clickData,
+                    source: .interstitial(state),
+                    fallbackURL: state.webViewData.url
+                )
+            }
 
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
 
         default:
             break
+        }
+    }
+}
+
+// MARK: Components
+private extension AdsProviderActor {
+    func handleComponentIframe(
+        request: IframeComponentRequest,
+        source: IframeComponentSource
+    ) async {
+        switch (request.action, request.kind, source) {
+        case (.open, .modal, .inline(let state)):
+            guard case .open(let data) = request else {
+                return
+            }
+            await presentInterstitialAd(data, state: state)
+
+        case (.close, .modal, .interstitial):
+            interstitialTimeoutTask?.cancel()
+            interstitialTimeoutTask = nil
+            Task { @MainActor in
+                await inlineEventSubject.send(.didFinishInterstitialAd)
+            }
+
+        case (.open, .skoverlay, _):
+            guard case .open(let data) = request else {
+                return
+            }
+            await presentSKOverlay(from: data, source: source)
+
+        case (.close, .skoverlay, _):
+            await dismissSKOverlay()
+
+        default:
+            break
+        }
+    }
+
+    func normalizeSKOverlayRequest(
+        from data: IframeEvent.OpenComponentIframeDataDTO,
+        source: IframeComponentSource
+    ) -> NormalizedSKOverlayRequest? {
+        guard let skan = bidSkan(from: source) else {
+            os_log(.error, "[SKOverlay]: SKAN data is required")
+            return nil
+        }
+        guard hasFidelity1(skan) else {
+            os_log(.error, "[SKOverlay]: fidelity-1 SKAN data is required")
+            return nil
+        }
+
+        let position: SKOverlayDisplayPosition
+        switch data.position?.lowercased() {
+        case "bottomraised":
+            position = .bottomRaised
+        default:
+            position = .bottom
+        }
+
+        return NormalizedSKOverlayRequest(
+            skan: skan,
+            position: position,
+            dismissible: data.dismissible ?? true
+        )
+    }
+
+    func presentSKOverlay(
+        from data: IframeEvent.OpenComponentIframeDataDTO,
+        source: IframeComponentSource
+    ) async {
+        guard let request = normalizeSKOverlayRequest(from: data, source: source) else {
+            return
+        }
+
+        _ = await skOverlayPresenter.present(
+            skan: request.skan,
+            position: request.position,
+            dismissible: request.dismissible
+        )
+    }
+
+    func dismissSKOverlay() async {
+        _ = await skOverlayPresenter.dismiss()
+    }
+
+    func presentSKStoreProduct(
+        skan: Skan
+    ) async -> Bool {
+        await skStoreProductPresenter.present(skan: skan)
+    }
+
+    func dismissSKStoreProduct() async {
+        _ = await skStoreProductPresenter.dismiss()
+    }
+
+    func bidSkan(from source: IframeComponentSource) -> Skan? {
+        switch source {
+        case .inline(let state):
+            state.bid.skan
+        case .interstitial(let state):
+            state.bid.skan
+        }
+    }
+
+    func hasFidelity1(_ skan: Skan) -> Bool {
+        skan.fidelities?.contains(where: { $0.fidelity == 1 }) ?? false
+    }
+
+    func closeInterstitialAndNativeComponents(for _: AdLoadingState) async {
+        interstitialTimeoutTask?.cancel()
+        interstitialTimeoutTask = nil
+
+        await dismissSKOverlay()
+        await dismissSKStoreProduct()
+
+        Task { @MainActor in
+            await inlineEventSubject.send(.didFinishInterstitialAd)
         }
     }
 }
@@ -482,19 +654,49 @@ private extension AdsProviderActor {
 
 // MARK: Present actions
 private extension AdsProviderActor {
-    func openURL(from data: IframeEvent.ClickIframeDataDTO, fallbackURL: URL?) {
-        if let iframeClickedURL = if let clickDataURL = data.url {
-            adsServerAPI.redirectURL(relativeURL: clickDataURL)
-        } else {
-            fallbackURL
-        } {
-            Task { @MainActor in
-                if !urlOpener.canOpenURL(iframeClickedURL) {
-                    return
-                }
+    func handleClickIframe(
+        _ data: IframeEvent.ClickIframeDataDTO,
+        source: IframeComponentSource,
+        fallbackURL: URL?
+    ) async {
+        let clickedURL = resolvedClickURL(from: data, fallbackURL: fallbackURL)
 
-                urlOpener.open(iframeClickedURL, options: [:], completionHandler: nil)
+        guard let skan = bidSkan(from: source), hasFidelity1(skan) else {
+            openURL(clickedURL)
+            return
+        }
+
+        let storeProductOpened = await presentSKStoreProduct(skan: skan)
+
+        guard !storeProductOpened else {
+            return
+        }
+
+        openURL(clickedURL)
+    }
+
+    func resolvedClickURL(
+        from data: IframeEvent.ClickIframeDataDTO,
+        fallbackURL: URL?
+    ) -> URL? {
+        if let clickDataURL = data.url {
+            return adsServerAPI.redirectURL(relativeURL: clickDataURL)
+        }
+
+        return fallbackURL
+    }
+
+    func openURL(_ url: URL?) {
+        guard let url else {
+            return
+        }
+
+        Task { @MainActor in
+            if !urlOpener.canOpenURL(url) {
+                return
             }
+
+            urlOpener.open(url, options: [:], completionHandler: nil)
         }
     }
 
@@ -528,14 +730,15 @@ private extension AdsProviderActor {
 
         // Close interstitial ad if it init component does not
         // arrive within timeout interval.
-        interstitialTimeoutTask = Task { @MainActor in
+        interstitialTimeoutTask?.cancel()
+        interstitialTimeoutTask = Task {
             try? await Task.sleep(milliseconds: data.timeout + 500) // Add buffer time for displaying.
 
             guard !Task.isCancelled else {
                 return
             }
 
-            await inlineEventSubject.send(.didFinishInterstitialAd)
+            await closeInterstitialAndNativeComponents(for: state)
         }
     }
 }
