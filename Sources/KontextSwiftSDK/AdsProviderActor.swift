@@ -426,6 +426,11 @@ private extension AdsProviderActor {
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
         switch event {
         case .initComponentIframe:
+            // NOTE: Intentionally dispatched to @MainActor before sending.
+            // InterstitialAdViewModel observes this subject and updates @Published properties.
+            // Without this hop, the send() arrives on the actor's background executor,
+            // which causes "Publishing changes from background threads" warnings and potential
+            // crashes in future iOS versions. The actor isolation crossing is a known tradeoff.
             Task { @MainActor in
                 await interstitialEventSubject.send(.didChangeDisplay(true))
             }
