@@ -21,6 +21,8 @@ actor AdsProviderActor {
     private var bids: [Bid]
     private var states: [AdLoadingState]
 
+    private let numberOfRelevantMessages = 30
+
     private var resolvedAdvertisingId: String?
     private var resolvedVendorId: String?
 
@@ -89,6 +91,8 @@ extension AdsProviderActor: AdsProviderActing {
     func setMessages(messages: [AdsMessage]) async {
         let newUserMessages = messages.filter { $0.role == .user }
 
+        let messagesToSend = Array(messages.suffix(numberOfRelevantMessages))
+
         guard let lastUserMessage = newUserMessages.last else {
             return
         }
@@ -114,7 +118,7 @@ extension AdsProviderActor: AdsProviderActing {
                 advertisingId: resolvedAdvertisingId,
                 vendorId: resolvedVendorId,
                 api: adsServerAPI,
-                messages: messages
+                messages: messagesToSend
             )
 
             guard preloadedData.permanentError != true else {
@@ -283,7 +287,7 @@ private extension AdsProviderActor {
                 sdk: await SDKInfo.current().name,
                 code: bid.code,
                 messageId: messageId,
-                messages: messages.map { MessageDTO (from: $0) },
+                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
                 otherParams: configuration.otherParams
             )),
             onIFrameEvent: { [weak self] event in
