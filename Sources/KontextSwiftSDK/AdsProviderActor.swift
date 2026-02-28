@@ -612,6 +612,7 @@ private extension AdsProviderActor {
             skanOwner = (stateId: state.id, bidId: state.bid.bidId)
             if pendingStart == state.id {
                 pendingStart = nil
+                print("[SKAN] startSKAdNetwork inside if pendingStart == state.id")
                 await skAdNetworkManager.startImpression()
             }
         } else {
@@ -622,12 +623,14 @@ private extension AdsProviderActor {
     }
 
     func startSKAdNetwork(for state: AdLoadingState) async {
+        print("[SKAN] startSKAdNetwork — bidId: \(state.bid.bidId), trigger: \(state.bid.impressionTrigger)")
         guard
             skanOwner?.stateId == state.id,
             skanOwner?.bidId == state.bid.bidId
         else {
             return
         }
+        print("[SKAN] startSKAdNetwork — skanOwner: \(skanOwner)")
 
         await skAdNetworkManager.startImpression()
     }
@@ -764,6 +767,6 @@ private func testBid(from bid: Bid) -> Bid {
             timestamp: nil,
             signature: nil
         ),
-        impressionTrigger: .component 
+        impressionTrigger: .immediate 
     )
 }
