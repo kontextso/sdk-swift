@@ -138,6 +138,10 @@ extension MyMessagesTableViewController: AdsProviderDelegate {
             self.ads = ads
             self.prepareViewModels()
             self.tableView.reloadData()
+        case .cleared:
+            self.ads = []
+            self.prepareViewModels()
+            self.tableView.reloadData()
         case .adHeight:
             self.tableView.beginUpdates()
             self.tableView.endUpdates()

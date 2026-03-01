@@ -6,6 +6,9 @@ protocol AdsServerAPI: Sendable {
     func preload(
         sessionId: String?,
         configuration: AdsProviderConfiguration,
+        isDisabled: Bool,
+        advertisingId: String?,
+        vendorId: String?,
         messages: [AdsMessage]
     ) async throws -> PreloadedData
 
@@ -58,6 +61,9 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     func preload(
         sessionId: String?,
         configuration: AdsProviderConfiguration,
+        isDisabled: Bool,
+        advertisingId: String?,
+        vendorId: String?,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
         let preloadUrlConvertible = BaseURLConvertible(
@@ -65,20 +71,34 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             pathComponents: ["preload"],
             queryItems: nil
         )
-        let app = AppInfo.current()
+        let app = await AppInfo.current()
         let sdk = await SDKInfo.current()
+        let device = await DeviceInfo.current(appInfo: app)
+        let mergedRegulatory = TCFInfo.current().mergedRegulatory(from: configuration.regulatory)
         let requestDTO = PreloadRequestDTO(
             sessionId: sessionId,
             configuration: configuration,
+            advertisingId: advertisingId,
+            vendorId: vendorId,
             sdkInfo: sdk,
             appinfo: app,
-            device: await DeviceInfo.current(appInfo: app),
-            messages: messages
+            device: device,
+            messages: messages,
+            regulatoryOverride: mergedRegulatory
         )
+        var headers: [HTTPHeaderField] = [
+            .acceptType(.json),
+            .contentType(.json),
+            .publisherToken(configuration.publisherToken),
+            .isDisabled(isDisabled)
+        ]
+        if let ua = device.network.userAgent {
+            headers.append(.userAgent(ua))
+        }
         let responseDTO: PreloadResponseDTO = try await networking.request(
             method: .post,
             urlConvertible: preloadUrlConvertible,
-            headers: [.acceptType(.json), .contentType(.json)],
+            headers: headers,
             body: requestDTO
         )
         return responseDTO.toModel()

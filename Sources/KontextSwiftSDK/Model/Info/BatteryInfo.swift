@@ -32,8 +32,10 @@ extension PowerInfo {
     static func current() -> PowerInfo {
         // Enable battery monitoring first
         UIDevice.current.isBatteryMonitoringEnabled = true
+        defer { UIDevice.current.isBatteryMonitoringEnabled = false }
         // Calculate properties after
-        let batteryLevel: Double? = Double(UIDevice.current.batteryLevel) * 100
+        let rawLevel = UIDevice.current.batteryLevel
+        let batteryLevel: Double? = rawLevel >= 0 ? Double(rawLevel) * 100 : nil
         let batteryState: BatteryState? = switch UIDevice.current.batteryState {
         case .charging: .charging
         case .full: .full

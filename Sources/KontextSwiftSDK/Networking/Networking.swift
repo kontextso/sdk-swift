@@ -27,11 +27,17 @@ enum HTTPHeaderField {
     
     case acceptType(AcceptType)
     case contentType(ContentType)
+    case userAgent(String)
+    case publisherToken(String)
+    case isDisabled(Bool)
     
     var headerKey: String {
         switch self {
         case .acceptType: "Accept"
         case .contentType: "Content-Type"
+        case .userAgent: "User-Agent"
+        case .publisherToken: "Kontextso-Publisher-Token"
+        case .isDisabled: "Kontextso-Is-Disabled"
         }
     }
     
@@ -39,6 +45,9 @@ enum HTTPHeaderField {
         switch self {
         case .acceptType(let type): type.rawValue
         case .contentType(let type): type.rawValue
+        case .userAgent(let ua): ua
+        case .publisherToken(let token): token
+        case .isDisabled(let value): value ? "1" : "0"
         }
     }
 }
@@ -120,6 +129,7 @@ final class Network: Networking {
         // Decode response body
         do {
             let jsonDecoder = JSONDecoder()
+            jsonDecoder.dateDecodingStrategy = .millisecondsSince1970
             return try jsonDecoder.decode(DecodableResponse.self, from: data)
         } catch {
             throw APIError.decodingError(error)
@@ -143,6 +153,7 @@ final class Network: Networking {
             request.httpMethod = method.rawValue
             headers.forEach { request.setValue($0.headerValue, forHTTPHeaderField: $0.headerKey) }
             let jsonEncoder = JSONEncoder()
+            jsonEncoder.dateEncodingStrategy = .millisecondsSince1970
             request.httpBody = try jsonEncoder.encode(body)
         } catch {
             throw APIError.encodingError(error)

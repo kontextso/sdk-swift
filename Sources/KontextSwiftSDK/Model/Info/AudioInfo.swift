@@ -35,7 +35,7 @@ extension AudioInfo {
     /// Creates an AudioInfo instance with current audio information
     static func current() -> AudioInfo {
         let volume = Int(AVAudioSession.sharedInstance().outputVolume * 100)
-        let muted = AVAudioSession.sharedInstance().outputVolume == 0 ? true : false
+        let muted = AVAudioSession.sharedInstance().outputVolume < 0.01
         let outputPluggedIn = AVAudioSession.sharedInstance().currentRoute.outputs.isEmpty == false
         let outputTypes: [AudioOutputType] = AVAudioSession.sharedInstance().currentRoute.outputs.map { output in
             return switch output.portType {
