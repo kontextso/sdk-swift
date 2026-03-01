@@ -92,9 +92,6 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             .publisherToken(configuration.publisherToken),
             .isDisabled(isDisabled)
         ]
-        if let ua = device.network.userAgent {
-            headers.append(.userAgent(ua))
-        }
         let responseDTO: PreloadResponseDTO = try await networking.request(
             method: .post,
             urlConvertible: preloadUrlConvertible,
