@@ -24,7 +24,7 @@ struct DependencyContainer: Sendable {
         let networking = Network()
         let adsServerAPI = BaseURLAdsServerAPI(
             trackingURL: configuration.adServerUrl,
-            contextualURL: configuration.ctxAdServerUrl,  // ← add
+            nonTrackingURL: configuration.nonTrackingAdServerUrl,
             networking: networking
         )
         let providerActor = AdsProviderActor(
