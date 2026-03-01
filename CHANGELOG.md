@@ -12,7 +12,6 @@ Released on 2026-03-01.
 
 - UserAgent is now removed from request headers.
 
-
 ## [2.0.1](https://github.com//kontextso/sdk-swift/releases/tag/2.0.1)
 
 Released on 2026-03-01.
@@ -20,7 +19,6 @@ Released on 2026-03-01.
 ### Fixed
 
 - Fixed PrivacyInfo.xcprivacy file.
-
 
 ## [2.0.0](https://github.com//kontextso/sdk-swift/releases/tag/2.0.0)
 
