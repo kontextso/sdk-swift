@@ -11,7 +11,7 @@
 
 ## 1. Create a release branch and test
 
-1. Checkout branch `develop`
+1. Checkout branch `main`
 1. Pull the latest changes
 1. Create a new branch `release/1.0.0`
 1. Make sure it builds.
@@ -44,7 +44,7 @@ Released on 2025-09-16.
 
 ## 3. Update the CocoaPods spec
 
-Update the version in KontextSDK.podspec:
+Update the version in KontextSwiftSDK.podspec:
 
 ```
 s.version = "1.0.0"
@@ -67,19 +67,17 @@ struct SDKInfo {
 
 ## 5. Commit changes
 
-Commit the CHANGELOG.md and KontextSDK.podspec to `release/1.0.0` branch
+Commit the CHANGELOG.md and KontextSwiftSDK.podspec to `release/1.0.0` branch
 
 ```bash
-git add CHANGELOG.md KontextSDK.podspec
+git add CHANGELOG.md KontextSwiftSDK.podspec
 git commit -m "Prepare release 1.0.0"
 ```
 
-## 6. Open pull requests
+## 6. Open pull request
 
-1. Create a PR to develop named: "Release version 1.0.0" and use the last changelog entry as the PR description.
-2. Merge the PR to develop.
-3. Create a PR to master with same attributes.
-4. Merge the PR to master.
+1. Create a PR to `main` named: "Release version 1.0.0" and use the last changelog entry as the PR description.
+2. Merge the PR to `main`.
 
 ## 7. Create an annotated tag
 

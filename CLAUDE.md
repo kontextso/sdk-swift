@@ -84,9 +84,9 @@ DTOs live in `Networking/DTO/` and map directly to/from JSON. Domain models live
 ## Release Process
 
 See `RELEASING.md` for full steps. In short:
-1. Branch `release/X.Y.Z` from `develop`
+1. Branch `release/X.Y.Z` from `main`
 2. Update `CHANGELOG.md`, `KontextSwiftSDK.podspec` (`s.version`), and `SDKInfo.swift` (`sdkVersion`)
-3. PR to `develop`, then PR to `main`
+3. PR to `main`
 4. Annotated tag: `git tag -a X.Y.Z -m "Release X.Y.Z"`
 5. Publish: `pod trunk push KontextSwiftSDK.podspec --allow-warnings`
 6. Create GitHub release
