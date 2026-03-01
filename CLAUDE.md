@@ -30,9 +30,11 @@ The SDK delivers AI-powered ads into iOS chat UIs. It is distributed via both Sw
 - Forwards `setMessages([MessageRepresentable])` calls into the internal actor
 - Creates all dependencies via `DependencyContainer.defaultContainer()`
 
-**`AdsProviderConfiguration`** (`AdsProviderConfiguration.swift`) holds all immutable per-conversation settings including `publisherToken`, `userId`, `conversationId`, `enabledPlacementCodes`, and server URLs.
+**`AdsProviderConfiguration`** (`AdsProviderConfiguration.swift`) holds all immutable per-conversation settings: `publisherToken`, `userId`, `conversationId`, `enabledPlacementCodes`, `character`, `variantId`, `advertisingId`, `vendorId`, `adServerUrl` (defaults to `https://server.megabrain.co/`), `regulatory`, `otherParams`, and `userEmail`.
 
 ### Internal Business Logic
+
+**`AdsProviderActing`** (`AdsProviderActing.swift`) is the internal protocol bridging `AdsProvider` and `AdsProviderActor`. It defines `setDelegate()`, `setDisabled()`, `setMessages()`, `reset()`, and `setIFA()`. `AdsProviderActingDelegate` is the reverse callback protocol.
 
 **`AdsProviderActor`** (`AdsProviderActor.swift`) is a Swift `actor` that owns all mutable state:
 - Holds last 30 messages and detects new user messages to trigger preloads
@@ -44,9 +46,7 @@ The SDK delivers AI-powered ads into iOS chat UIs. It is distributed via both Sw
 ### Networking Layer
 
 **`AdsServerAPI` protocol** / **`BaseURLAdsServerAPI`** (`Networking/AdsServerAPI.swift`):
-- Switches between two base URLs based on ATT status (checked via `IFACollector.isTrackingAuthorized`):
-  - Tracking authorized → `server.megabrain.co`
-  - No ATT → `ctx.megabrain.co`
+- Uses a single `baseURL` taken from `AdsProviderConfiguration.adServerUrl` (defaults to `https://server.megabrain.co/`)
 - `preload()`: POST to `/preload` with full device/app/message context
 - `frameURL()` / `componentURL()`: Build iframe/component display URLs
 - `redirectURL()`: Resolves relative redirect URLs
@@ -69,7 +69,7 @@ DTOs live in `Networking/DTO/` and map directly to/from JSON. Domain models live
 
 ### Privacy & Attribution
 
-- **`IFACollector`** (`Model/Info/IFACollector.swift`): Requests ATT, collects IDFA/IDFV, determines `isTrackingAuthorized`
+- **`IFACollector`** (`Model/Info/IFACollector.swift`): Requests ATT (on iOS 14.5+), collects IDFA/IDFV via `collect(manualAdvertisingId:manualVendorId:)`
 - **`TCFInfo`** (`Model/Info/TCFInfo.swift`): Reads IAB TCF consent string from `UserDefaults` for GDPR compliance; merged with publisher-supplied `Regulatory`
 - **`SKAdNetworkManager`**, **`SKOverlayManager`**, **`SKStoreProductManager`**: Privacy-preserving install attribution and App Store overlays/product views
 
