@@ -7,6 +7,7 @@ private let timeout: TimeInterval = 1
 private let bufferSize = 100
 
 // MARK: - Tests
+@MainActor
 struct AdsProviderTests {
     // MARK: Ad available
     @Test
@@ -377,7 +378,9 @@ private extension AdsProviderTests {
             sessionId: sessionId,
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI,
-            urlOpener: urlOpener
+            urlOpener: urlOpener,
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         return DependencyContainer(
