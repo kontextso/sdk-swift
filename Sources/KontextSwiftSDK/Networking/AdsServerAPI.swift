@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 // MARK: - AdsServerAPI
 
@@ -43,7 +44,16 @@ struct BaseURLConvertible: URLConvertible {
         let urlWithPath: URL = pathComponents.reduce(baseURL) { $0.appendingPathComponent($1) }
         var urlComponents = URLComponents(url: urlWithPath, resolvingAgainstBaseURL: false)
         urlComponents?.queryItems = queryItems
-        return urlComponents?.url
+
+        let result = urlComponents?.url
+        
+        // Temporary debug logging
+        os_log(.debug, "[Kontext] baseURL: %{public}@", baseURL.absoluteString)
+        os_log(.debug, "[Kontext] urlWithPath: %{public}@", urlWithPath.absoluteString)
+        os_log(.debug, "[Kontext] urlComponents: %{public}@", String(describing: urlComponents))
+        os_log(.debug, "[Kontext] result: %{public}@", result?.absoluteString ?? "NIL ← problem here")
+        
+        return result
     }
 }
 
