@@ -4,6 +4,14 @@
 
 List of changes by respective version.
 
+## [2.0.1](https://github.com//kontextso/sdk-swift/releases/tag/2.0.1)
+
+Released on 2026-03-01.
+
+### Fixed
+
+- Fixed PrivacyInfo.xcprivacy file.
+
 ## [2.0.0](https://github.com//kontextso/sdk-swift/releases/tag/2.0.0)
 
 Released on 2026-03-01.
