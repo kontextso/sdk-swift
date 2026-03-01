@@ -1,6 +1,7 @@
 import Testing
 @testable import KontextSwiftSDK
 
+@MainActor
 // MARK: - Tests
 struct AdsProviderActorTests {
     @Test
@@ -11,7 +12,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: true,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setMessages(messages: AdsMessage.variation1)
@@ -26,7 +29,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: false,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setDisabled(true)
@@ -42,7 +47,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: false,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setMessages(messages: AdsMessage.variation1)
@@ -57,7 +64,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: true,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setDisabled(false)
@@ -74,7 +83,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: false,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
         await provider.setDelegate(delegate: delegate)
         await provider.setMessages(messages: AdsMessage.variation1)
