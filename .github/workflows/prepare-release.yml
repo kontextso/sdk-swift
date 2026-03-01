@@ -65,4 +65,4 @@ jobs:
           body: |
             Updates CHANGELOG.md, KontextSDK.podspec, and SDKInfo.swift for version ${{ github.event.inputs.version }}.
           commit-message: "chore: prepare release ${{ github.event.inputs.version }}"
-          base: develop
+          base: main
