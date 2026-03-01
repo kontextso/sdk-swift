@@ -4,6 +4,14 @@
 
 List of changes by respective version.
 
+## [2.0.2](https://github.com//kontextso/sdk-swift/releases/tag/2.0.2)
+
+Released on 2026-03-01.
+
+### Updated
+
+- UserAgent is now removed from request headers.
+
 ## [2.0.1](https://github.com//kontextso/sdk-swift/releases/tag/2.0.1)
 
 Released on 2026-03-01.
