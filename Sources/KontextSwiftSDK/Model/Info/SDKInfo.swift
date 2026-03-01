@@ -3,6 +3,7 @@ import UIKit
 
 struct SDKInfo  {
     static let defaultAdServerURL: URL = URL(string: "https://server.megabrain.co")!
+    static let defaultNonTrackingAdServerURL: URL = URL(string: "https://ctx.megabrain.co")!
     static let sdkName = "sdk-swift"
     static let sdkVersion = "2.0.0"
 

@@ -38,10 +38,13 @@ public struct AdsProviderConfiguration: Sendable {
     /// - UIDevice.current.identifierForVendor?.uuidString, avoid using other identifiers like UUID.
     /// - More at: https://developer.apple.com/documentation/uikit/uidevice/identifierforvendor
     public let vendorId: String?
+    /// URL of the server from which the ads are served (non-tracking)
+    /// Defaults to https://ctx.megabrain.co/
+    public let nonTrackingAdServerUrl: URL
     /// URL of the server from which the ads are served.
     /// Defaults to https://server.megabrain.co/
     public let adServerUrl: URL
-    /// Information about regulatory requirements that apply.
+    /// Information about regulatory requirements that apply.    
     public let regulatory: Regulatory?
     ///   An arbitrary key-value collection of values that the publisher can send.
     ///   It varies per publisher, but all publishers provide at least the theme parameter.
@@ -74,6 +77,7 @@ public struct AdsProviderConfiguration: Sendable {
         advertisingId: String? = nil,
         vendorId: String? = nil,
         adServerUrl: URL? = nil,
+        nonTrackingAdServerUrl: URL? = nil,
         regulatory: Regulatory? = nil,
         otherParams: [String: String] = [:],
         userEmail: String? = nil
@@ -87,6 +91,7 @@ public struct AdsProviderConfiguration: Sendable {
         self.advertisingId = advertisingId
         self.vendorId = vendorId
         self.adServerUrl = adServerUrl ?? SDKInfo.defaultAdServerURL
+        self.nonTrackingAdServerUrl = nonTrackingAdServerUrl ?? SDKInfo.defaultNonTrackingAdServerURL
         self.regulatory = regulatory
         self.otherParams = otherParams
         self.userEmail = userEmail

@@ -50,12 +50,18 @@ struct BaseURLConvertible: URLConvertible {
 // MARK: - BaseURLAdsServerAPI
 
 final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
-    private let baseURL: URL
+    private let trackingURL: URL      // server.megabrain.co
+    private let nonTrackingURL: URL    // ctx.megabrain.co
     private let networking: Networking
     
-    init(baseURL: URL, networking: Networking) {
-        self.baseURL = baseURL
+    init(trackingURL: URL, nonTrackingURL: URL, networking: Networking) {
+        self.trackingURL = trackingURL
+        self.nonTrackingURL = nonTrackingURL
         self.networking = networking
+    }
+
+    private var activeBaseURL: URL {
+        IFACollector.isTrackingAuthorized ? trackingURL : nonTrackingURL
     }
     
     func preload(
@@ -67,7 +73,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
         let preloadUrlConvertible = BaseURLConvertible(
-            baseURL: baseURL,
+            baseURL: activeBaseURL,
             pathComponents: ["preload"],
             queryItems: nil
         )
@@ -109,7 +115,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         otherParams: [String: String]
     ) -> URL? {
         BaseURLConvertible(
-            baseURL: baseURL,
+            baseURL: activeBaseURL,
             pathComponents: ["api", "frame", bidId],
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
@@ -128,7 +134,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
         otherParams: [String: String]
     ) -> URL? {
         BaseURLConvertible(
-            baseURL: baseURL,
+            baseURL: activeBaseURL,
             pathComponents: ["api", component, bidId],
             queryItems: [
                 URLQueryItem(name: "messageId", value: messageId),
@@ -139,6 +145,6 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
     }
 
     func redirectURL(relativeURL: URL) -> URL {
-        URL(string: relativeURL.relativeString, relativeTo: baseURL) ?? relativeURL
+        URL(string: relativeURL.relativeString, relativeTo: activeBaseURL) ?? relativeURL
     }
 }

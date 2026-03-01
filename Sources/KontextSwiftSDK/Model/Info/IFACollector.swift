@@ -10,6 +10,11 @@ struct IFAResult {
 enum IFACollector {
     private static let zeroUUID = "00000000-0000-0000-0000-000000000000"
 
+    static var isTrackingAuthorized: Bool {
+        guard #available(iOS 14.5, *) else { return false }
+        return ATTrackingManager.trackingAuthorizationStatus == .authorized
+    }
+
     static func collect(
         manualAdvertisingId: String?,
         manualVendorId: String?

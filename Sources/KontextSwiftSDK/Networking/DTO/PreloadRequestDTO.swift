@@ -35,8 +35,8 @@ struct PreloadRequestDTO: Encodable {
         self.enabledPlacementCodes = configuration.enabledPlacementCodes
         variantId = configuration.variantId
         character = CharacterDTO(from: configuration.character)
-        self.advertisingId = advertisingId
-        self.vendorId = vendorId
+        self.advertisingId = IFACollector.isTrackingAuthorized ? advertisingId : nil
+        self.vendorId = IFACollector.isTrackingAuthorized ? vendorId : nil
         self.sessionId = sessionId
         self.sdk = sdkInfo.toModel()
         self.app = appinfo.toModel()
