@@ -51,8 +51,8 @@ actor AdsProviderActor {
         adsServerAPI: AdsServerAPI,
         urlOpener: URLOpening,
         skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared,
-        skOverlayPresenter: any SKOverlayPresenting = DefaultSKOverlayPresenter(),
-        skStoreProductPresenter: any SKStoreProductPresenting = DefaultSKStoreProductPresenter()
+        skOverlayPresenter: any SKOverlayPresenting,
+        skStoreProductPresenter: any SKStoreProductPresenting
     ) {
         self.configuration = configuration
         self.sessionId = sessionId
