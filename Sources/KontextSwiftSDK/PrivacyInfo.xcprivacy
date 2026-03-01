@@ -3,12 +3,16 @@
 <plist version="1.0">
 <dict>
   <key>NSPrivacyTracking</key><true/>
+
   <key>NSPrivacyTrackingDomains</key>
   <array>
-    <string>megabrain.co</string>
+    <string>server.megabrain.co</string>
   </array>
+
   <key>NSPrivacyCollectedDataTypes</key>
   <array>
+
+    <!-- IDFA — used for tracking, requires ATT -->
     <dict>
       <key>NSPrivacyCollectedDataType</key>
       <string>NSPrivacyCollectedDataTypeDeviceID</string>
@@ -19,6 +23,20 @@
         <string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
       </array>
     </dict>
+
+    <!-- IDFV — not used for tracking, no ATT required -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeDeviceID</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key><false/>
+      <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <!-- App info (name, bundle ID, version) — sent to DSPs -->
     <dict>
       <key>NSPrivacyCollectedDataType</key>
       <string>NSPrivacyCollectedDataTypeOtherAppInfo</string>
@@ -26,9 +44,11 @@
       <key>NSPrivacyCollectedDataTypeTracking</key><false/>
       <key>NSPrivacyCollectedDataTypePurposes</key>
       <array>
-        <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+        <string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
       </array>
     </dict>
+
+    <!-- Device diagnostics (battery, audio, screen) — sent to DSPs -->
     <dict>
       <key>NSPrivacyCollectedDataType</key>
       <string>NSPrivacyCollectedDataTypeOtherDiagnosticData</string>
@@ -36,12 +56,16 @@
       <key>NSPrivacyCollectedDataTypeTracking</key><false/>
       <key>NSPrivacyCollectedDataTypePurposes</key>
       <array>
-        <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+        <string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
       </array>
     </dict>
+
   </array>
+
   <key>NSPrivacyAccessedAPITypes</key>
   <array>
+
+    <!-- AppInfo.installTime / updateTime use file attributes -->
     <dict>
       <key>NSPrivacyAccessedAPIType</key>
       <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
@@ -50,6 +74,8 @@
         <string>C617.1</string>
       </array>
     </dict>
+
+    <!-- AppInfo.startTime uses ProcessInfo.systemUptime -->
     <dict>
       <key>NSPrivacyAccessedAPIType</key>
       <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
@@ -58,6 +84,8 @@
         <string>8FFB.1</string>
       </array>
     </dict>
+
+    <!-- TCFInfo reads IABTCF_TCString from UserDefaults -->
     <dict>
       <key>NSPrivacyAccessedAPIType</key>
       <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
@@ -66,6 +94,7 @@
         <string>CA92.1</string>
       </array>
     </dict>
+
   </array>
 </dict>
 </plist>
