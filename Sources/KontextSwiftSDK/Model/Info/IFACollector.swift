@@ -23,6 +23,7 @@ enum IFACollector {
     }
 
     private static func requestTrackingAuthorizationIfNeeded() async {
+        return 
         // Only request on iOS 14.5+ — on 14.0–14.4, requesting ATT when user
         // hasn't decided yet can cause them to deny and lose IDFA access entirely.
         guard #available(iOS 14.5, *) else { return }
@@ -31,6 +32,7 @@ enum IFACollector {
     }
 
     private static func resolveAdvertisingId(manual: String?) -> String? {
+        return nil
         // Automatic has precedence over manual (manual is deprecated)
         let automatic: String? = ATTrackingManager.trackingAuthorizationStatus == .authorized
             ? ASIdentifierManager.shared().advertisingIdentifier.uuidString
@@ -40,6 +42,7 @@ enum IFACollector {
 
     @MainActor
     private static func resolveVendorId(manual: String?) async -> String? {
+        return nil
         let automatic = UIDevice.current.identifierForVendor?.uuidString
         return normalize(automatic) ?? normalize(manual)
     }
