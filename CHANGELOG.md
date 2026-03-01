@@ -4,6 +4,22 @@
 
 List of changes by respective version.
 
+## [2.0.4](https://github.com//kontextso/sdk-swift/releases/tag/2.0.4)
+
+Released on 2026-03-01.
+
+### Updated
+
+- Add forgotten changelog entry for 2.0.3 release.
+
+## [2.0.3](https://github.com//kontextso/sdk-swift/releases/tag/2.0.3)
+
+Released on 2026-03-01.
+
+### Updated
+
+- Set NSPrivacyTracking to false and clear tracking domains.
+
 ## [2.0.2](https://github.com//kontextso/sdk-swift/releases/tag/2.0.2)
 
 Released on 2026-03-01.
