@@ -39,6 +39,9 @@ struct BaseURLConvertible: URLConvertible {
     let baseURL: URL
     let pathComponents: [String]
     let queryItems: [URLQueryItem]?
+    var debugDescription: String {
+        "baseURL=\(baseURL) path=\(pathComponents) components=\(String(describing: URLComponents(url: pathComponents.reduce(baseURL) { $0.appendingPathComponent($1) }, resolvingAgainstBaseURL: false)))"
+    }
     
     func asURL() -> URL? {
         let urlWithPath: URL = pathComponents.reduce(baseURL) { $0.appendingPathComponent($1) }

@@ -54,17 +54,28 @@ enum HTTPHeaderField {
 
 // MARK: - APIError
 
-enum APIError: Error {
-    case invalidURL
+enum APIError: Error, LocalizedError {
+    case invalidURL(debug: String)
     case requestFailed(Error)
     case invalidResponse(statusCode: Int)
     case encodingError(Error)
     case decodingError(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL(let debug): return "invalidURL: \(debug)"
+        case .requestFailed(let e): return "requestFailed: \(e.localizedDescription)"
+        case .invalidResponse(let code): return "invalidResponse: \(code)"
+        case .encodingError(let e): return "encodingError: \(e.localizedDescription)"
+        case .decodingError(let e): return "decodingError: \(e.localizedDescription)"
+        }
+    }
 }
 
 // MARK: - URLConvertible
 
 protocol URLConvertible: Sendable {
+    var debugDescription: String { get }
     func asURL() -> URL?
 }
 
@@ -144,7 +155,7 @@ final class Network: Networking {
     ) async throws -> Data {
         // Prepare URL
         guard let url = urlConvertible.asURL() else {
-            throw APIError.invalidURL
+            throw APIError.invalidURL(debug: urlConvertible.debugDescription)
         }
         // Prepare request
         var request = URLRequest(url: url)
