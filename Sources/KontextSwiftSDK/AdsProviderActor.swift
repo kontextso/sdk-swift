@@ -561,7 +561,9 @@ private extension AdsProviderActor {
                     if creativeType == .display {
                         do {
                             try session.loaded()
+                            os_log("[OMID] loaded() fired")
                             try session.impression()
+                            os_log("[OMID] impression() fired")
                         } catch {
                             os_log("[OMID] Failed to fire loaded/impression: \(error)")
                         }
