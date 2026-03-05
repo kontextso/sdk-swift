@@ -168,9 +168,6 @@ final class Network: Networking {
         } catch {
             throw APIError.requestFailed(error)
         }
-
-        print("🔍 RAW RESPONSE")
-        print(String(data: data, encoding: .utf8) ?? "No data")
         
         // Check HTTP status code
         guard let httpResponse = response as? HTTPURLResponse else {
