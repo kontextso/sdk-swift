@@ -377,12 +377,6 @@ private extension AdsProviderActor {
                 notifyAboutAdChanges()
             }
 
-            if let om = omSession(for: stateId) {
-                Task { @MainActor in
-                    om.signalImpressionOnce()
-                }
-            }
-
         case .hideIframe:
             if newState.show {
                 newState.show = false

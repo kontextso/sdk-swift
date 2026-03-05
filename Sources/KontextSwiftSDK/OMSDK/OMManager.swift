@@ -90,9 +90,6 @@ final class OMSession {
     private let webView: WKWebView
     private let adEvents: OMIDMegabraincoAdEvents
 
-    private var didLoad = false
-    private var didImpress = false
-
     init(session: OMIDMegabraincoAdSession, webView: WKWebView) throws {
         self.session = session
         self.webView = webView
@@ -102,18 +99,6 @@ final class OMSession {
     func start() {
         session.start()
         print("OMSession started")
-    }
-
-    func signalLoadedOnce() {
-        guard !didLoad else { return }
-        didLoad = true
-        try? adEvents.loaded()
-    }
-
-    func signalImpressionOnce() {
-        guard !didImpress else { return }
-        didImpress = true
-        try? adEvents.impressionOccurred()
     }
 
     func finish() {
