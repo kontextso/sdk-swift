@@ -89,6 +89,5 @@ See `RELEASING.md` for full steps. In short:
 3. PR to `main`
 4. Annotated tag: `git tag -a X.Y.Z -m "Release X.Y.Z"`
 5. Publish: `pod trunk push KontextSwiftSDK.podspec --allow-warnings`
-6. Create GitHub release
 
 Version strings must not have a `v` prefix (e.g., `2.0.0`, not `v2.0.0`).
