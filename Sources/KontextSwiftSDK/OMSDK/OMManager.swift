@@ -116,10 +116,10 @@ final class OMSession {
     }
 
     func loaded() throws {
-        try adEvents.loaded(nil)
+        try adEvents.loaded()
     }
 
-    func impression() {
-        adEvents.impressionOccurred()
+    func impression() throws {
+        try adEvents.impressionOccurred()
     }
 }

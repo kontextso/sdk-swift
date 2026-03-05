@@ -560,7 +560,7 @@ private extension AdsProviderActor {
                     session.start()
                     if creativeType == .display {
                         try? session.loaded()
-                        session.impression()
+                        try? session.impression()
                     }
                     return session
                 }
