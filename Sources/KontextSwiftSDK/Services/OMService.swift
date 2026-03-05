@@ -22,7 +22,7 @@ final class OMService: OMServicing {
     /// Used to identify integration
     private let partner = OMIDMegabraincoPartner(
         name: "megabrainco",
-        versionString: Constants.version
+        versionString: Constants.omIntegrationVersion
     )
 
     /// Activates OM SDK
