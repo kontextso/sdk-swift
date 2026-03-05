@@ -464,6 +464,16 @@ private extension AdsProviderActor {
         await cleanupSKAdNetwork(stateId: stateId, bidId: bidId)
         await dismissSKOverlay()
         await dismissSKStoreProduct()
+        await finishOMSession(for: stateId)
+    }
+
+    func finishOMSession(for stateId: UUID) async {
+        guard let index = omSessions.firstIndex(where: { $0.stateId == stateId }) else { return }
+        let session = omSessions[index].session
+        // OM requires web view to be alive 1 second after finish is called.
+        await MainActor.run { session.finish() }
+        try? await Task.sleep(seconds: 1)
+        omSessions.removeAll { $0.stateId == stateId }
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
