@@ -46,6 +46,9 @@ enum IframeEvent: Decodable, Hashable, Sendable {
     /// Events coming from iframe
     case eventIframe(EventIframeDataDTO)
 
+    /// OMID impression fired (or failed) from iframe JS session client; error is non-nil when it failed
+    case omidFiredIframe(error: String?)
+
     /// Unknown event type
     case unknown(String)
 }
@@ -76,6 +79,11 @@ extension IframeEvent {
     /// Data for error events
     struct ErrorDataDTO: Decodable, Hashable {
         let message: String
+    }
+
+    /// Data for omid-fired-iframe events
+    struct OmidFiredIframeDataDTO: Decodable, Hashable {
+        let error: String?
     }
 
     /// Data for update-iframe events
@@ -262,6 +270,9 @@ extension IframeEvent {
             self = .eventIframe(
                 try container.decode(EventIframeDataDTO.self, forKey: .data)
             )
+        case "omid-fired-iframe":
+            let omidData = try? container.decode(OmidFiredIframeDataDTO.self, forKey: .data)
+            self = .omidFiredIframe(error: omidData?.error)
         default:
             self = .unknown(type)
         }

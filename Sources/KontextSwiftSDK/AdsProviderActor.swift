@@ -448,6 +448,13 @@ private extension AdsProviderActor {
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
 
+        case .omidFiredIframe(let error):
+            if let error {
+                os_log("[OMID] Iframe JS session client error for stateId: \(stateId) — \(error)")
+            } else {
+                os_log("[OMID] Impression fired from iframe JS session client for stateId: \(stateId)")
+            }
+
         default:
             break
         }
@@ -540,6 +547,8 @@ private extension AdsProviderActor {
                     session.start()
                     return session
                 }
+
+                os_log("[OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
 
                 // 5) Store session in actor state
                 let newState = OMSessionState(stateId: stateId, session: omSession)
