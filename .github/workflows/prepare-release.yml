@@ -37,9 +37,7 @@ jobs:
       # Update CHANGELOG.md
       - name: Update CHANGELOG.md
         run: |
-          echo "## [${{ github.event.inputs.version }}](https://github.com/${{ github.repository }}/releases/tag/${{ github.event.inputs.version }})" > new-changelog.md
-          echo "" >> new-changelog.md
-          echo "Released on $(date +'%Y-%m-%d')." >> new-changelog.md
+          echo "## ${{ github.event.inputs.version }}" > new-changelog.md
           echo "" >> new-changelog.md
           echo "${{ steps.notes.outputs.notes }}" >> new-changelog.md
           echo "" >> new-changelog.md

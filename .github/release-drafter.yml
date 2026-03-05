@@ -1,17 +1,7 @@
-name-template: 'v$RESOLVED_VERSION'
+name-template: '$RESOLVED_VERSION'
 tag-template: '$RESOLVED_VERSION'
 
-categories:
-  - title: "🚀 Added"
-    labels: ["feature", "enhancement"]
-  - title: "🐛 Fixed"
-    labels: ["fix", "bug"]
-  - title: "🔄 Updated"
-    labels: ["chore", "refactor"]
-  - title: "🗑️ Removed"
-    labels: ["removed"]
-
-change-template: "- $TITLE (#$NUMBER)"
+change-template: "* $TITLE"
 change-title-escapes: '\<*_&' # to avoid formatting issues
 
 version-resolver:
@@ -24,6 +14,4 @@ version-resolver:
   default: patch
 
 template: |
-  ## Changes
-
   $CHANGES
