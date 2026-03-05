@@ -532,9 +532,11 @@ private extension AdsProviderActor {
         switch event {
         case .didStart(let webView, let url):
             do {
+                let creativeType = states.first(where: { $0.id == stateId })?.bid.om?.creativeType ?? .display
+
                 // 4) Create + start must be on MainActor
                 let omSession = try await MainActor.run {
-                    let session = try omService.createSession(webView, url: url)
+                    let session = try omService.createSession(webView, url: url, creativeType: creativeType)
                     session.start()
                     return session
                 }

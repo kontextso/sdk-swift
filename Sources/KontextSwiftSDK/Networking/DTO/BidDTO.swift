@@ -4,6 +4,7 @@ struct BidDTO: Decodable {
     let adDisplayPosition: AdDisplayPosition
     let skan: SkanDTO?
     let impressionTrigger: ImpressionTrigger
+    let om: OmInfoDTO?
 
     private enum CodingKeys: String, CodingKey {
         case bidId
@@ -11,6 +12,7 @@ struct BidDTO: Decodable {
         case adDisplayPosition
         case skan
         case impressionTrigger
+        case om
     }
 
     init(from decoder: any Decoder) throws {
@@ -33,16 +35,30 @@ struct BidDTO: Decodable {
         impressionTrigger = ImpressionTrigger(
             rawValue: decodedImpressionTrigger ?? ""
         ) ?? .immediate
+        do {
+            om = try container.decodeIfPresent(OmInfoDTO.self, forKey: .om)
+        } catch {
+            om = nil
+        }
     }
-    
+
     var model: Bid {
         Bid(
             bidId: bidId,
             code: code,
             adDisplayPosition: adDisplayPosition,
             skan: skan?.model,
-            impressionTrigger: impressionTrigger
+            impressionTrigger: impressionTrigger,
+            om: om?.model
         )
+    }
+}
+
+struct OmInfoDTO: Decodable {
+    let creativeType: String?
+
+    var model: OmInfo {
+        OmInfo(creativeType: OmCreativeType(rawValue: creativeType ?? "") ?? .display)
     }
 }
 

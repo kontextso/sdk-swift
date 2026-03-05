@@ -9,7 +9,7 @@ protocol OMManaging: Sendable {
     @discardableResult
     func activate() -> Bool
 
-    func createSession(_ webView: WKWebView, url: URL?) throws -> OMSession
+    func createSession(_ webView: WKWebView, url: URL?, creativeType: OmCreativeType) throws -> OMSession
 }
 
 final class OMManager: OMManaging {
@@ -37,7 +37,7 @@ final class OMManager: OMManaging {
     }
 
     /// Creates OMID context, configuration and returns a session
-    func createSession(_ webView: WKWebView, url: URL?) throws -> OMSession {
+    func createSession(_ webView: WKWebView, url: URL?, creativeType: OmCreativeType) throws -> OMSession {
         guard isActive else {
             throw OMError.sdkIsNotActive
         }
@@ -54,11 +54,22 @@ final class OMManager: OMManaging {
                 customReferenceIdentifier: nil
             )
 
+            let omCreativeType: OMIDMegabraincoCreativeType
+            let mediaEventsOwner: OMIDMegabraincoOwner
+            switch creativeType {
+            case .display:
+                omCreativeType = .htmlDisplay
+                mediaEventsOwner = .noneOwner
+            case .video:
+                omCreativeType = .video
+                mediaEventsOwner = .javaScriptOwner
+            }
+
             let configuration = try OMIDMegabraincoAdSessionConfiguration(
-                creativeType: .htmlDisplay,
+                creativeType: omCreativeType,
                 impressionType: .beginToRender,
                 impressionOwner: .javaScriptOwner,
-                mediaEventsOwner: .javaScriptOwner,
+                mediaEventsOwner: mediaEventsOwner,
                 isolateVerificationScripts: false
             )
 
@@ -98,7 +109,6 @@ final class OMSession {
 
     func start() {
         session.start()
-        print("OMSession started")
     }
 
     func finish() {
