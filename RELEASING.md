@@ -21,24 +21,24 @@
 
 ## 2. Update the changelog
 
-Edit CHANGELOG.md to include the new release notes in following format
+Edit `CHANGELOG.md` to include the new release notes at the top.
 
+Standard release:
 ```markdown
-## [1.0.0](https://github.com//kontextso/sdk-swift/releases/tag/1.0.0)
+## 1.0.0
+* Add new feature.
+* Fix some bug.
+* Remove old feature.
+```
 
-Released on 2025-09-16.
+If the release contains breaking changes, add a `### Breaking` section before the bullet points:
+```markdown
+## 2.0.0
+### Breaking
+Short description of what changed and what integrators need to do.
 
-## Added
- 
-- New feature added
-
-## Updated
-
-- Some feature updated
-
-## Removed
-
-- Old feature removed
+* Add new feature.
+* Fix some bug.
 ```
 
 
