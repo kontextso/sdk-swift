@@ -41,7 +41,7 @@ final class AdWebView: WKWebView {
             let omsdkScript = WKUserScript(
                 source: omsdkJS,
                 injectionTime: .atDocumentStart,
-                forMainFrameOnly: false
+                forMainFrameOnly: true
             )
             contentController.addUserScript(omsdkScript)
         }
