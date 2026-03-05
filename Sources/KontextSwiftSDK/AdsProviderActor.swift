@@ -339,11 +339,6 @@ private extension AdsProviderActor {
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
 
-        print("➡️ PRELOAD REQUEST")
-        print("sessionId:", sessionId ?? "nil")
-        print("configuration:", configuration)
-        print("messages:", messages)
-
         let response = try await withTimeout(TimeInterval(timeout)) {
             try await api.preload(
                 sessionId: sessionId,
@@ -354,9 +349,6 @@ private extension AdsProviderActor {
                 messages: messages
             )
         }
-
-        print("⬅️ PRELOAD RESPONSE")
-        print(response)
 
         return response
     }
@@ -385,12 +377,9 @@ private extension AdsProviderActor {
                 notifyAboutAdChanges()
             }
 
-            print("🔍 Show iframe")
-
             if let om = omSession(for: stateId) {
                 Task { @MainActor in
                     om.signalImpressionOnce()
-                    print("🔍 OM session signaled impression")
                 }
             }
 
@@ -553,13 +542,7 @@ private extension AdsProviderActor {
                 let omSession = try await MainActor.run {
                     let session = try omService.createSession(webView, url: url)
                     session.start()
-
-                    print("🔍 OM session started")
-
                     session.signalLoadedOnce()
-
-                    print("🔍 OM session signaled loaded")
-
                     return session
                 }
 
