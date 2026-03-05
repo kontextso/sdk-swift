@@ -559,8 +559,12 @@ private extension AdsProviderActor {
                     let session = try omService.createSession(webView, url: url, creativeType: creativeType)
                     session.start()
                     if creativeType == .display {
-                        try? session.loaded()
-                        try? session.impression()
+                        do {
+                            try session.loaded()
+                            try session.impression()
+                        } catch {
+                            os_log("[OMID] Failed to fire loaded/impression: \(error)")
+                        }
                     }
                     return session
                 }
