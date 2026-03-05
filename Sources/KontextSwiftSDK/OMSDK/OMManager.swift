@@ -21,7 +21,7 @@ final class OMManager: OMManaging {
 
     /// Used to identify integration
     private let partner = OMIDMegabraincoPartner(
-        name: "megabrainco",
+        name: Constants.omPartnerName,
         versionString: Constants.omIntegrationVersion
     )
 
@@ -31,10 +31,7 @@ final class OMManager: OMManaging {
             return true
         }
 
-        let result = OMIDMegabraincoSDK.shared.activate()
-
-        print("🔍 OM SDK ACTIVATED")
-        print(result)
+        OMIDMegabraincoSDK.shared.activate()
 
         return isActive
     }
@@ -106,25 +103,16 @@ final class OMSession {
         session.start()
     }
 
-    func signalLoadedOnce() throws {
+    func signalLoadedOnce() {
         guard !didLoad else { return }
         didLoad = true
-        do {
-            try adEvents.loaded()
-        } catch {
-            // use os_log in real code
-            print("OM loaded() failed: \(error)")
-        }
+        try? adEvents.loaded()
     }
 
-    func signalImpressionOnce() throws {
+    func signalImpressionOnce() {
         guard !didImpress else { return }
         didImpress = true
-        do {
-            try adEvents.impressionOccurred()
-        } catch {
-            print("OM impressionOccurred failed: \(error)")
-        }
+        try? adEvents.impressionOccurred()
     }
 
     func finish() {

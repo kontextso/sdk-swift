@@ -389,7 +389,7 @@ private extension AdsProviderActor {
 
             if let om = omSession(for: stateId) {
                 Task { @MainActor in
-                    try? await om.signalImpressionOnce()
+                    om.signalImpressionOnce()
                     print("🔍 OM session signaled impression")
                 }
             }
@@ -556,7 +556,7 @@ private extension AdsProviderActor {
 
                     print("🔍 OM session started")
 
-                    try session.signalLoadedOnce()
+                    session.signalLoadedOnce()
 
                     print("🔍 OM session signaled loaded")
 
