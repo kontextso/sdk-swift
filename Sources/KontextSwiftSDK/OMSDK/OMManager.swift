@@ -57,8 +57,8 @@ final class OMManager: OMManaging {
             let configuration = try OMIDMegabraincoAdSessionConfiguration(
                 creativeType: .htmlDisplay,
                 impressionType: .beginToRender,
-                impressionOwner: .nativeOwner,
-                mediaEventsOwner: .noneOwner,
+                impressionOwner: .javaScriptOwner,
+                mediaEventsOwner: .javaScriptOwner,
                 isolateVerificationScripts: false
             )
 

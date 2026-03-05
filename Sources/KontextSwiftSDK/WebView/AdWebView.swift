@@ -32,6 +32,20 @@ final class AdWebView: WKWebView {
         self.onIFrameEvent = onIFrameEvent
         self.onOMEvent = onOMEvent
 
+        let contentController = WKUserContentController()
+
+        if
+            let omsdkURL = Bundle.module.url(forResource: "omsdk-v1", withExtension: "js"),
+            let omsdkJS = try? String(contentsOf: omsdkURL, encoding: .utf8)
+        {
+            let omsdkScript = WKUserScript(
+                source: omsdkJS,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: false
+            )
+            contentController.addUserScript(omsdkScript)
+        }
+
         let js = """
         window.addEventListener('message', function(event) {
             window.webkit.messageHandlers.iframeMessage.postMessage(event.data);
@@ -42,8 +56,6 @@ final class AdWebView: WKWebView {
             injectionTime: .atDocumentStart,
             forMainFrameOnly: false
         )
-
-        let contentController = WKUserContentController()
         contentController.addUserScript(userScript)
 
         self.updateIframeData = updateIframeData

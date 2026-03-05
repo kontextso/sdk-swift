@@ -542,7 +542,6 @@ private extension AdsProviderActor {
                 let omSession = try await MainActor.run {
                     let session = try omService.createSession(webView, url: url)
                     session.start()
-                    session.signalLoadedOnce()
                     return session
                 }
 
