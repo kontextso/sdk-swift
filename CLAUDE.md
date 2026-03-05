@@ -2,7 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## Project Overview
+
+Kontext Swift SDK — an iOS SDK for integrating AI-powered contextual ads into chat apps. Distributed via Swift Package Manager and CocoaPods (`KontextSwiftSDK`). Minimum deployment target: iOS 14.
+
+## Common Commands
 
 ```bash
 # Build

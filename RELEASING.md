@@ -12,12 +12,12 @@
 ## 1. Create a release branch and test
 
 1. Checkout branch `main`
-1. Pull the latest changes
-1. Create a new branch `release/1.0.0`
-1. Make sure it builds.
-1. Run tests and make sure they are green.
-1. Run ExampleSwiftUI and make sure it's OK.
-1. Run ExampleUIKit and make sure it's OK.
+2. Pull the latest changes
+3. Create a new branch `release/1.0.0`
+4. Make sure it builds.
+5. Run tests and make sure they are green.
+6. Run ExampleSwiftUI and make sure it's OK.
+7. Run ExampleUIKit and make sure it's OK.
 
 ## 2. Update the changelog
 
@@ -67,10 +67,10 @@ struct SDKInfo {
 
 ## 5. Commit changes
 
-Commit the CHANGELOG.md and KontextSwiftSDK.podspec to `release/1.0.0` branch
+Commit the changed files to `release/1.0.0` branch:
 
 ```bash
-git add CHANGELOG.md KontextSwiftSDK.podspec
+git add CHANGELOG.md KontextSwiftSDK.podspec Sources/KontextSwiftSDK/SDKInfo.swift
 git commit -m "Prepare release 1.0.0"
 ```
 
@@ -82,6 +82,8 @@ git commit -m "Prepare release 1.0.0"
 ## 7. Create an annotated tag
 
 ```bash
+git checkout main
+git pull
 git tag -a 1.0.0 -m "Release 1.0.0"
 git push origin 1.0.0
 ```
