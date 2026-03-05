@@ -7,6 +7,7 @@ private let timeout: TimeInterval = 1
 private let bufferSize = 100
 
 // MARK: - Tests
+@MainActor
 struct AdsProviderTests {
     // MARK: Ad available
     @Test
@@ -238,10 +239,15 @@ struct AdsProviderTests {
                 groupTask.addTask {
                     try await withTimeout(timeout) {
                         var didSendError = false
+                        var didReceiveCleared = false
+                        var receivedFilledWithEmptyAds = false
 
                         for await event in stream {
-                            if case let .filled(ads) = event {
-                                if let ad = ads.first, !didSendError {
+                            switch event {
+                            case .filled(let ads):
+                                if ads.isEmpty {
+                                    receivedFilledWithEmptyAds = true
+                                } else if let ad = ads.first, !didSendError {
                                     ad.webViewData.onIFrameEvent(
                                         .errorIframe(
                                             IframeEvent.ErrorDataDTO(
@@ -250,12 +256,24 @@ struct AdsProviderTests {
                                         )
                                     )
                                     didSendError = true
-                                } else if didSendError {
-                                    #expect(ads.isEmpty)
-                                    break
                                 }
+
+                            case .cleared:
+                                if didSendError {
+                                    didReceiveCleared = true
+                                    #expect(!receivedFilledWithEmptyAds)
+                                }
+
+                            default:
+                                break
+                            }
+
+                            if didReceiveCleared {
+                                break
                             }
                         }
+
+                        #expect(didReceiveCleared)
                     }
                 }
 
@@ -360,7 +378,9 @@ private extension AdsProviderTests {
             sessionId: sessionId,
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI,
-            urlOpener: urlOpener
+            urlOpener: urlOpener,
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         return DependencyContainer(

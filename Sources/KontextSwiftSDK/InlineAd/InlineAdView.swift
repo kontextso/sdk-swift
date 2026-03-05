@@ -6,7 +6,7 @@ enum InlineAdEvent {
         InterstitialAdView.Params,
         UIModalPresentationStyle = .fullScreen
     )
-    case didFinishInterstitialAd    
+    case didFinishInterstitialAd
 }
 
 /// SwiftUI view that represents an inline ad in the chat UI.
@@ -50,7 +50,10 @@ public struct InlineAdView: View {
             InterstitialAdView(params: params)
         }
         .onChange(of: ad) { newAd in
-            viewModel.ad = newAd
+            viewModel.replaceAd(newAd)
+        }
+        .onDisappear {
+            viewModel.disposeCurrentAttributionIfNeeded()
         }
         .onReceive(Publishers.keyboardHeight) { height in
             keyboardHeight = height

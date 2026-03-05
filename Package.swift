@@ -15,8 +15,15 @@ let package = Package(
         .target(
             name: "KontextSwiftSDK",
             dependencies: ["OMSDK_Megabrainco"],
+            resources: [
+                .copy("PrivacyInfo.xcprivacy")
+            ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
+            ],
+            linkerSettings: [
+                .linkedFramework("AdSupport"),
+                .linkedFramework("AppTrackingTransparency"),
             ]
         ),
         .binaryTarget(

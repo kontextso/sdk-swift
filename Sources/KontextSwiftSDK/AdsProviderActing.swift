@@ -11,6 +11,8 @@ protocol AdsProviderActing: Sendable {
     func setMessages(messages: [AdsMessage]) async
 
     func reset() async
+
+    func setIFA(advertisingId: String?, vendorId: String?) async
 }
 
 // MARK: - AdsProviderActingDelegate

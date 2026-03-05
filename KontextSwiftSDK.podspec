@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |spec|
     spec.name                 = 'KontextSwiftSDK'
-    spec.version              = '1.2.0'
+    spec.version              = '2.0.4'
     spec.summary              = 'Kontext.so Swift SDK'
     spec.description          = <<-DESC
     The official Swift SDK for integrating Kontext.so ads into your mobile application.
@@ -17,5 +17,6 @@ Pod::Spec.new do |spec|
 
     spec.source               = { :git => 'https://github.com/kontextso/sdk-swift.git', :tag => spec.version.to_s }
     spec.source_files         = 'Sources/**/*.swift'
-    spec.frameworks           = ['UIKit', 'WebKit', 'SwiftUI']
+    spec.resource_bundles     = { 'KontextSwiftSDKPrivacy' => ['Sources/KontextSwiftSDK/PrivacyInfo.xcprivacy'] }
+    spec.frameworks           = ['UIKit', 'WebKit', 'SwiftUI', 'StoreKit']
 end

@@ -7,7 +7,7 @@ struct AdLoadingState {
     let messageId: String
     let webViewData: AdLoadingState.WebViewData
     var show: Bool
-    var preferredHeight: CGFloat?    
+    var preferredHeight: CGFloat?
 }
 
 extension AdLoadingState {
@@ -16,6 +16,7 @@ extension AdLoadingState {
         let updateData: UpdateIFrameDTO?
         let onIFrameEvent: @Sendable (IframeEvent) -> Void
         let onOMEvent: @Sendable (OMEvent) -> Void
+        let onDispose: @Sendable () -> Void
         let events: AnyPublisher<InlineAdEvent, Never>
 
         func hash(into hasher: inout Hasher) {

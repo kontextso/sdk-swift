@@ -1,6 +1,7 @@
 import Testing
 @testable import KontextSwiftSDK
 
+@MainActor
 // MARK: - Tests
 struct AdsProviderActorTests {
     @Test
@@ -11,11 +12,13 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: true,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setMessages(messages: AdsMessage.variation1)
-        #expect(adsServerAPI.preloadCalled == false, "Preload should not be called when disabled")
+        #expect(adsServerAPI.preloadCalled == true, "Preload should be called even when disabled")
     }
 
     @Test
@@ -26,12 +29,14 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: false,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setDisabled(true)
         await provider.setMessages(messages: AdsMessage.variation1)
-        #expect(adsServerAPI.preloadCalled == false, "Preload should not be called when disabled")
+        #expect(adsServerAPI.preloadCalled == true, "Preload should be called even when disabled")
     }
 
     @Test
@@ -42,7 +47,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: false,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setMessages(messages: AdsMessage.variation1)
@@ -57,7 +64,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: true,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
 
         await provider.setDisabled(false)
@@ -74,7 +83,9 @@ struct AdsProviderActorTests {
             sessionId: nil,
             isDisabled: false,
             adsServerAPI: adsServerAPI,
-            urlOpener: MockURLOpener()
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
         )
         await provider.setDelegate(delegate: delegate)
         await provider.setMessages(messages: AdsMessage.variation1)
