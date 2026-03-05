@@ -31,11 +31,11 @@ final class MyMessagesTableViewController: UITableViewController {
         viewModels = []
         adsProvider = AdsProvider(configuration: AdsProviderConfiguration(
             // Replace publisher token with your own to try out
-            publisherToken: "iab-dev",
+            publisherToken: "nexus-dev",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
-            adServerUrl: URL(string: "http://localhost:3002")!,
+            // adServerUrl: URL(string: "http://localhost:3002")!,
             otherParams: ["theme": "dark"],
         ))
         super.init(style: .plain)

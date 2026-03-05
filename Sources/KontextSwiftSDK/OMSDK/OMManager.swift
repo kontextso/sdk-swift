@@ -101,6 +101,7 @@ final class OMSession {
 
     func start() {
         session.start()
+        print("OMSession started")
     }
 
     func signalLoadedOnce() {
