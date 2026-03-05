@@ -16,7 +16,8 @@ let package = Package(
             name: "KontextSwiftSDK",
             dependencies: ["OMSDK_Megabrainco"],
             resources: [
-                .copy("PrivacyInfo.xcprivacy")
+                .copy("PrivacyInfo.xcprivacy"),
+                .copy("OMSDK/omsdk-v1.js")
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
