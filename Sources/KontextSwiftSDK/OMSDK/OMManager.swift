@@ -54,8 +54,8 @@ final class OMManager: OMManaging {
                 customReferenceIdentifier: nil
             )
 
-            let omCreativeType: OMIDMegabraincoCreativeType
-            let mediaEventsOwner: OMIDMegabraincoOwner
+            let omCreativeType: OMIDCreativeType
+            let mediaEventsOwner: OMIDOwner
             switch creativeType {
             case .display:
                 omCreativeType = .htmlDisplay
