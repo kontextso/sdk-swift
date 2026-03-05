@@ -92,16 +92,7 @@ git push origin 1.0.0
 pod trunk push KontextSwiftSDK.podspec --allow-warnings
 ```
 
-## 9. Create GitHub release
-
-1. Go GitHub releases (under tags)
-2. Draft a new release
-3. Use release title that describes the changes as a whole.
-4. Copy over the last CHANGELOG.md entry as release notes.
-5. Choose a proper version tag you just created
-6. Publish release
-
-## 10. Verify
+## 9. Verify
 
 1. Check that the version is available on the [CocoaPods page](https://cocoapods.org/pods/KontextSwiftSDK).
 2. Integrate the new version into the internal testing app and confirm it builds and runs.
