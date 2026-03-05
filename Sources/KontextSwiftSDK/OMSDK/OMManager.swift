@@ -68,7 +68,7 @@ final class OMManager: OMManaging {
             let configuration = try OMIDMegabraincoAdSessionConfiguration(
                 creativeType: omCreativeType,
                 impressionType: .beginToRender,
-                impressionOwner: .javaScriptOwner,
+                impressionOwner: .nativeOwner,
                 mediaEventsOwner: mediaEventsOwner,
                 isolateVerificationScripts: false
             )
@@ -113,5 +113,13 @@ final class OMSession {
 
     func finish() {
         session.finish()
+    }
+
+    func loaded() throws {
+        try adEvents.loaded(nil)
+    }
+
+    func impression() {
+        adEvents.impressionOccurred()
     }
 }

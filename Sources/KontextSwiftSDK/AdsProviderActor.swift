@@ -558,6 +558,10 @@ private extension AdsProviderActor {
                 let omSession = try await MainActor.run {
                     let session = try omService.createSession(webView, url: url, creativeType: creativeType)
                     session.start()
+                    if creativeType == .display {
+                        try? session.loaded()
+                        session.impression()
+                    }
                     return session
                 }
 
