@@ -2,17 +2,17 @@ import Foundation
 @preconcurrency import OMSDK_Megabrainco
 
 enum OMEvent: Sendable {
-    case didStart(WKWebView, URL?)    
+    case didStart(WKWebView, URL?)
 }
 
-protocol OMServicing: Sendable {
+protocol OMManaging: Sendable {
     @discardableResult
     func activate() -> Bool
 
     func createSession(_ webView: WKWebView, url: URL?) throws -> OMSession
 }
 
-final class OMService: OMServicing {
+final class OMManager: OMManaging {
     enum OMError: Error {
         case sdkIsNotActive
         case partnerIsNotAvailable
@@ -80,7 +80,7 @@ final class OMService: OMServicing {
 
 // MARK: - Private
 
-private extension OMService {
+private extension OMManager {
     var isActive: Bool {
         OMIDMegabraincoSDK.shared.isActive
     }

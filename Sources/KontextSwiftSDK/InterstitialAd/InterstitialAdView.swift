@@ -9,7 +9,7 @@ struct InterstitialAdView: View {
     struct Params: Identifiable {
         var id: String { url?.absoluteString ?? UUID().uuidString }
         let url: URL?
-        let omService: OMServicing
+        let omService: OMManaging
         let events: AnyPublisher<InterstitialAdEvent, Never>
         let onIFrameEvent: (IframeEvent) -> Void
         let onOMEvent: (OMEvent) -> Void

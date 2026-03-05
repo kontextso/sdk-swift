@@ -4,13 +4,13 @@ struct DependencyContainer: Sendable {
     let networking: Networking
     let adsServerAPI: AdsServerAPI
     let adsProviderActing: AdsProviderActing
-    let omService: OMServicing
+    let omService: OMManaging
 
     init(
         networking: Networking,
         adsServerAPI: AdsServerAPI,
         adsProviderActing: AdsProviderActing,
-        omService: OMServicing
+        omService: OMManaging
     ) {
         self.networking = networking
         self.adsServerAPI = adsServerAPI
@@ -25,7 +25,7 @@ struct DependencyContainer: Sendable {
         isDisabled: Bool
     ) -> DependencyContainer {
         let networking = Network()
-        let omService = OMService()
+        let omService = OMManager()
         let adsServerAPI = BaseURLAdsServerAPI(
             baseURL: configuration.adServerUrl,
             networking: networking

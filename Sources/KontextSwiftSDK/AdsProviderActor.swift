@@ -36,7 +36,7 @@ actor AdsProviderActor {
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
     private let urlOpener: URLOpening
-    private let omService: OMServicing
+    private let omService: OMManaging
     private let skAdNetworkManager: any SKAdNetworkManaging
     private let skOverlayPresenter: any SKOverlayPresenting
     private let skStoreProductPresenter: any SKStoreProductPresenting
@@ -52,7 +52,7 @@ actor AdsProviderActor {
         isDisabled: Bool,
         adsServerAPI: AdsServerAPI,
         urlOpener: URLOpening,
-        omService: OMServicing,
+        omService: OMManaging,
         skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared,
         skOverlayPresenter: any SKOverlayPresenting,
         skStoreProductPresenter: any SKStoreProductPresenting
