@@ -548,6 +548,9 @@ private extension AdsProviderActor {
 
         switch event {
         case .didStart(let webView, let url):
+            // Guard against spurious didFinish callbacks after the ad has been disposed/cleared
+            guard states.contains(where: { $0.id == stateId }) else { return }
+
             do {
                 let creativeType = states.first(where: { $0.id == stateId })?.bid.om?.creativeType ?? .display
 
