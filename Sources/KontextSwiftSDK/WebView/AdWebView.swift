@@ -58,6 +58,27 @@ final class AdWebView: WKWebView {
         )
         contentController.addUserScript(userScript)
 
+        #if DEBUG
+        let consoleJS = """
+        (function() {
+            var orig = console.log.bind(console);
+            console.log = function() {
+                var msg = Array.prototype.slice.call(arguments).join(' ');
+                if (msg.indexOf('[OMID]') !== -1) {
+                    window.webkit.messageHandlers.consoleLog.postMessage(msg);
+                }
+                orig.apply(console, arguments);
+            };
+        })();
+        """
+        let consoleScript = WKUserScript(
+            source: consoleJS,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        contentController.addUserScript(consoleScript)
+        #endif
+
         self.updateIframeData = updateIframeData
         webConfiguration.allowsInlineMediaPlayback = true
         webConfiguration.userContentController = contentController
@@ -72,6 +93,9 @@ final class AdWebView: WKWebView {
         scriptHandler = AdScriptMessageHandler(adWebView: self)
         if let scriptHandler {
             configuration.userContentController.add(scriptHandler, name: "iframeMessage")
+            #if DEBUG
+            configuration.userContentController.add(scriptHandler, name: "consoleLog")
+            #endif
         }
 
         observeEvents()
@@ -89,6 +113,10 @@ final class AdWebView: WKWebView {
         super.removeFromSuperview()
         webConfiguration.userContentController
             .removeScriptMessageHandler(forName: "iframeMessage")
+        #if DEBUG
+        webConfiguration.userContentController
+            .removeScriptMessageHandler(forName: "consoleLog")
+        #endif
     }
 
     func loadAd(from url: URL) {
@@ -167,6 +195,16 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
+        #if DEBUG
+        if message.name == "consoleLog", let msg = message.body as? String {
+            let f = DateFormatter()
+            f.dateFormat = "HH:mm:ss.SSS"
+            let time = f.string(from: Date())
+            print("[\(time)] [WebView] \(msg)")
+            return
+        }
+        #endif
+
         guard
             message.name == "iframeMessage",
             let adWebView
