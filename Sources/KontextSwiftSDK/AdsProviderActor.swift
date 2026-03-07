@@ -137,6 +137,12 @@ extension AdsProviderActor: AdsProviderActing {
             )
             let (_, preloadedData) = try await (sleep, preload)
 
+            // TODO: Re-entrant setMessages race — when the actor suspends at the await above,
+            // a new setMessages call can run and overwrite lastPreloadUserMessageId. When this
+            // call resumes, it binds stale preload results to the wrong message. Fix by bailing
+            // out early if a newer message was sent while we were waiting:
+            //   guard lastPreloadUserMessageId == lastUserMessage.id else { return }
+
             guard preloadedData.permanentError != true else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)
                 isDisabled = true
@@ -477,9 +483,13 @@ private extension AdsProviderActor {
     }
 
     func finishOMSession(for stateId: UUID) async {
+        // TODO: This function is currently dead code in the normal flow — omSessions is cleared
+        // in setMessages before notifyAdsCleared() triggers onDispose, so the guard below
+        // always exits early. If it ever did execute, session.finish() would be called after
+        // the WebView is already removed from the hierarchy, which is exactly the bug we fixed.
+        // Should be removed once error/interstitial flows are revisited.
         guard let index = omSessions.firstIndex(where: { $0.stateId == stateId }) else { return }
         let session = omSessions[index].session
-        // OM requires web view to be alive 1 second after finish is called.
         await MainActor.run { session.finish() }
         try? await Task.sleep(seconds: 1)
         omSessions.removeAll { $0.stateId == stateId }
@@ -545,12 +555,13 @@ private extension AdsProviderActor {
         if let existingIndex = omSessions.firstIndex(where: { $0.stateId == stateId }) {
             let existingSession = omSessions[existingIndex].session
 
-            // 2) OMID must be touched on MainActor
+            // TODO: WKWebView can fire didFinish multiple times (e.g. on redirect or dynamic content).
+            // When that happens, we finish the existing session but return without creating a new one,
+            // silently stopping OMID measurement. Fix by falling through to session creation instead
+            // of returning early. Pre-existing issue, low probability with current ad HTML.
             await MainActor.run {
                 existingSession.finish()
             }
-
-            // 3) Mutate actor state after
             omSessions.remove(at: existingIndex)
             return
         }
