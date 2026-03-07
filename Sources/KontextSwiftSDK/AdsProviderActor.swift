@@ -486,14 +486,10 @@ private extension AdsProviderActor {
     }
 
     func finishOMSession(for stateId: UUID) async {
-        // TODO: This function is currently dead code in the normal flow — omSessions is cleared
-        // in setMessages before notifyAdsCleared() triggers onDispose, so the guard below
-        // always exits early. If it ever did execute, session.finish() would be called after
-        // the WebView is already removed from the hierarchy, which is exactly the bug we fixed.
-        // Should be removed once error/interstitial flows are revisited.
         guard let index = omSessions.firstIndex(where: { $0.stateId == stateId }) else { return }
-        let session = omSessions[index].session
-        await MainActor.run { session.finish() }
+        let state = omSessions[index]
+        await MainActor.run { state.session.finish() }
+        os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(stateId)")
         try? await Task.sleep(seconds: 1)
         omSessions.removeAll { $0.stateId == stateId }
     }
@@ -621,9 +617,10 @@ private extension AdsProviderActor {
             }
             await presentInterstitialAd(data, state: state)
 
-        case (.close, .modal, .interstitial):
+        case (.close, .modal, .interstitial(let state)):
             interstitialTimeoutTask?.cancel()
             interstitialTimeoutTask = nil
+            await finishOMSession(for: state.id)
             Task { @MainActor in
                 await inlineEventSubject.send(.didFinishInterstitialAd)
             }
@@ -712,12 +709,13 @@ private extension AdsProviderActor {
         skan.fidelities?.contains(where: { $0.fidelity == 1 }) ?? false
     }
 
-    func closeInterstitialAndNativeComponents(for _: AdLoadingState) async {
+    func closeInterstitialAndNativeComponents(for state: AdLoadingState) async {
         interstitialTimeoutTask?.cancel()
         interstitialTimeoutTask = nil
 
         await dismissSKOverlay()
         await dismissSKStoreProduct()
+        await finishOMSession(for: state.id)
 
         Task { @MainActor in
             await inlineEventSubject.send(.didFinishInterstitialAd)
