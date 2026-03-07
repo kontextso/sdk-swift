@@ -250,17 +250,14 @@ private extension AdsProviderActor {
         let bids = self.bids.filter { $0.adDisplayPosition == adDisplayPosition }
         // Only take one bid for each unique code
         let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
-        // Insert new states for last message id
-        let stateId = UUID()
-
         var newStates: [AdLoadingState] = []
         for bid in uniqueBids {
             newStates.append(AdLoadingState(
-                id: stateId,
+                id: bid.bidId,
                 bid: bid,
                 messageId: lastMessageId,
                 webViewData: await prepareWebViewData(
-                    stateId: stateId,
+                    stateId: bid.bidId,
                     messageId: lastMessageId,
                     bid: bid
                 ),
@@ -307,7 +304,7 @@ private extension AdsProviderActor {
         await AdLoadingState.WebViewData(
             url: adsServerAPI.frameURL(
                 messageId: messageId,
-                bidId: bid.bidId,
+                bidId: bid.bidId.uuidString.lowercased(),
                 bidCode: bid.code,
                 otherParams: configuration.otherParams
             ),
@@ -332,7 +329,7 @@ private extension AdsProviderActor {
                 Task {
                     await self?.handleInlineWebViewDispose(
                         stateId: stateId,
-                        bidId: bid.bidId
+                        bidId: bid.bidId.uuidString.lowercased()
                     )
                 }
             },
@@ -731,7 +728,7 @@ private extension AdsProviderActor {
 
         let didInitialize = await skAdNetworkManager.initImpression(skan)
         if didInitialize {
-            skanOwner = (stateId: state.id, bidId: state.bid.bidId)
+            skanOwner = (stateId: state.id, bidId: state.bid.bidId.uuidString.lowercased())
             if pendingStart == state.id {
                 pendingStart = nil
                 await skAdNetworkManager.startImpression()
@@ -746,7 +743,7 @@ private extension AdsProviderActor {
     func startSKAdNetwork(for state: AdLoadingState) async {
         guard
             skanOwner?.stateId == state.id,
-            skanOwner?.bidId == state.bid.bidId
+            skanOwner?.bidId == state.bid.bidId.uuidString.lowercased()
         else {
             return
         }
@@ -827,7 +824,7 @@ private extension AdsProviderActor {
     ) async {
         let url = await adsServerAPI.componentURL(
             messageId: state.messageId,
-            bidId: state.bid.bidId,
+            bidId: state.bid.bidId.uuidString.lowercased(),
             bidCode: state.bid.code,
             component: data.component.rawValue,
             otherParams: configuration.otherParams

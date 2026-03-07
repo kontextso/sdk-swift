@@ -1,3 +1,5 @@
+import Foundation
+
 struct BidDTO: Decodable {
     let bidId: String
     let code: String
@@ -42,9 +44,12 @@ struct BidDTO: Decodable {
         }
     }
 
-    var model: Bid {
-        Bid(
-            bidId: bidId,
+    var model: Bid? {
+        guard let uuid = UUID(uuidString: bidId) else {
+            return nil
+        }
+        return Bid(
+            bidId: uuid,
             code: code,
             adDisplayPosition: adDisplayPosition,
             skan: skan?.model,

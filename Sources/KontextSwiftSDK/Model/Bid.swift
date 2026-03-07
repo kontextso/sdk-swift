@@ -41,7 +41,7 @@ public enum OmCreativeType: String, Sendable {
 
 public struct Bid: Sendable, Hashable {
     /// Id of the bid
-    public let bidId: String
+    public let bidId: UUID
     /// Placement code
     public let code: String
     /// Indicates when the ad should be rendered
@@ -54,7 +54,7 @@ public struct Bid: Sendable, Hashable {
     public let om: OmInfo?
 
     init(
-        bidId: String,
+        bidId: UUID,
         code: String,
         adDisplayPosition: AdDisplayPosition,
         skan: Skan? = nil,
