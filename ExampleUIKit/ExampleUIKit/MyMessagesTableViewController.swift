@@ -91,9 +91,9 @@ private extension MyMessagesTableViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            // content: "kontextso ad_format:image",
             // content: "Hello, how are you?",
-            content: "kontextso ad_format:inline",
+            // content: "kontextso ad_format:inline",
+            content: "kontextso ad_format:video",
             createdAt: Date()
         )
         messages.append(message)

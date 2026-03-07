@@ -112,7 +112,7 @@ extension AdsProviderActor: AdsProviderActing {
             await MainActor.run {
                 for state in sessionsToFinish {
                     state.session.finish()
-                    os_log("[\(ts)] [OMID] Session finished (display) for stateId: \(state.stateId)")
+                    os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
                 }
             }
             await reset()
@@ -596,7 +596,7 @@ private extension AdsProviderActor {
                 os_log("[\(ts)] [OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
 
                 // 5) Store session in actor state
-                let newState = OMSessionState(stateId: stateId, session: omSession)
+                let newState = OMSessionState(stateId: stateId, session: omSession, creativeType: creativeType)
                 omSessions.append(newState)
             } catch {
                 os_log("OM failed to start: \(String(describing: error))")

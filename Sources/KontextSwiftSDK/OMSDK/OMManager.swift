@@ -55,20 +55,23 @@ final class OMManager: OMManaging {
             )
 
             let omCreativeType: OMIDCreativeType
+            let impressionOwner: OMIDOwner
             let mediaEventsOwner: OMIDOwner
             switch creativeType {
             case .display:
                 omCreativeType = .htmlDisplay
+                impressionOwner = .nativeOwner
                 mediaEventsOwner = .noneOwner
             case .video:
                 omCreativeType = .video
+                impressionOwner = .javaScriptOwner
                 mediaEventsOwner = .javaScriptOwner
             }
 
             let configuration = try OMIDMegabraincoAdSessionConfiguration(
                 creativeType: omCreativeType,
                 impressionType: .beginToRender,
-                impressionOwner: .nativeOwner,
+                impressionOwner: impressionOwner,
                 mediaEventsOwner: mediaEventsOwner,
                 isolateVerificationScripts: false
             )
