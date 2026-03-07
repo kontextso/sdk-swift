@@ -35,7 +35,7 @@ final class MyMessagesTableViewController: UITableViewController {
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
-            // adServerUrl: URL(string: "http://localhost:3002")!,
+            adServerUrl: URL(string: "http://localhost:3002")!,
             otherParams: ["theme": "dark"],
         ))
         super.init(style: .plain)

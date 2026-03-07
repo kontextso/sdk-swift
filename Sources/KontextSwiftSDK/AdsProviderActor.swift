@@ -173,10 +173,15 @@ extension AdsProviderActor: AdsProviderActing {
         await dismissSKOverlay()
         await dismissSKStoreProduct()
         bids = []
-        states = []
 
-        // OM requires web view to be alive 1 second after finish is called.
-        Task { await resetOmStates() }
+        // Finish OM sessions on MainActor before clearing states.
+        // The WebView must still be in the view hierarchy when session.finish() is called,
+        // otherwise iOS freezes the WebContent process and the sessionFinish JS never executes.
+        let sessions = omSessions.map { $0.session }
+        omSessions = []
+        await MainActor.run { sessions.forEach { $0.finish() } }
+
+        states = []
     }
 
     func setIFA(advertisingId: String?, vendorId: String?) {
@@ -187,12 +192,6 @@ extension AdsProviderActor: AdsProviderActing {
 
 // MARK: Data processing
 private extension AdsProviderActor {
-    func resetOmStates() async {
-        omSessions.forEach { $0.session.finish() }
-        try? await Task.sleep(seconds: 1)
-        omSessions = []
-    }
-
     func bindBidsToLastUserMessage() async {
         await bindBidsToLastMessage(
             forRole: .user,
@@ -550,9 +549,11 @@ private extension AdsProviderActor {
         case .didStart(let webView, let url):
             // Guard against spurious didFinish callbacks after the ad has been disposed/cleared
             guard states.contains(where: { $0.id == stateId }) else { return }
+            // Killswitch: if the server didn't send an `om` object, OMID is disabled for this bid
+            guard let omInfo = states.first(where: { $0.id == stateId })?.bid.om else { return }
 
             do {
-                let creativeType = states.first(where: { $0.id == stateId })?.bid.om?.creativeType ?? .display
+                let creativeType = omInfo.creativeType
 
                 // 4) Create + start must be on MainActor
                 let omSession = try await MainActor.run {
