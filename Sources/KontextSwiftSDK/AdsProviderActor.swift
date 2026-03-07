@@ -105,8 +105,19 @@ extension AdsProviderActor: AdsProviderActing {
         self.messages = messages
 
         if shouldPreload {
+            // Finish OM sessions while the WebView is still in the view hierarchy,
+            // then wait 1 second for the sessionFinish JS to execute before removing the WebView.
+            let sessionsToFinish = omSessions
+            omSessions = []
+            await MainActor.run {
+                for state in sessionsToFinish {
+                    state.session.finish()
+                    os_log("[OMID] Session finished (display) for stateId: \(state.stateId)")
+                }
+            }
             await reset()
             notifyAdsCleared()
+            try? await Task.sleep(seconds: 1)
         } else {
             await bindBidsToLastAssistantMessage()
             return
@@ -174,9 +185,6 @@ extension AdsProviderActor: AdsProviderActing {
         await dismissSKStoreProduct()
         bids = []
         states = []
-
-        // OM requires web view to be alive 1 second after finish is called.
-        Task { await resetOmStates() }
     }
 
     func setIFA(advertisingId: String?, vendorId: String?) {
@@ -187,12 +195,6 @@ extension AdsProviderActor: AdsProviderActing {
 
 // MARK: Data processing
 private extension AdsProviderActor {
-    func resetOmStates() async {
-        omSessions.forEach { $0.session.finish() }
-        try? await Task.sleep(seconds: 1)
-        omSessions = []
-    }
-
     func bindBidsToLastUserMessage() async {
         await bindBidsToLastMessage(
             forRole: .user,
