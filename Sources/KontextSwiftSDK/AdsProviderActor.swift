@@ -112,7 +112,7 @@ extension AdsProviderActor: AdsProviderActing {
             await MainActor.run {
                 for state in sessionsToFinish {
                     state.session.finish()
-                    os_log("[OMID] Session finished (display) for stateId: \(state.stateId)")
+                    os_log("[\(ts)] [OMID] Session finished (display) for stateId: \(state.stateId)")
                 }
             }
             await reset()
@@ -191,6 +191,12 @@ extension AdsProviderActor: AdsProviderActing {
         resolvedAdvertisingId = advertisingId
         resolvedVendorId = vendorId
     }
+}
+
+private var ts: String {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm:ss.SSS"
+    return f.string(from: Date())
 }
 
 // MARK: Data processing
@@ -387,7 +393,7 @@ private extension AdsProviderActor {
             }
 
         case .viewIframe(let viewData):
-            os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
+            os_log(.info, "[\(ts)] [InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .adDoneIframe:
             if newState.bid.impressionTrigger == .immediate, newState.bid.skan != nil {
@@ -452,9 +458,9 @@ private extension AdsProviderActor {
 
         case .omidFiredIframe(let error):
             if let error {
-                os_log("[OMID] Iframe JS session client error for stateId: \(stateId) — \(error)")
+                os_log("[\(ts)] [OMID] Iframe JS session client error for stateId: \(stateId) — \(error)")
             } else {
-                os_log("[OMID] Impression fired from iframe JS session client for stateId: \(stateId)")
+                os_log("[\(ts)] [OMID] Impression fired from iframe JS session client for stateId: \(stateId)")
             }
 
         default:
@@ -565,17 +571,17 @@ private extension AdsProviderActor {
                     if creativeType == .display {
                         do {
                             try session.loaded()
-                            os_log("[OMID] loaded() fired")
+                            os_log("[\(ts)] [OMID] loaded() fired")
                             try session.impression()
-                            os_log("[OMID] impression() fired")
+                            os_log("[\(ts)] [OMID] impression() fired")
                         } catch {
-                            os_log("[OMID] Failed to fire loaded/impression: \(error)")
+                            os_log("[\(ts)] [OMID] Failed to fire loaded/impression: \(error)")
                         }
                     }
                     return session
                 }
 
-                os_log("[OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
+                os_log("[\(ts)] [OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
 
                 // 5) Store session in actor state
                 let newState = OMSessionState(stateId: stateId, session: omSession)

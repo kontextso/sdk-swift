@@ -135,7 +135,9 @@ private extension MyMessagesTableViewController {
 
 extension MyMessagesTableViewController: AdsProviderDelegate {
     func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {
-        print(event.name)
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss.SSS"
+        print("[\(f.string(from: Date()))] \(event.name)")
         switch event {
         case .filled(let ads):
             self.ads = ads
