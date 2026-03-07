@@ -173,15 +173,10 @@ extension AdsProviderActor: AdsProviderActing {
         await dismissSKOverlay()
         await dismissSKStoreProduct()
         bids = []
-
-        // Finish OM sessions on MainActor before clearing states.
-        // The WebView must still be in the view hierarchy when session.finish() is called,
-        // otherwise iOS freezes the WebContent process and the sessionFinish JS never executes.
-        let sessions = omSessions.map { $0.session }
-        omSessions = []
-        await MainActor.run { sessions.forEach { $0.finish() } }
-
         states = []
+
+        // OM requires web view to be alive 1 second after finish is called.
+        Task { await resetOmStates() }
     }
 
     func setIFA(advertisingId: String?, vendorId: String?) {
@@ -192,6 +187,12 @@ extension AdsProviderActor: AdsProviderActing {
 
 // MARK: Data processing
 private extension AdsProviderActor {
+    func resetOmStates() async {
+        omSessions.forEach { $0.session.finish() }
+        try? await Task.sleep(seconds: 1)
+        omSessions = []
+    }
+
     func bindBidsToLastUserMessage() async {
         await bindBidsToLastMessage(
             forRole: .user,
