@@ -321,6 +321,12 @@ private extension AdsProviderActor {
                 }
             },
             onOMEvent: { [weak self] event in
+                // Interstitial bids: inline WebView is just a preview, OMID session
+                // starts when the modal WebView loads (handled in presentInterstitialAd).
+                guard bid.impressionTrigger != .component else {
+                    os_log("[\(ts)] [OMID] Skipping inline OM event (impressionTrigger: component) for stateId: \(stateId)")
+                    return
+                }
                 Task {
                     await self?.handleOMEvent(event: event, stateId: stateId)
                 }
