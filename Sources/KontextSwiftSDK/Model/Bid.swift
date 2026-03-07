@@ -30,9 +30,18 @@ public struct Skan: Decodable, Sendable, Hashable {
     public let signature: String?
 }
 
+public struct OmInfo: Sendable, Hashable {
+    public let creativeType: OmCreativeType
+}
+
+public enum OmCreativeType: String, Sendable {
+    case display
+    case video
+}
+
 public struct Bid: Sendable, Hashable {
     /// Id of the bid
-    public let bidId: String
+    public let bidId: UUID
     /// Placement code
     public let code: String
     /// Indicates when the ad should be rendered
@@ -41,18 +50,22 @@ public struct Bid: Sendable, Hashable {
     public let skan: Skan?
     /// Determines when impression attribution should be started
     public let impressionTrigger: ImpressionTrigger
+    /// Open Measurement configuration
+    public let om: OmInfo?
 
     init(
-        bidId: String,
+        bidId: UUID,
         code: String,
         adDisplayPosition: AdDisplayPosition,
         skan: Skan? = nil,
-        impressionTrigger: ImpressionTrigger = .immediate
+        impressionTrigger: ImpressionTrigger = .immediate,
+        om: OmInfo? = nil
     ) {
         self.bidId = bidId
         self.code = code
         self.adDisplayPosition = adDisplayPosition
         self.skan = skan
         self.impressionTrigger = impressionTrigger
+        self.om = om
     }
 }

@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  MyMessagesCellViewModel.swift
 //  ExampleUIKit
 //
 

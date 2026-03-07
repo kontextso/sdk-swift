@@ -9,13 +9,16 @@ struct InterstitialAdView: View {
     struct Params: Identifiable {
         var id: String { url?.absoluteString ?? UUID().uuidString }
         let url: URL?
+        let omService: OMManaging
         let events: AnyPublisher<InterstitialAdEvent, Never>
         let onIFrameEvent: (IframeEvent) -> Void
+        let onOMEvent: (OMEvent) -> Void
     }
 
     @StateObject private var viewModel: InterstitialAdViewModel
     private let events: AnyPublisher<InterstitialAdEvent, Never>
     private var onIFrameEvent: (IframeEvent) -> Void
+    private var onOMEvent: (OMEvent) -> Void
 
     init(params: Params) {
         _viewModel = StateObject(
@@ -26,6 +29,7 @@ struct InterstitialAdView: View {
         )
         self.events = params.events
         self.onIFrameEvent = params.onIFrameEvent
+        self.onOMEvent = params.onOMEvent
     }
 
     var body: some View {
@@ -35,7 +39,8 @@ struct InterstitialAdView: View {
                     url: url,
                     updateIFrameData: nil,
                     eventPublisher: nil,
-                    onIFrameEvent: { onIFrameEvent($0) }
+                    onIFrameEvent: { onIFrameEvent($0) },
+                    onOMEvent: onOMEvent
                 )
                 .opacity(viewModel.showIframe ? 1 : 0)
             }
