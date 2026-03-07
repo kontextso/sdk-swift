@@ -117,7 +117,6 @@ extension AdsProviderActor: AdsProviderActing {
             }
             await reset()
             notifyAdsCleared()
-            try? await Task.sleep(seconds: 1)
         } else {
             await bindBidsToLastAssistantMessage()
             return
@@ -125,7 +124,8 @@ extension AdsProviderActor: AdsProviderActing {
 
         lastPreloadUserMessageId = lastUserMessage.id
         do {
-            let preloadedData = try await preloadWithTimeout(
+            async let sleep: Void = Task.sleep(seconds: 1)
+            async let preload = preloadWithTimeout(
                 timeout: preloadTimeout,
                 sessionId: sessionId,
                 configuration: configuration,
@@ -135,6 +135,7 @@ extension AdsProviderActor: AdsProviderActing {
                 api: adsServerAPI,
                 messages: messagesToSend
             )
+            let (_, preloadedData) = try await (sleep, preload)
 
             guard preloadedData.permanentError != true else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)
