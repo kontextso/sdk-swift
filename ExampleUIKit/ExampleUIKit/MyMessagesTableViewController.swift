@@ -93,8 +93,8 @@ private extension MyMessagesTableViewController {
             role: .user,
             // content: "Hello, how are you?",
             // content: "kontextso ad_format:inline",
-            // content: "kontextso ad_format:video",
-            content: "kontextso ad_format:interstitial",
+            content: "kontextso ad_format:video",
+            // content: "kontextso ad_format:interstitial",
             createdAt: Date()
         )
         messages.append(message)
