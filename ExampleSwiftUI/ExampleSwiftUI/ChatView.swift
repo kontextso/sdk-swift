@@ -103,6 +103,8 @@ struct ChatView: View {
             id: UUID().uuidString,
             role: .user,
             // content: "Hello my smart helpful assistant, how are you?",
+            // content: "kontextso ad_format:inline"
+            // content: "kontextso ad_format:video"
             content: "kontextso ad_format:interstitial"
         )
 
