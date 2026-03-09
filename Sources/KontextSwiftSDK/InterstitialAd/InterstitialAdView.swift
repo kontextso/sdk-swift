@@ -43,6 +43,7 @@ struct InterstitialAdView: View {
                     onOMEvent: onOMEvent
                 )
                 .opacity(viewModel.showIframe ? 1 : 0)
+                .animation(.none, value: viewModel.showIframe)
             }
 
             if !viewModel.showIframe {

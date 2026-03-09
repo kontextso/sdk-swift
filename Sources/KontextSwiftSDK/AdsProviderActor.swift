@@ -389,6 +389,7 @@ private extension AdsProviderActor {
     }
 
     func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) async {
+        // os_log("[\(ts)] [Inline] iframe event: \(String(describing: event))")
         guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
             return
         }
@@ -518,9 +519,20 @@ private extension AdsProviderActor {
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
+        // os_log("[\(ts)] [Interstitial] iframe event: \(String(describing: event))")
         switch event {
         case .initComponentIframe:
-            // Modal is now fully visible — start the deferred OMID session.
+            // Modal content is loaded — show the WebView and cancel the timeout.
+            // NOTE: Intentionally dispatched to @MainActor before sending.
+            Task { @MainActor in
+                await interstitialEventSubject.send(.didChangeDisplay(true))
+            }
+            interstitialTimeoutTask?.cancel()
+            interstitialTimeoutTask = nil
+
+        case .adDoneComponentIframe:
+            // Video has started playing — modal is fully visible and dimensions are stable.
+            // Start the deferred OMID session now so impression fires with correct geometry.
             if let pending = pendingInterstitialWebView, pending.stateId == state.id,
                let omInfo = state.bid.om {
                 pendingInterstitialWebView = nil
@@ -529,17 +541,6 @@ private extension AdsProviderActor {
                     await startOMSession(webView: webView, url: url, stateId: stateId, omInfo: omInfo)
                 }
             }
-
-            // NOTE: Intentionally dispatched to @MainActor before sending.
-            // InterstitialAdViewModel observes this subject and updates @Published properties.
-            // Without this hop, the send() arrives on the actor's background executor,
-            // which causes "Publishing changes from background threads" warnings and potential
-            // crashes in future iOS versions. The actor isolation crossing is a known tradeoff.
-            Task { @MainActor in
-                await interstitialEventSubject.send(.didChangeDisplay(true))
-            }
-            interstitialTimeoutTask?.cancel()
-            interstitialTimeoutTask = nil
 
         case .openComponentIframe(let data):
             Task {

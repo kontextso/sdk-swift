@@ -37,6 +37,10 @@ enum IframeEvent: Decodable, Hashable, Sendable {
     /// Init component event from iframe
     case initComponentIframe(ComponentIframeDataDTO)
 
+    /// Ad content ready event from component iframe — fires on first video play,
+    /// meaning the modal is fully visible and dimensions are stable.
+    case adDoneComponentIframe(ComponentIframeDataDTO)
+
     /// Error component event from iframe
     case errorComponentIframe(ComponentIframeDataDTO)
 
@@ -260,6 +264,12 @@ extension IframeEvent {
                 return
             }
             self = .initComponentIframe(data)
+        case "ad-done-component-iframe":
+            guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
+                self = .unknown(type)
+                return
+            }
+            self = .adDoneComponentIframe(data)
         case "error-component-iframe":
             guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
                 self = .unknown(type)
