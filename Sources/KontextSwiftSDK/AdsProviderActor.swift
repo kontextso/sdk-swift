@@ -1,6 +1,7 @@
 @preconcurrency import Combine
 import OSLog
 import UIKit
+import WebKit
 
 // MARK: - AdsProviderActor
 
@@ -45,6 +46,10 @@ actor AdsProviderActor {
 
     // stateId waiting for start after init
     private var pendingStart: UUID?
+
+    // Interstitial OMID: WebView reference captured on didFinish, consumed on initComponentIframe
+    // so that session.start() fires only after the modal is fully visible.
+    private var pendingInterstitialWebView: (webView: WKWebView, url: URL?, stateId: UUID)?
 
     init(
         configuration: AdsProviderConfiguration,
@@ -497,6 +502,16 @@ private extension AdsProviderActor {
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
         switch event {
         case .initComponentIframe:
+            // Modal is now fully visible — start the deferred OMID session.
+            if let pending = pendingInterstitialWebView, pending.stateId == state.id,
+               let omInfo = state.bid.om {
+                pendingInterstitialWebView = nil
+                let (webView, url, stateId) = (pending.webView, pending.url, pending.stateId)
+                Task {
+                    await startOMSession(webView: webView, url: url, stateId: stateId, omInfo: omInfo)
+                }
+            }
+
             // NOTE: Intentionally dispatched to @MainActor before sending.
             // InterstitialAdViewModel observes this subject and updates @Published properties.
             // Without this hop, the send() arrives on the actor's background executor,
@@ -550,7 +565,7 @@ private extension AdsProviderActor {
 // MARK: OM Events
 private extension AdsProviderActor {
     func handleOMEvent(event: OMEvent, stateId: UUID) async {
-        // 1) Check current state in the actor (safe)
+        // Check for an existing session (didFinish fired again on an already-active session)
         if let existingIndex = omSessions.firstIndex(where: { $0.stateId == stateId }) {
             let existingSession = omSessions[existingIndex].session
 
@@ -572,34 +587,44 @@ private extension AdsProviderActor {
             // Killswitch: if the server didn't send an `om` object, OMID is disabled for this bid
             guard let omInfo = states.first(where: { $0.id == stateId })?.bid.om else { return }
 
-            do {
-                let creativeType = omInfo.creativeType
-
-                // 4) Create + start must be on MainActor
-                let omSession = try await MainActor.run {
-                    let session = try omService.createSession(webView, url: url, creativeType: creativeType)
-                    session.start()
-                    if creativeType == .display {
-                        do {
-                            try session.loaded()
-                            os_log("[\(ts)] [OMID] loaded() fired")
-                            try session.impression()
-                            os_log("[\(ts)] [OMID] impression() fired")
-                        } catch {
-                            os_log("[\(ts)] [OMID] Failed to fire loaded/impression: \(error)")
-                        }
-                    }
-                    return session
-                }
-
-                os_log("[\(ts)] [OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
-
-                // 5) Store session in actor state
-                let newState = OMSessionState(stateId: stateId, session: omSession, creativeType: creativeType)
-                omSessions.append(newState)
-            } catch {
-                os_log("OM failed to start: \(String(describing: error))")
+            // For interstitial ads, defer session start until initComponentIframe fires,
+            // so session.start() is called only after the modal is fully visible.
+            if states.first(where: { $0.id == stateId })?.bid.impressionTrigger == .component {
+                pendingInterstitialWebView = (webView: webView, url: url, stateId: stateId)
+                os_log("[\(ts)] [OMID] Deferring session start until initComponentIframe for stateId: \(stateId)")
+                return
             }
+
+            await startOMSession(webView: webView, url: url, stateId: stateId, omInfo: omInfo)
+        }
+    }
+
+    func startOMSession(webView: WKWebView, url: URL?, stateId: UUID, omInfo: OmInfo) async {
+        do {
+            let creativeType = omInfo.creativeType
+
+            let omSession = try await MainActor.run {
+                let session = try omService.createSession(webView, url: url, creativeType: creativeType)
+                session.start()
+                if creativeType == .display {
+                    do {
+                        try session.loaded()
+                        os_log("[\(ts)] [OMID] loaded() fired")
+                        try session.impression()
+                        os_log("[\(ts)] [OMID] impression() fired")
+                    } catch {
+                        os_log("[\(ts)] [OMID] Failed to fire loaded/impression: \(error)")
+                    }
+                }
+                return session
+            }
+
+            os_log("[\(ts)] [OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
+
+            let newState = OMSessionState(stateId: stateId, session: omSession, creativeType: creativeType)
+            omSessions.append(newState)
+        } catch {
+            os_log("OM failed to start: \(String(describing: error))")
         }
     }
 }
@@ -712,6 +737,10 @@ private extension AdsProviderActor {
     func closeInterstitialAndNativeComponents(for state: AdLoadingState) async {
         interstitialTimeoutTask?.cancel()
         interstitialTimeoutTask = nil
+
+        if pendingInterstitialWebView?.stateId == state.id {
+            pendingInterstitialWebView = nil
+        }
 
         await dismissSKOverlay()
         await dismissSKStoreProduct()
