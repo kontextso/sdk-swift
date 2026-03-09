@@ -36,11 +36,12 @@ struct ChatView: View {
         // 2. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
             // Replace publisher token with your own to try out
-            publisherToken: "<publisher-token>",
+            publisherToken: "nexus-dev",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
             character: character,
+            adServerUrl: URL(string: "http://localhost:3002")!,
             regulatory: Regulatory(gdpr: 1, coppa: nil),
             otherParams: ["theme": "dark"]
         )
@@ -51,7 +52,7 @@ struct ChatView: View {
             configuration: configuration
         ))
     }
-    
+
     var body: some View {
         VStack {
             ScrollView {
@@ -101,7 +102,8 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello my smart helpful assistant, how are you?"
+            // content: "Hello my smart helpful assistant, how are you?",
+            content: "kontextso ad_format:interstitial"
         )
 
         messages.append(userMessage)
@@ -109,7 +111,7 @@ struct ChatView: View {
 
         Task {
             // Simulate assistant response
-            try await Task.sleep(nanoseconds: 1_000_000_0)
+            try await Task.sleep(nanoseconds: 1_000_000_000)
             handleAssistantResponse()
         }
     }
