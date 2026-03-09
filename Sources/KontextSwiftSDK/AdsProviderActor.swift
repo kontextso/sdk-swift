@@ -51,6 +51,11 @@ actor AdsProviderActor {
     // so that session.start() fires only after the modal is fully visible.
     private var pendingInterstitialWebView: (webView: WKWebView, url: URL?, stateId: UUID)?
 
+    // Inline OMID: WebView reference captured on didFinish, consumed on adDoneIframe
+    // so that session.start() fires only after the ad content is fully rendered and
+    // the iframe has received its container dimensions (iframeLoaded = true in JS).
+    private var pendingInlineWebView: (webView: WKWebView, url: URL?, stateId: UUID, omInfo: OmInfo)?
+
     init(
         configuration: AdsProviderConfiguration,
         sessionId: String? = nil,
@@ -411,6 +416,16 @@ private extension AdsProviderActor {
             os_log(.info, "[\(ts)] [InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .adDoneIframe:
+            // Ad content is fully rendered and iframe has received container dimensions —
+            // start the deferred OMID session now so impression fires with correct geometry.
+            if let pending = pendingInlineWebView, pending.stateId == newState.id {
+                pendingInlineWebView = nil
+                let (webView, url, stateId, omInfo) = (pending.webView, pending.url, pending.stateId, pending.omInfo)
+                Task {
+                    await startOMSession(webView: webView, url: url, stateId: stateId, omInfo: omInfo)
+                }
+            }
+
             if newState.bid.impressionTrigger == .immediate, newState.bid.skan != nil {
                 if skanOwner?.stateId == newState.id {
                     await startSKAdNetwork(for: newState)
@@ -484,6 +499,9 @@ private extension AdsProviderActor {
     }
 
     func handleInlineWebViewDispose(stateId: UUID, bidId: String) async {
+        if pendingInlineWebView?.stateId == stateId {
+            pendingInlineWebView = nil
+        }
         await cleanupSKAdNetwork(stateId: stateId, bidId: bidId)
         await dismissSKOverlay()
         await dismissSKStoreProduct()
@@ -595,7 +613,11 @@ private extension AdsProviderActor {
                 return
             }
 
-            await startOMSession(webView: webView, url: url, stateId: stateId, omInfo: omInfo)
+            // For inline ads, defer session start until adDoneIframe fires,
+            // so session.start() is called only after the ad content is fully rendered
+            // and the iframe has received its container dimensions.
+            pendingInlineWebView = (webView: webView, url: url, stateId: stateId, omInfo: omInfo)
+            os_log("[\(ts)] [OMID] Deferring session start until adDoneIframe for stateId: \(stateId)")
         }
     }
 
@@ -606,17 +628,21 @@ private extension AdsProviderActor {
             let omSession = try await MainActor.run {
                 let session = try omService.createSession(webView, url: url, creativeType: creativeType)
                 session.start()
-                if creativeType == .display {
+                return session
+            }
+
+            if creativeType == .display {
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms: gives native OMID SDK time to measure adView geometry
+                await MainActor.run {
                     do {
-                        try session.loaded()
+                        try omSession.loaded()
                         os_log("[\(ts)] [OMID] loaded() fired")
-                        try session.impression()
+                        try omSession.impression()
                         os_log("[\(ts)] [OMID] impression() fired")
                     } catch {
                         os_log("[\(ts)] [OMID] Failed to fire loaded/impression: \(error)")
                     }
                 }
-                return session
             }
 
             os_log("[\(ts)] [OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
