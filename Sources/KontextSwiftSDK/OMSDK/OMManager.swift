@@ -125,4 +125,9 @@ final class OMSession {
     func impression() throws {
         try adEvents.impressionOccurred()
     }
+
+    func logError(errorType: String?, message: String?) {
+        let omErrorType: OMIDErrorType = errorType == "video" ? .media : .generic
+        session.logError(withType: omErrorType, message: message ?? "unknown")
+    }
 }

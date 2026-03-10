@@ -457,8 +457,11 @@ private extension AdsProviderActor {
                 didReceiveEvent: AdsEvent.adHeight(newState.toModel())
             )
 
-        case .errorIframe(let message):
-            os_log(.error, "[InlineAd]: Error: \(message?.message ?? "unknown")")
+        case .errorIframe(let data):
+            os_log(.error, "[InlineAd]: Error: \(data?.message ?? "unknown")")
+            if let session = omSession(for: stateId) {
+                await MainActor.run { session.logError(errorType: data?.errorType, message: data?.message) }
+            }
             await reset()
             notifyAdsCleared()
 
@@ -558,8 +561,12 @@ private extension AdsProviderActor {
                 )
             }
 
-        case .errorComponentIframe:
+        case .errorComponentIframe(let data):
+            let errorSession = omSession(for: state.id)
             Task {
+                if let session = errorSession {
+                    await MainActor.run { session.logError(errorType: data.errorType, message: data.message) }
+                }
                 await closeInterstitialAndNativeComponents(for: state)
             }
 

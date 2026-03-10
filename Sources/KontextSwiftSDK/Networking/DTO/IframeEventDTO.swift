@@ -42,7 +42,7 @@ enum IframeEvent: Decodable, Hashable, Sendable {
     case adDoneComponentIframe(ComponentIframeDataDTO)
 
     /// Error component event from iframe
-    case errorComponentIframe(ComponentIframeDataDTO)
+    case errorComponentIframe(ErrorComponentIframeDataDTO)
 
     /// Close component request event to close component iframe
     case closeComponentIframe(ComponentIframeDataDTO)
@@ -82,7 +82,16 @@ extension IframeEvent {
 
     /// Data for error events
     struct ErrorDataDTO: Decodable, Hashable {
-        let message: String
+        let message: String?
+        let errorType: String?
+    }
+
+    /// Data for error component iframe events
+    struct ErrorComponentIframeDataDTO: Decodable, Hashable {
+        let code: String
+        let component: OpenComponentIframeDataDTO.Component
+        let message: String?
+        let errorType: String?
     }
 
     /// Data for omid-fired-iframe events
@@ -271,7 +280,7 @@ extension IframeEvent {
             }
             self = .adDoneComponentIframe(data)
         case "error-component-iframe":
-            guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
+            guard let data = try? container.decode(ErrorComponentIframeDataDTO.self, forKey: .data) else {
                 self = .unknown(type)
                 return
             }
