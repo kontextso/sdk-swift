@@ -32,7 +32,7 @@ let package = Package(
             path: "Frameworks/OMSDK_Megabrainco.xcframework"
         ),
         .testTarget(
-            name: "KontextSwiftSDKTests",
+            name: "KontextAdsTests",
             dependencies: ["KontextSwiftSDK"]
         )
     ]
