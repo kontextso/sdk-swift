@@ -7,7 +7,8 @@ import UIKit
 import KontextSwiftSDK
 
 final class InlineAdTableViewCell: UITableViewCell {
-    private var inlineAdView: InlineAdUIView?    
+    private var inlineAdView: InlineAdUIView?
+    private var configuredAdId: UUID?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -21,12 +22,20 @@ final class InlineAdTableViewCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        inlineAdView?.removeFromSuperview()
-        inlineAdView = nil
+        // Don't destroy the view here — configure() will clean up if the ad changes.
+        // This preserves the OMID session across scroll off/on for the same ad.
     }
 
     func configure(with viewModel: InlineAdViewModel) {
+        // Same ad already displayed — nothing to do.
+        if configuredAdId == viewModel.ad.id, inlineAdView != nil {
+            return
+        }
+
+        // Different ad — tear down previous view.
         inlineAdView?.removeFromSuperview()
+        inlineAdView = nil
+        configuredAdId = viewModel.ad.id
 
         let inlineAdView = InlineAdUIView(ad: viewModel.ad)
         self.inlineAdView = inlineAdView

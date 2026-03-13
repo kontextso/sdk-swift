@@ -110,6 +110,7 @@ final class AdWebView: WKWebView {
     }
 
     override func removeFromSuperview() {
+        stopLoading()
         super.removeFromSuperview()
         webConfiguration.userContentController
             .removeScriptMessageHandler(forName: "iframeMessage")
@@ -176,6 +177,16 @@ private extension AdWebView {
 // MARK: - WKNavigationDelegate
 
 extension AdWebView: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        // Cancel any navigation when the view has no window — this blocks WebKit's crash-recovery
+        // reload that fires ~6s after the WebContent process is terminated post-ad.cleared.
+        guard window != nil else {
+            decisionHandler(.cancel)
+            return
+        }
+        decisionHandler(.allow)
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         onOMEvent(.didStart(webView, url))
     }

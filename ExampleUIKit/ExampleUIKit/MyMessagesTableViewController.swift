@@ -95,6 +95,7 @@ private extension MyMessagesTableViewController {
             content: "kontextso ad_format:inline",
             // content: "kontextso ad_format:video",
             // content: "kontextso ad_format:interstitial",
+            // content: "kontextso ad_format:interstitial_rewarded",
             createdAt: Date()
         )
         messages.append(message)
