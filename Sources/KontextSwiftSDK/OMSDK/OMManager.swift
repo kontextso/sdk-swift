@@ -60,7 +60,7 @@ final class OMManager: OMManaging {
             switch creativeType {
             case .display:
                 omCreativeType = .htmlDisplay
-                impressionOwner = .nativeOwner
+                impressionOwner = .javaScriptOwner
                 mediaEventsOwner = .noneOwner
             case .video:
                 omCreativeType = .video
