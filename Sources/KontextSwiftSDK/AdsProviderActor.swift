@@ -639,20 +639,6 @@ private extension AdsProviderActor {
                 return session
             }
 
-            if creativeType == .display {
-                try await Task.sleep(nanoseconds: 50_000_000) // 50ms: gives native OMID SDK time to measure adView geometry
-                await MainActor.run {
-                    do {
-                        try omSession.loaded()
-                        os_log("[\(ts)] [OMID] loaded() fired")
-                        try omSession.impression()
-                        os_log("[\(ts)] [OMID] impression() fired")
-                    } catch {
-                        os_log("[\(ts)] [OMID] Failed to fire loaded/impression: \(error)")
-                    }
-                }
-            }
-
             os_log("[\(ts)] [OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
 
             let newState = OMSessionState(stateId: stateId, session: omSession, creativeType: creativeType)
