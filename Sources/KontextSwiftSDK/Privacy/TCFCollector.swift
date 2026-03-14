@@ -2,7 +2,7 @@ import Foundation
 
 /// IAB Transparency and Consent Framework data read from UserDefaults.
 /// Consent SDKs store TCF values under standardized keys after user interacts with a consent banner.
-struct TCFInfo {
+struct TCFCollector {
     /// Whether GDPR applies (0 = No, 1 = Yes, nil = Unknown)
     let gdpr: Int?
     /// IAB TCF consent string encoding the user's consent choices
@@ -14,11 +14,11 @@ struct TCFInfo {
     }
 
     /// Reads TCF consent data from UserDefaults
-    static func current(userDefaults: UserDefaults = .standard) -> TCFInfo {
+    static func current(userDefaults: UserDefaults = .standard) -> TCFCollector {
         let tcString = userDefaults.string(forKey: "IABTCF_TCString")
         let gdprApplies = userDefaults.object(forKey: "IABTCF_gdprApplies")
 
-        return TCFInfo(
+        return TCFCollector(
             gdpr: normalizedGDPRFlag(from: gdprApplies),
             gdprConsent: (tcString?.isEmpty == false) ? tcString : nil
         )
