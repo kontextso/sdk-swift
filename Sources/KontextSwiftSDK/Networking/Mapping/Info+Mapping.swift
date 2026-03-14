@@ -97,7 +97,7 @@ extension SDKInfo: ModelConvertible {
         SDKDTO(
             name: name,
             version: version,
-            platform: lowercasedPlatform
+            platform: platform
         )
     }
 }

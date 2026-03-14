@@ -1,6 +1,6 @@
 import Foundation
 
-struct AppInfo  {
+struct AppInfo {
     let name: String
     let bundleId: String?
     let version: String
