@@ -19,8 +19,13 @@ extension OSInfo {
         OSInfo(
             name: UIDevice.current.systemName.lowercased(),
             version: UIDevice.current.systemVersion,
-            locale: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"),
+            locale: bcp47Locale(Locale.current.identifier),
             timezone: TimeZone.current.identifier
         )
+    }
+
+    /// Converts an Apple locale identifier to BCP-47 format (e.g. "cs_CZ" → "cs-CZ")
+    static func bcp47Locale(_ identifier: String) -> String {
+        identifier.replacingOccurrences(of: "_", with: "-")
     }
 }
