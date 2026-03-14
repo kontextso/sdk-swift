@@ -1,44 +1,5 @@
 import Foundation
 
-public enum ImpressionTrigger: String, Decodable, Sendable {
-    case immediate
-    case component
-
-    public init(from decoder: Decoder) throws {
-        let rawValue = (try? decoder.singleValueContainer().decode(String.self)) ?? ""
-        self = ImpressionTrigger(rawValue: rawValue) ?? .immediate
-    }
-}
-
-public struct AttributionFidelity: Decodable, Sendable, Hashable {
-    public let fidelity: Int
-    public let signature: String
-    public let nonce: String
-    public let timestamp: String
-}
-
-public struct Skan: Decodable, Sendable, Hashable {
-    public let version: String
-    public let network: String
-    public let itunesItem: String
-    public let sourceApp: String
-    public let sourceIdentifier: String?
-    public let campaign: String?
-    public let fidelities: [AttributionFidelity]?
-    public let nonce: String?
-    public let timestamp: String?
-    public let signature: String?
-}
-
-public struct OmInfo: Sendable, Hashable {
-    public let creativeType: OmCreativeType
-}
-
-public enum OmCreativeType: String, Sendable {
-    case display
-    case video
-}
-
 public struct Bid: Sendable, Hashable {
     /// Id of the bid
     public let bidId: UUID
