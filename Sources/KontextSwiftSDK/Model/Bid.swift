@@ -1,5 +1,6 @@
 import Foundation
 
+/// Winning bid returned by the server for a specific placement
 public struct Bid: Sendable, Hashable {
     /// Id of the bid
     public let bidId: UUID
