@@ -8,25 +8,9 @@ public struct Bid: Sendable, Hashable {
     /// Indicates when the ad should be rendered
     let adDisplayPosition: AdDisplayPosition
     /// SKAdNetwork attribution payload for iOS impression reporting
-    public let skan: Skan?
+    let skan: Skan?
     /// Determines when impression attribution should be started
     let impressionTrigger: ImpressionTrigger
     /// Open Measurement configuration
-    public let om: OmInfo?
-
-    init(
-        bidId: UUID,
-        code: String,
-        adDisplayPosition: AdDisplayPosition,
-        skan: Skan? = nil,
-        impressionTrigger: ImpressionTrigger = .immediate,
-        om: OmInfo? = nil
-    ) {
-        self.bidId = bidId
-        self.code = code
-        self.adDisplayPosition = adDisplayPosition
-        self.skan = skan
-        self.impressionTrigger = impressionTrigger
-        self.om = om
-    }
+    let om: OmInfo?
 }

@@ -3,7 +3,7 @@ import Foundation
 struct BidDTO: Decodable {
     let bidId: String
     let code: String
-    let adDisplayPosition: AdDisplayPosition
+    let adDisplayPosition: AdDisplayPositionDTO
     let skan: SkanDTO?
     let impressionTrigger: ImpressionTrigger
     let om: OmInfoDTO?
@@ -21,10 +21,10 @@ struct BidDTO: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         bidId = try container.decode(String.self, forKey: .bidId)
         code = try container.decode(String.self, forKey: .code)
-        adDisplayPosition = try container.decode(
-            AdDisplayPosition.self,
+        adDisplayPosition = (try? container.decode(
+            AdDisplayPositionDTO.self,
             forKey: .adDisplayPosition
-        )
+        )) ?? .afterAssistantMessage
         do {
             skan = try container.decodeIfPresent(SkanDTO.self, forKey: .skan)
         } catch {
@@ -51,7 +51,7 @@ struct BidDTO: Decodable {
         return Bid(
             bidId: uuid,
             code: code,
-            adDisplayPosition: adDisplayPosition,
+            adDisplayPosition: adDisplayPosition.model,
             skan: skan?.model,
             impressionTrigger: impressionTrigger,
             om: om?.model

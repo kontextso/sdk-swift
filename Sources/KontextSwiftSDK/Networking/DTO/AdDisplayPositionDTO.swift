@@ -10,4 +10,11 @@ enum AdDisplayPositionDTO: String, Decodable, Sendable {
             self = .afterUserMessage
         }
     }
+
+    var model: AdDisplayPosition {
+        switch self {
+        case .afterAssistantMessage: .afterAssistantMessage
+        case .afterUserMessage: .afterUserMessage
+        }
+    }
 }

@@ -4,6 +4,4 @@ public enum Role: String, Sendable {
     case user
     /// Author of the message is the assistant (AI), generated message
     case assistant
-    /// Author of the message is unknown
-    case unknown
 }
