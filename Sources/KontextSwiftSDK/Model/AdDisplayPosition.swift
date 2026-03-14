@@ -1,4 +1,4 @@
-enum AdDisplayPosition: String, Sendable {
+enum AdDisplayPosition: String, Decodable, Sendable {
     /// Ad will be rendered after the assistant's message
     case afterAssistantMessage
     /// The ad will be rendered after the user's message
