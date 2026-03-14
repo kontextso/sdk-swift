@@ -7,21 +7,19 @@ struct AdDisplayPositionTests {
     func knownPositionsDecodeCorrectly() throws {
         #expect(try decode("afterAssistantMessage") == .afterAssistantMessage)
         #expect(try decode("afterUserMessage") == .afterUserMessage)
-        #expect(try decode("unknown") == .unknown)
     }
 
     @Test
-    func unknownRawValueFallsBackToUnknown() throws {
-        #expect(try decode("before") == .unknown)
-        #expect(try decode("") == .unknown)
-        #expect(try decode("AfterAssistantMessage") == .unknown)  // case-sensitive
+    func unknownRawValueFallsBackToAfterAssistantMessage() throws {
+        #expect(try decode("unknown") == .afterAssistantMessage)
+        #expect(try decode("") == .afterAssistantMessage)
+        #expect(try decode("AfterAssistantMessage") == .afterAssistantMessage)  // case-sensitive
     }
 
     @Test
     func rawValuesMatchCaseNames() {
         #expect(AdDisplayPosition.afterAssistantMessage.rawValue == "afterAssistantMessage")
         #expect(AdDisplayPosition.afterUserMessage.rawValue == "afterUserMessage")
-        #expect(AdDisplayPosition.unknown.rawValue == "unknown")
     }
 }
 
