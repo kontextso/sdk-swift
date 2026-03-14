@@ -10,7 +10,7 @@ public struct Bid: Sendable, Hashable {
     /// SKAdNetwork attribution payload for iOS impression reporting
     public let skan: Skan?
     /// Determines when impression attribution should be started
-    public let impressionTrigger: ImpressionTrigger
+    let impressionTrigger: ImpressionTrigger
     /// Open Measurement configuration
     public let om: OmInfo?
 
