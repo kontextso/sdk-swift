@@ -43,11 +43,7 @@ struct NetworkInfo {
 
 extension NetworkInfo {
     /// Creates a NetworkInfo instance with current network information
-    static func current(
-        appInfo: AppInfo,
-        osInfo: OSInfo,
-        hardwareInfo: HardwareInfo
-    ) async -> NetworkInfo {
+    static func current() async -> NetworkInfo {
         let userAgent = await currentUserAgent()
         let carrierName = carrierName
         let networkType = await networkType()

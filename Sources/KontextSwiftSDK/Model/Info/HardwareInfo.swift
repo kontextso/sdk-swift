@@ -23,14 +23,15 @@ extension HardwareInfo {
     /// Creates a HardwareInfo instance with current hardware information
     @MainActor
     static func current() -> HardwareInfo {
-        HardwareInfo(
+        let deviceType: DeviceType = switch UIDevice.current.userInterfaceIdiom {
+        case .phone: .handset
+        case .pad: .tablet
+        default: .other
+        }
+        return HardwareInfo(
             brand: "Apple",
             model: deviceModelIdentifier(),
-            type: switch UIDevice.current.userInterfaceIdiom {
-            case .phone: .handset
-            case .pad: .tablet
-            default: .other
-            },
+            type: deviceType,
             sdCardAvailable: false
         )
     }

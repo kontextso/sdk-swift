@@ -11,17 +11,13 @@ struct DeviceInfo {
 extension DeviceInfo {
     /// Creates a DeviceInfo instance with current device information
     @MainActor
-    static func current(appInfo: AppInfo) async -> DeviceInfo {
+    static func current() async -> DeviceInfo {
         let os = OSInfo.current()
         let hardware = HardwareInfo.current()
         let screen = ScreenInfo.current()
         let power = PowerInfo.current()
         let audio = AudioInfo.current()
-        let network = await NetworkInfo.current(
-            appInfo: appInfo,
-            osInfo: os,
-            hardwareInfo: hardware
-        )
+        let network = await NetworkInfo.current()
 
         return DeviceInfo(
             os: os,
