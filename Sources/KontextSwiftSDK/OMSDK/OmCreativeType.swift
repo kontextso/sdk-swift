@@ -5,9 +5,3 @@ enum OmCreativeType: String, Sendable {
     /// Video ad
     case video
 }
-
-/// Open Measurement configuration for the ad
-struct OmInfo: Sendable, Hashable {
-    /// Type of creative used to configure the OMID session
-    let creativeType: OmCreativeType
-}

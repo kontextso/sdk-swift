@@ -12,6 +12,6 @@ public struct Bid: Sendable, Hashable {
     let skan: Skan?
     /// Determines when impression attribution should be started
     let impressionTrigger: ImpressionTrigger
-    /// Open Measurement configuration
-    let om: OmInfo?
+    /// Open Measurement creative type — nil means OMID is disabled for this bid
+    let om: OmCreativeType?
 }
