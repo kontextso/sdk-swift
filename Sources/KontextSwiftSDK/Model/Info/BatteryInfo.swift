@@ -1,5 +1,6 @@
 import UIKit
 
+/// Battery charge state reported by UIDevice
 enum BatteryState: String, Encodable {
     case charging
     case full
@@ -7,28 +8,19 @@ enum BatteryState: String, Encodable {
     case unknown
 }
 
+/// Current device battery and power mode status
 struct PowerInfo {
     /// Battery level (0 to 100) or nil if not available
     let batteryLevel: Double?
     /// Battery state (charging, full, unplugged, unknown) or nil if not available
     let batteryState: BatteryState?
-    /// Low power mode status (true if low power mode is on, false if off) or nil if not available
-    let lowPowerMode: Bool?
-
-    init(
-        batteryLevel: Double?,
-        batteryState: BatteryState?,
-        lowPowerMode: Bool?
-    ) {
-        self.batteryLevel = batteryLevel
-        self.batteryState = batteryState
-        self.lowPowerMode = lowPowerMode
-    }
+    /// Whether Low Power Mode is currently enabled
+    let lowPowerMode: Bool
 }
 
 extension PowerInfo {
-    @MainActor
     /// Creates a PowerInfo instance with current power information
+    @MainActor
     static func current() -> PowerInfo {
         // Enable battery monitoring first
         UIDevice.current.isBatteryMonitoringEnabled = true
@@ -43,12 +35,11 @@ extension PowerInfo {
         case .unknown: .unknown
         @unknown default: .unknown
         }
-        let lowPowerMode: Bool? = ProcessInfo.processInfo.isLowPowerModeEnabled
 
         return PowerInfo(
             batteryLevel: batteryLevel,
             batteryState: batteryState,
-            lowPowerMode: lowPowerMode
+            lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
         )
     }
 }

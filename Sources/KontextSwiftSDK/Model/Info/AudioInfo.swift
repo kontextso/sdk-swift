@@ -1,6 +1,7 @@
 import AVFAudio
 
-enum AudioOutputType: String, Codable {
+/// Audio output port category
+enum AudioOutputType: String, Encodable {
     case wired
     case hdmi
     case bluetooth
@@ -8,37 +9,27 @@ enum AudioOutputType: String, Codable {
     case other
 }
 
+/// Current device audio session state
 struct AudioInfo {
-    /// media volume 0-100
-    let volume: Int?
-    /// preferred over "soundOn"
-    let muted: Bool?
-    /// ANY output connected?
-    let outputPluggedIn: Bool?
-    /// array, wired/hdmi/bluetooth/...
-    let outputType: [AudioOutputType]?
-
-    init(
-        volume: Int?,
-        muted: Bool?,
-        outputPluggedIn: Bool?,
-        outputType: [AudioOutputType]?
-    ) {
-        self.volume = volume
-        self.muted = muted
-        self.outputPluggedIn = outputPluggedIn
-        self.outputType = outputType
-    }
+    /// Media volume 0–100
+    let volume: Int
+    /// True when volume is below audible threshold
+    let muted: Bool
+    /// True when any audio output is connected
+    let outputPluggedIn: Bool
+    /// List of connected output port types
+    let outputType: [AudioOutputType]
 }
 
 extension AudioInfo {
     /// Creates an AudioInfo instance with current audio information
     static func current() -> AudioInfo {
-        let volume = Int(AVAudioSession.sharedInstance().outputVolume * 100)
-        let muted = AVAudioSession.sharedInstance().outputVolume < 0.01
-        let outputPluggedIn = AVAudioSession.sharedInstance().currentRoute.outputs.isEmpty == false
-        let outputTypes: [AudioOutputType] = AVAudioSession.sharedInstance().currentRoute.outputs.map { output in
-            return switch output.portType {
+        let session = AVAudioSession.sharedInstance()
+        let volume = Int(session.outputVolume * 100)
+        let muted = session.outputVolume < 0.01
+        let outputs = session.currentRoute.outputs
+        let outputTypes: [AudioOutputType] = outputs.map { output in
+            switch output.portType {
             case .headphones, .lineOut, .builtInSpeaker, .PCI, .fireWire, .displayPort, .AVB, .thunderbolt: .wired
             case .HDMI: .hdmi
             case .bluetoothA2DP, .bluetoothHFP, .bluetoothLE, .carAudio, .airPlay: .bluetooth
@@ -50,7 +41,7 @@ extension AudioInfo {
         return AudioInfo(
             volume: volume,
             muted: muted,
-            outputPluggedIn: outputPluggedIn,
+            outputPluggedIn: outputs.isEmpty == false,
             outputType: outputTypes
         )
     }
