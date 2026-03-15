@@ -13,7 +13,7 @@ extension DeviceInfo {
     @MainActor
     static func current(appInfo: AppInfo) async -> DeviceInfo {
         let os = OSInfo.current()
-        let hardware = await HardwareInfo.current()
+        let hardware = HardwareInfo.current()
         let screen = ScreenInfo.current()
         let power = PowerInfo.current()
         let audio = AudioInfo.current()
