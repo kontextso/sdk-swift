@@ -41,7 +41,7 @@ extension HardwareInfo: ModelConvertible {
             brand: brand,
             model: model,
             type: type,
-            sdCardAvailable: false
+            sdCardAvailable: sdCardAvailable
         )
     }
 }
