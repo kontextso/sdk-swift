@@ -22,13 +22,11 @@ extension PowerInfo {
     /// Creates a PowerInfo instance with current power information
     @MainActor
     static func current() -> PowerInfo {
-        // Enable battery monitoring first
-        UIDevice.current.isBatteryMonitoringEnabled = true
-        defer { UIDevice.current.isBatteryMonitoringEnabled = false }
-        // Calculate properties after
-        let rawLevel = UIDevice.current.batteryLevel
-        let batteryLevel: Double? = rawLevel >= 0 ? Double(rawLevel) * 100 : nil
-        let batteryState: BatteryState? = switch UIDevice.current.batteryState {
+        let device = UIDevice.current
+        device.isBatteryMonitoringEnabled = true
+        defer { device.isBatteryMonitoringEnabled = false }
+
+        let batteryState: BatteryState? = switch device.batteryState {
         case .charging: .charging
         case .full: .full
         case .unplugged: .unplugged
@@ -37,9 +35,15 @@ extension PowerInfo {
         }
 
         return PowerInfo(
-            batteryLevel: batteryLevel,
+            batteryLevel: batteryLevel(from: device.batteryLevel),
             batteryState: batteryState,
             lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
         )
+    }
+
+    /// Converts raw UIDevice battery level to a 0–100 scale.
+    /// UIDevice reports -1.0 when battery monitoring is unavailable.
+    static func batteryLevel(from rawLevel: Float) -> Double? {
+        rawLevel >= 0 ? Double(rawLevel) * 100 : nil
     }
 }
