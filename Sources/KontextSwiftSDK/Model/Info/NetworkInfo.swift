@@ -127,9 +127,15 @@ private extension NetworkInfo {
     }
 
     static func mapRadioTechnologyToDetail() -> NetworkDetail? {
-        let info = CTTelephonyNetworkInfo()
-        let radioTech: String? = info.serviceCurrentRadioAccessTechnology?.values.first
+        let radioTech = CTTelephonyNetworkInfo().serviceCurrentRadioAccessTechnology?.values.first
+        return NetworkInfo.mapRadioTechnology(radioTech)
+    }
+}
 
+extension NetworkInfo {
+    /// Maps a raw CTRadioAccessTechnology string to a NetworkDetail case.
+    /// Extracted from mapRadioTechnologyToDetail() to allow unit testing without CTTelephonyNetworkInfo.
+    static func mapRadioTechnology(_ radioTech: String?) -> NetworkDetail? {
         if #available(iOS 14.1, *) {
             switch radioTech {
             case CTRadioAccessTechnologyNRNSA, CTRadioAccessTechnologyNR:
