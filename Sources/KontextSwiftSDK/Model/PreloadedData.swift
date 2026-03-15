@@ -1,4 +1,5 @@
-struct PreloadedData {
+/// Response data from the preload endpoint containing bids and session configuration
+struct PreloadedData: Sendable {
     /// Unique identifier for the session.
     let sessionId: String?
     /// List of bids

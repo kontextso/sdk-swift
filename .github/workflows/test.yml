@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme KontextSwiftSDK \
+            -destination 'platform=iOS Simulator,OS=18.5,name=iPhone 16' \
+            CODE_SIGNING_ALLOWED=NO

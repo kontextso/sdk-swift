@@ -1,9 +1,12 @@
+import Foundation
+
 struct BidDTO: Decodable {
     let bidId: String
     let code: String
-    let adDisplayPosition: AdDisplayPosition
+    let adDisplayPosition: AdDisplayPositionDTO
     let skan: SkanDTO?
     let impressionTrigger: ImpressionTrigger
+    let om: OmInfoDTO?
 
     private enum CodingKeys: String, CodingKey {
         case bidId
@@ -11,16 +14,17 @@ struct BidDTO: Decodable {
         case adDisplayPosition
         case skan
         case impressionTrigger
+        case om
     }
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         bidId = try container.decode(String.self, forKey: .bidId)
         code = try container.decode(String.self, forKey: .code)
-        adDisplayPosition = try container.decode(
-            AdDisplayPosition.self,
+        adDisplayPosition = (try? container.decode(
+            AdDisplayPositionDTO.self,
             forKey: .adDisplayPosition
-        )
+        )) ?? .afterAssistantMessage
         do {
             skan = try container.decodeIfPresent(SkanDTO.self, forKey: .skan)
         } catch {
@@ -33,16 +37,33 @@ struct BidDTO: Decodable {
         impressionTrigger = ImpressionTrigger(
             rawValue: decodedImpressionTrigger ?? ""
         ) ?? .immediate
+        do {
+            om = try container.decodeIfPresent(OmInfoDTO.self, forKey: .om)
+        } catch {
+            om = nil
+        }
     }
-    
-    var model: Bid {
-        Bid(
-            bidId: bidId,
+
+    var model: Bid? {
+        guard let uuid = UUID(uuidString: bidId) else {
+            return nil
+        }
+        return Bid(
+            bidId: uuid,
             code: code,
-            adDisplayPosition: adDisplayPosition,
+            adDisplayPosition: adDisplayPosition.model,
             skan: skan?.model,
-            impressionTrigger: impressionTrigger
+            impressionTrigger: impressionTrigger,
+            om: om?.model
         )
+    }
+}
+
+struct OmInfoDTO: Decodable {
+    let creativeType: String?
+
+    var model: OmCreativeType {
+        OmCreativeType(rawValue: creativeType ?? "") ?? .display
     }
 }
 
