@@ -1,4 +1,5 @@
 import Foundation
+import WebKit
 @preconcurrency import OMSDK_Megabrainco
 
 enum OMEvent: Sendable {
