@@ -591,14 +591,13 @@ private extension AdsProviderActor {
 // MARK: OM Events
 private extension AdsProviderActor {
     func handleOMEvent(event: OMEvent, stateId: UUID) async {
-        // Check for an existing session (didFinish fired again on an already-active session)
+        // Guard against a duplicate didFinish for an already-active session.
+        // In practice this cannot happen: didFinish only fires for main-frame navigations, and our
+        // WKWebView loads a static shell HTML that never navigates after the initial load. The DSP ad
+        // runs inside a <iframe> (subframe), so any window.location call there does not trigger
+        // didFinish on the outer WKWebView. Early-return is correct here.
         if let existingIndex = omSessions.firstIndex(where: { $0.stateId == stateId }) {
             let existingSession = omSessions[existingIndex].session
-
-            // TODO: WKWebView can fire didFinish multiple times (e.g. on redirect or dynamic content).
-            // When that happens, we finish the existing session but return without creating a new one,
-            // silently stopping OMID measurement. Fix by falling through to session creation instead
-            // of returning early. Pre-existing issue, low probability with current ad HTML.
             await MainActor.run {
                 existingSession.finish()
             }
