@@ -881,6 +881,7 @@ private extension AdsProviderActor {
         )
 
         Task { @MainActor in
+            guard let url else { return }
             let params = await InterstitialAdView.Params(
                 url: url,
                 omService: omService,

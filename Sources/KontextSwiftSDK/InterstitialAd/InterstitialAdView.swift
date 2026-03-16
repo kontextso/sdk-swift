@@ -7,8 +7,8 @@ enum InterstitialAdEvent {
 
 struct InterstitialAdView: View {
     struct Params: Identifiable {
-        var id: String { url?.absoluteString ?? UUID().uuidString }
-        let url: URL?
+        let id: UUID = UUID()
+        let url: URL
         let omService: OMManaging
         let events: AnyPublisher<InterstitialAdEvent, Never>
         let onIFrameEvent: (IframeEvent) -> Void
@@ -34,17 +34,15 @@ struct InterstitialAdView: View {
 
     var body: some View {
         ZStack {
-            if let url = viewModel.url {
-                AdWebViewRepresentable(
-                    url: url,
-                    updateIFrameData: nil,
-                    eventPublisher: nil,
-                    onIFrameEvent: { onIFrameEvent($0) },
-                    onOMEvent: onOMEvent
-                )
-                .opacity(viewModel.showIframe ? 1 : 0)
-                .animation(.none, value: viewModel.showIframe)
-            }
+            AdWebViewRepresentable(
+                url: viewModel.url,
+                updateIFrameData: nil,
+                eventPublisher: nil,
+                onIFrameEvent: { onIFrameEvent($0) },
+                onOMEvent: onOMEvent
+            )
+            .opacity(viewModel.showIframe ? 1 : 0)
+            .animation(.none, value: viewModel.showIframe)
 
             if !viewModel.showIframe {
                 ProgressView()
