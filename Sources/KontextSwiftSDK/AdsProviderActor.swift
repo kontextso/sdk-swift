@@ -389,7 +389,6 @@ private extension AdsProviderActor {
     }
 
     func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) async {
-        // os_log("[\(ts)] [Inline] iframe event: \(String(describing: event))")
         guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
             return
         }
@@ -522,7 +521,6 @@ private extension AdsProviderActor {
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
-        // os_log("[\(ts)] [Interstitial] iframe event: \(String(describing: event))")
         switch event {
         case .initComponentIframe:
             // Modal content is loaded — show the WebView and cancel the timeout.
