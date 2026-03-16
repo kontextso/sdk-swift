@@ -515,10 +515,10 @@ private extension AdsProviderActor {
     func finishOMSession(for stateId: UUID) async {
         guard let index = omSessions.firstIndex(where: { $0.stateId == stateId }) else { return }
         let state = omSessions[index]
+        omSessions.remove(at: index)
         await MainActor.run { state.session.finish() }
         os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(stateId)")
         try? await Task.sleep(seconds: 1)
-        omSessions.removeAll { $0.stateId == stateId }
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
