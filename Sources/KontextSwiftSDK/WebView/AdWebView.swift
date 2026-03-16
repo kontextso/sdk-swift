@@ -194,6 +194,12 @@ extension AdWebView: WKNavigationDelegate {
 
 // MARK: - AdScriptMessageHandler
 
+private let consoleLogFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm:ss.SSS"
+    return f
+}()
+
 private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
     private weak var adWebView: AdWebView?
 
@@ -208,10 +214,7 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
     ) {
         #if DEBUG
         if message.name == "consoleLog", let msg = message.body as? String {
-            let f = DateFormatter()
-            f.dateFormat = "HH:mm:ss.SSS"
-            let time = f.string(from: Date())
-            print("[\(time)] [WebView] \(msg)")
+            print("[\(consoleLogFormatter.string(from: Date()))] [WebView] \(msg)")
             return
         }
         #endif

@@ -210,11 +210,13 @@ extension AdsProviderActor: AdsProviderActing {
     }
 }
 
-private var ts: String {
+private let tsFormatter: DateFormatter = {
     let f = DateFormatter()
     f.dateFormat = "HH:mm:ss.SSS"
-    return f.string(from: Date())
-}
+    return f
+}()
+
+private var ts: String { tsFormatter.string(from: Date()) }
 
 // MARK: Data processing
 private extension AdsProviderActor {
