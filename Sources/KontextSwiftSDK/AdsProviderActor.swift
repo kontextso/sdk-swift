@@ -147,11 +147,10 @@ extension AdsProviderActor: AdsProviderActing {
             )
             let (_, preloadedData) = try await (sleep, preload)
 
-            // TODO: Re-entrant setMessages race — when the actor suspends at the await above,
-            // a new setMessages call can run and overwrite lastPreloadUserMessageId. When this
-            // call resumes, it binds stale preload results to the wrong message. Fix by bailing
-            // out early if a newer message was sent while we were waiting:
-            //   guard lastPreloadUserMessageId == lastUserMessage.id else { return }
+            // Bail out if a newer setMessages call arrived while we were suspended.
+            // The new call has already overwritten lastPreloadUserMessageId, so our
+            // preload results are stale and should not be bound.
+            guard lastPreloadUserMessageId == lastUserMessage.id else { return }
 
             guard preloadedData.permanentError != true else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)
