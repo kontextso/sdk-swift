@@ -115,6 +115,10 @@ final class OMSession {
         session.start()
     }
 
+    func retire() {
+        webView.evaluateJavaScript("window.postMessage({ type: 'retire-iframe' }, '*');", completionHandler: nil)
+    }
+
     func finish() {
         session.finish()
     }

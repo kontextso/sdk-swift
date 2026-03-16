@@ -121,6 +121,7 @@ extension AdsProviderActor: AdsProviderActing {
             omSessions = []
             await MainActor.run {
                 for state in sessionsToFinish {
+                    state.session.retire()
                     state.session.finish()
                     os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
                 }
@@ -516,7 +517,10 @@ private extension AdsProviderActor {
         guard let index = omSessions.firstIndex(where: { $0.stateId == stateId }) else { return }
         let state = omSessions[index]
         omSessions.remove(at: index)
-        await MainActor.run { state.session.finish() }
+        await MainActor.run {
+            state.session.retire()
+            state.session.finish()
+        }
         os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(stateId)")
         try? await Task.sleep(seconds: 1)
     }
