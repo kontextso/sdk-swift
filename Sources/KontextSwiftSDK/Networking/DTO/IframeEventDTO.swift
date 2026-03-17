@@ -174,11 +174,6 @@ extension IframeEvent {
         }
     }
 
-    /// Data for unknown events
-    struct UnknownDataDTO: Decodable, Hashable {
-        let type: String
-    }
-
     private struct OpenSKOverlayIframeDataAliasDTO: Decodable {
         let position: String?
         let dismissible: Bool?
