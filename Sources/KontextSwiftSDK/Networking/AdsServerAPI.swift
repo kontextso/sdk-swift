@@ -72,7 +72,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             queryItems: nil
         )
         let app = AppInfo.current()
-        let sdk = SDKInfo.current()
+        let sdk = await SDKInfo.current()
         let device = await DeviceInfo.current()
         let mergedRegulatory = TCFCollector.current().mergedRegulatory(from: configuration.regulatory)
         let requestDTO = PreloadRequestDTO(
