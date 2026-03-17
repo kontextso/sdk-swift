@@ -3,6 +3,10 @@ import WebKit
 @preconcurrency import OMSDK_Megabrainco
 
 enum OMEvent: Sendable {
+    /// Fired by WKNavigationDelegate.didFinish — the web view's main frame HTML has loaded
+    /// and the web view is ready for an OMID session to be created.
+    /// Session start is deferred further: inline ads wait for adDoneIframe + 50ms,
+    /// interstitials wait for initComponentIframe, so that geometry is stable before measurement begins.
     case didStart(WKWebView, URL?)
 }
 
