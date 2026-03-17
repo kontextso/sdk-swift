@@ -491,13 +491,6 @@ private extension AdsProviderActor {
         case .eventIframe(let data):
             delegate?.adsProviderActing(self, didReceiveEvent: data.toModel())
 
-        case .omidFiredIframe(let error):
-            if let error {
-                os_log("[\(ts)] [OMID] Iframe JS session client error for stateId: \(stateId) — \(error)")
-            } else {
-                os_log("[\(ts)] [OMID] Impression fired from iframe JS session client for stateId: \(stateId)")
-            }
-
         default:
             break
         }
