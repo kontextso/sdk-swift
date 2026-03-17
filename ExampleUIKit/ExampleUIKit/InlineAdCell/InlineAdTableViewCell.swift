@@ -22,17 +22,28 @@ final class InlineAdTableViewCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        // Don't destroy the view here — configure() will clean up if the ad changes.
-        // This preserves the OMID session across scroll off/on for the same ad.
+        // IMPORTANT: Do NOT remove inlineAdView or nil out configuredAdId here.
+        //
+        // UITableView calls prepareForReuse() when a cell scrolls off screen. If we destroy
+        // the InlineAdUIView here, the WKWebView inside it is torn down, which ends the OMID
+        // ad session. When the same cell scrolls back on screen, configure() would create a
+        // brand new InlineAdUIView, starting a duplicate OMID session for the same bid.
+        //
+        // Instead, configure() is responsible for teardown — it compares configuredAdId to
+        // detect whether the ad has actually changed, and only tears down when it has.
+        // This preserves the WKWebView and OMID session across scroll off/on for the same ad,
+        // ensuring each bid produces exactly one sessionStart/sessionFinish pair.
     }
 
     func configure(with viewModel: InlineAdViewModel) {
-        // Same ad already displayed — nothing to do.
+        // Same ad already displayed in this cell — WKWebView and OMID session are intact,
+        // nothing to do. This is the common case when scrolling back to an already-loaded ad.
         if configuredAdId == viewModel.ad.id, inlineAdView != nil {
             return
         }
 
-        // Different ad — tear down previous view.
+        // Different ad — tear down the previous InlineAdUIView (and its WKWebView + OMID session)
+        // before creating a new one for the incoming ad.
         inlineAdView?.removeFromSuperview()
         inlineAdView = nil
         configuredAdId = viewModel.ad.id
