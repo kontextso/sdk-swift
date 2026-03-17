@@ -42,7 +42,7 @@ actor AdsProviderActor {
     private let skOverlayPresenter: any SKOverlayPresenting
     private let skStoreProductPresenter: any SKStoreProductPresenting
     private weak var delegate: AdsProviderActingDelegate?
-    private var skanOwner: (stateId: UUID, bidId: String)?
+    private var skanOwner: (stateId: UUID, bidId: UUID)?
 
     // stateId waiting for start after init
     private var pendingStart: UUID?
@@ -347,7 +347,7 @@ private extension AdsProviderActor {
                 Task {
                     await self?.handleInlineWebViewDispose(
                         stateId: stateId,
-                        bidId: bid.bidId.uuidString.lowercased()
+                        bidId: bid.bidId
                     )
                 }
             },
@@ -503,7 +503,7 @@ private extension AdsProviderActor {
         }
     }
 
-    func handleInlineWebViewDispose(stateId: UUID, bidId: String) async {
+    func handleInlineWebViewDispose(stateId: UUID, bidId: UUID) async {
         if pendingInlineWebView?.stateId == stateId {
             pendingInlineWebView = nil
         }
@@ -782,7 +782,7 @@ private extension AdsProviderActor {
 
         let didInitialize = await skAdNetworkManager.initImpression(skan)
         if didInitialize {
-            skanOwner = (stateId: state.id, bidId: state.bid.bidId.uuidString.lowercased())
+            skanOwner = (stateId: state.id, bidId: state.bid.bidId)
             if pendingStart == state.id {
                 pendingStart = nil
                 await skAdNetworkManager.startImpression()
@@ -797,7 +797,7 @@ private extension AdsProviderActor {
     func startSKAdNetwork(for state: AdLoadingState) async {
         guard
             skanOwner?.stateId == state.id,
-            skanOwner?.bidId == state.bid.bidId.uuidString.lowercased()
+            skanOwner?.bidId == state.bid.bidId
         else {
             return
         }
@@ -805,7 +805,7 @@ private extension AdsProviderActor {
         await skAdNetworkManager.startImpression()
     }
 
-    func cleanupSKAdNetwork(stateId: UUID, bidId: String) async {
+    func cleanupSKAdNetwork(stateId: UUID, bidId: UUID) async {
         guard skanOwner?.stateId == stateId, skanOwner?.bidId == bidId else {
             return
         }
