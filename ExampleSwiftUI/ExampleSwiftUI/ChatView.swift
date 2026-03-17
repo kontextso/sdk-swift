@@ -36,12 +36,11 @@ struct ChatView: View {
         // 2. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
             // Replace publisher token with your own to try out
-            publisherToken: "nexus-dev",
+            publisherToken: "<publisher-token>",
             userId: "1",
             conversationId: "1",
             enabledPlacementCodes: ["inlineAd"],
             character: character,
-            adServerUrl: URL(string: "http://localhost:3002")!,
             regulatory: Regulatory(gdpr: 1, coppa: nil),
             otherParams: ["theme": "dark"]
         )
@@ -102,10 +101,7 @@ struct ChatView: View {
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            // content: "Hello my smart helpful assistant, how are you?",
-            // content: "kontextso ad_format:inline"
-            // content: "kontextso ad_format:video"
-            content: "kontextso ad_format:interstitial"
+            content: "Hello my smart helpful assistant, how are you?"
         )
 
         messages.append(userMessage)
