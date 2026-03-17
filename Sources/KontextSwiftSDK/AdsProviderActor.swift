@@ -881,7 +881,6 @@ private extension AdsProviderActor {
             guard let url else { return }
             let params = await InterstitialAdView.Params(
                 url: url,
-                omService: omService,
                 events: interstitialEventSubject.eraseToAnyPublisher(),
                 onIFrameEvent: { [weak self] event in
                     Task {
