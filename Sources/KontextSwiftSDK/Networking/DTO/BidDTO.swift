@@ -62,8 +62,9 @@ struct BidDTO: Decodable {
 struct OmInfoDTO: Decodable {
     let creativeType: String?
 
-    var model: OmCreativeType {
-        OmCreativeType(rawValue: creativeType ?? "") ?? .display
+    var model: OmCreativeType? {
+        guard let creativeType else { return nil }
+        return OmCreativeType(rawValue: creativeType)
     }
 }
 
