@@ -612,7 +612,6 @@ private extension AdsProviderActor {
             // so session.start() is called only after the modal is fully visible.
             if states.first(where: { $0.id == stateId })?.bid.impressionTrigger == .component {
                 pendingInterstitialWebView = (webView: webView, url: url, stateId: stateId)
-                os_log("[\(ts)] [OMID] Deferring session start until initComponentIframe for stateId: \(stateId)")
                 return
             }
 
@@ -620,21 +619,16 @@ private extension AdsProviderActor {
             // so session.start() is called only after the ad content is fully rendered
             // and the iframe has received its container dimensions.
             pendingInlineWebView = (webView: webView, url: url, stateId: stateId, creativeType: creativeType)
-            os_log("[\(ts)] [OMID] Deferring session start until adDoneIframe for stateId: \(stateId)")
         }
     }
 
     func startOMSession(webView: WKWebView, url: URL?, stateId: UUID, creativeType: OmCreativeType) async {
         do {
-
             let omSession = try await MainActor.run {
                 let session = try omService.createSession(webView, url: url, creativeType: creativeType)
                 session.start()
                 return session
             }
-
-            os_log("[\(ts)] [OMID] Session started (\(creativeType.rawValue)) for stateId: \(stateId)")
-
             let newState = OMSessionState(stateId: stateId, session: omSession, creativeType: creativeType)
             omSessions.append(newState)
         } catch {
