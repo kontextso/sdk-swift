@@ -54,7 +54,7 @@ struct BidDTO: Decodable {
             adDisplayPosition: adDisplayPosition.model,
             skan: skan?.model,
             impressionTrigger: impressionTrigger,
-            om: om?.model
+            creativeType: om?.model
         )
     }
 }

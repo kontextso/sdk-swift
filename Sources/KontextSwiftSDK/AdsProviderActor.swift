@@ -533,7 +533,7 @@ private extension AdsProviderActor {
             // Video has started playing — modal is fully visible and dimensions are stable.
             // Start the deferred OMID session now so impression fires with correct geometry.
             if let pending = pendingInterstitialWebView, pending.stateId == state.id,
-               let creativeType = state.bid.om {
+               let creativeType = state.bid.creativeType {
                 pendingInterstitialWebView = nil
                 let (webView, url, stateId) = (pending.webView, pending.url, pending.stateId)
                 Task {
@@ -606,7 +606,7 @@ private extension AdsProviderActor {
             // Guard against spurious didFinish callbacks after the ad has been disposed/cleared
             guard states.contains(where: { $0.id == stateId }) else { return }
             // Killswitch: if the server didn't send an `om` object, OMID is disabled for this bid
-            guard let creativeType = states.first(where: { $0.id == stateId })?.bid.om else { return }
+            guard let creativeType = states.first(where: { $0.id == stateId })?.bid.creativeType else { return }
 
             // For interstitial ads, defer session start until initComponentIframe fires,
             // so session.start() is called only after the modal is fully visible.
