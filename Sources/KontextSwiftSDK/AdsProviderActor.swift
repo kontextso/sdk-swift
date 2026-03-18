@@ -200,6 +200,15 @@ extension AdsProviderActor: AdsProviderActing {
         await cleanupSKAdNetwork()
         await dismissSKOverlay()
         await dismissSKStoreProduct()
+        let sessionsToFinish = omSessions
+        omSessions = []
+        await MainActor.run {
+            for state in sessionsToFinish {
+                state.session.retire()
+                state.session.finish()
+                os_log("[\(ts)] [OMID] Session finished in reset (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
+            }
+        }
         bids = []
         states = []
     }
