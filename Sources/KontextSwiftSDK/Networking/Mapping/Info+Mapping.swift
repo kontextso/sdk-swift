@@ -41,7 +41,7 @@ extension HardwareInfo: ModelConvertible {
             brand: brand,
             model: model,
             type: type,
-            sdCardAvailable: false
+            sdCardAvailable: sdCardAvailable
         )
     }
 }
@@ -97,7 +97,7 @@ extension SDKInfo: ModelConvertible {
         SDKDTO(
             name: name,
             version: version,
-            platform: lowercasedPlatform
+            platform: platform
         )
     }
 }

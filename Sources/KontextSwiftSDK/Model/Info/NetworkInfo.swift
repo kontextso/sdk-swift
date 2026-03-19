@@ -3,6 +3,7 @@ import Foundation
 import Network
 import WebKit
 
+/// General network connection type
 enum NetworkType: String, Encodable {
     case wifi
     case cellular
@@ -10,6 +11,7 @@ enum NetworkType: String, Encodable {
     case other
 }
 
+/// Detailed cellular radio access technology
 enum NetworkDetail: String, Encodable {
     case twoG = "2g"
     case threeG = "3g"
@@ -22,32 +24,17 @@ enum NetworkDetail: String, Encodable {
     case gprs
 }
 
+/// Current device network connectivity state
 struct NetworkInfo {
     let userAgent: String?
     let carrierName: String?
-    let networkType: NetworkType?
+    let networkType: NetworkType
     let networkDetail: NetworkDetail?
-
-    init(
-        userAgent: String?,
-        carrierName: String?,
-        networkType: NetworkType?,
-        networkDetail: NetworkDetail?
-    ) {
-        self.userAgent = userAgent
-        self.carrierName = carrierName
-        self.networkType = networkType
-        self.networkDetail = networkDetail
-    }
 }
 
 extension NetworkInfo {
     /// Creates a NetworkInfo instance with current network information
-    static func current(
-        appInfo: AppInfo,
-        osInfo: OSInfo,
-        hardwareInfo: HardwareInfo
-    ) async -> NetworkInfo {
+    static func current() async -> NetworkInfo {
         let userAgent = await currentUserAgent()
         let carrierName = carrierName
         let networkType = await networkType()
@@ -63,6 +50,13 @@ extension NetworkInfo {
 }
 
 private extension NetworkInfo {
+    // FIXME: Concurrency safety — cachedUserAgent is a mutable static var on a value type,
+    // accessed from an async context without synchronization. Under strict concurrency this
+    // is a data race: two concurrent calls to currentUserAgent() could both read nil, both
+    // spin up a WKWebView, and then both write the result. The correct fix is to move this
+    // state into an actor or mark it nonisolated(unsafe) if single-threaded access can be
+    // guaranteed. Left as-is for now since it is a pre-existing issue and the race is benign
+    // (both writes produce the same value).
     static var cachedUserAgent: String?
 
     static func currentUserAgent() async -> String? {
@@ -127,18 +121,21 @@ private extension NetworkInfo {
                 }
                 monitor.cancel()
             }
-            
+
             monitor.start(queue: DispatchQueue.global(qos: .background))
         }
     }
-    
+
     static func mapRadioTechnologyToDetail() -> NetworkDetail? {
-        let info = CTTelephonyNetworkInfo()
-        let radioTech: String?
+        let radioTech = CTTelephonyNetworkInfo().serviceCurrentRadioAccessTechnology?.values.first
+        return NetworkInfo.mapRadioTechnology(radioTech)
+    }
+}
 
-        radioTech = info.serviceCurrentRadioAccessTechnology?.values.first
-
-
+extension NetworkInfo {
+    /// Maps a raw CTRadioAccessTechnology string to a NetworkDetail case.
+    /// Extracted from mapRadioTechnologyToDetail() to allow unit testing without CTTelephonyNetworkInfo.
+    static func mapRadioTechnology(_ radioTech: String?) -> NetworkDetail? {
         if #available(iOS 14.1, *) {
             switch radioTech {
             case CTRadioAccessTechnologyNRNSA, CTRadioAccessTechnologyNR:
@@ -155,17 +152,17 @@ private extension NetworkInfo {
         case CTRadioAccessTechnologyWCDMA:
             return .threeG
         case CTRadioAccessTechnologyHSDPA,
-        CTRadioAccessTechnologyHSUPA:
+             CTRadioAccessTechnologyHSUPA:
             return .hspa
         case CTRadioAccessTechnologyCDMA1x:
             return .twoG
         case CTRadioAccessTechnologyCDMAEVDORev0,
-            CTRadioAccessTechnologyCDMAEVDORevA,
-            CTRadioAccessTechnologyCDMAEVDORevB,
-        CTRadioAccessTechnologyeHRPD:
+             CTRadioAccessTechnologyCDMAEVDORevA,
+             CTRadioAccessTechnologyCDMAEVDORevB,
+             CTRadioAccessTechnologyeHRPD:
             return .threeG
         case CTRadioAccessTechnologyLTE:
-        return .lte
+            return .lte
         default:
             return nil
         }

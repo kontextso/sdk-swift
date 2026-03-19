@@ -1,10 +1,12 @@
-//
-//  ScreenInfo.swift
-//  KontextSwiftSDK
-//
-
 import UIKit
 
+/// Device orientation
+enum ScreenOrientation: String, Encodable {
+    case portrait
+    case landscape
+}
+
+/// Current device screen properties
 struct ScreenInfo {
     /// Device screen width size
     let screenWidth: CGFloat
@@ -16,25 +18,11 @@ struct ScreenInfo {
     let orientation: ScreenOrientation?
     /// Device dark mode status (true if dark mode is on, false if light mode is on)
     let isDarkMode: Bool
-
-    init(
-        screenWidth: CGFloat,
-        screenHeight: CGFloat,
-        scale: CGFloat,
-        orientation: ScreenOrientation?,
-        isDarkMode: Bool
-    ) {
-        self.screenWidth = screenWidth
-        self.screenHeight = screenHeight
-        self.scale = scale
-        self.orientation = orientation
-        self.isDarkMode = isDarkMode
-    }
 }
 
 extension ScreenInfo {
-    @MainActor
     /// Creates a ScreenInfo instance with current screen information
+    @MainActor
     static func current() -> ScreenInfo {
         let orientation: ScreenOrientation? = switch UIDevice.current.orientation {
         case .portrait, .portraitUpsideDown: .portrait

@@ -37,8 +37,12 @@ enum IframeEvent: Decodable, Hashable, Sendable {
     /// Init component event from iframe
     case initComponentIframe(ComponentIframeDataDTO)
 
+    /// Ad content ready event from component iframe — fires on first video play,
+    /// meaning the modal is fully visible and dimensions are stable.
+    case adDoneComponentIframe(ComponentIframeDataDTO)
+
     /// Error component event from iframe
-    case errorComponentIframe(ComponentIframeDataDTO)
+    case errorComponentIframe(ErrorComponentIframeDataDTO)
 
     /// Close component request event to close component iframe
     case closeComponentIframe(ComponentIframeDataDTO)
@@ -75,7 +79,16 @@ extension IframeEvent {
 
     /// Data for error events
     struct ErrorDataDTO: Decodable, Hashable {
-        let message: String
+        let message: String?
+        let errorType: String?
+    }
+
+    /// Data for error component iframe events
+    struct ErrorComponentIframeDataDTO: Decodable, Hashable {
+        let code: String
+        let component: OpenComponentIframeDataDTO.Component
+        let message: String?
+        let errorType: String?
     }
 
     /// Data for update-iframe events
@@ -159,11 +172,6 @@ extension IframeEvent {
             self.code = code
             self.component = component
         }
-    }
-
-    /// Data for unknown events
-    struct UnknownDataDTO: Decodable, Hashable {
-        let type: String
     }
 
     private struct OpenSKOverlayIframeDataAliasDTO: Decodable {
@@ -252,8 +260,14 @@ extension IframeEvent {
                 return
             }
             self = .initComponentIframe(data)
-        case "error-component-iframe":
+        case "ad-done-component-iframe":
             guard let data = try? container.decode(ComponentIframeDataDTO.self, forKey: .data) else {
+                self = .unknown(type)
+                return
+            }
+            self = .adDoneComponentIframe(data)
+        case "error-component-iframe":
+            guard let data = try? container.decode(ErrorComponentIframeDataDTO.self, forKey: .data) else {
                 self = .unknown(type)
                 return
             }

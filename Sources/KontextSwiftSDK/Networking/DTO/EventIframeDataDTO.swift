@@ -35,14 +35,14 @@ struct EventIframeDataDTO: Decodable, Hashable {
     }
 
     struct ViewedDataDTO: Decodable, Hashable {
-        let id: String
+        let id: UUID
         let content: String
         let messageId: String
         let format: String?
     }
 
     struct ClickedDataDTO: Decodable, Hashable {
-        let id: String
+        let id: UUID
         let content: String
         let messageId: String
         let url: URL
@@ -51,7 +51,7 @@ struct EventIframeDataDTO: Decodable, Hashable {
     }
 
     struct GeneralDataDTO: Decodable, Hashable {
-        let id: String
+        let id: UUID
     }
 
     struct ErrorDataDTO: Decodable, Hashable {

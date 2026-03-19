@@ -71,10 +71,10 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             pathComponents: ["preload"],
             queryItems: nil
         )
-        let app = await AppInfo.current()
+        let app = AppInfo.current()
         let sdk = await SDKInfo.current()
-        let device = await DeviceInfo.current(appInfo: app)
-        let mergedRegulatory = TCFInfo.current().mergedRegulatory(from: configuration.regulatory)
+        let device = await DeviceInfo.current()
+        let mergedRegulatory = TCFCollector.current().mergedRegulatory(from: configuration.regulatory)
         let requestDTO = PreloadRequestDTO(
             sessionId: sessionId,
             configuration: configuration,
@@ -86,7 +86,7 @@ final class BaseURLAdsServerAPI: AdsServerAPI, @unchecked Sendable {
             messages: messages,
             regulatoryOverride: mergedRegulatory
         )
-        var headers: [HTTPHeaderField] = [
+        let headers: [HTTPHeaderField] = [
             .acceptType(.json),
             .contentType(.json),
             .publisherToken(configuration.publisherToken),

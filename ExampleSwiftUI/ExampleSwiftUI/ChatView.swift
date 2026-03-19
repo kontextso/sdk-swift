@@ -51,7 +51,7 @@ struct ChatView: View {
             configuration: configuration
         ))
     }
-    
+
     var body: some View {
         VStack {
             ScrollView {
@@ -109,7 +109,7 @@ struct ChatView: View {
 
         Task {
             // Simulate assistant response
-            try await Task.sleep(nanoseconds: 1_000_000_0)
+            try await Task.sleep(nanoseconds: 1_000_000_000)
             handleAssistantResponse()
         }
     }

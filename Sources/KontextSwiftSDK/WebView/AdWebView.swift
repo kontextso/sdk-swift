@@ -16,18 +16,36 @@ final class AdWebView: WKWebView {
     private let updateIframeData: UpdateIFrameDTO?
     private let eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>?
     private let onIFrameEvent: (IframeEvent) -> Void
+    private let onOMEvent: (OMEvent) -> Void
 
     private var cancellables: Set<AnyCancellable> = []
     private var scriptHandler: AdScriptMessageHandler?
+    private var hasEverHadWindow = false
 
     init(
         frame: CGRect = .zero,
         updateIframeData: UpdateIFrameDTO?,
         eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>? = nil,
-        onIFrameEvent: @escaping (IframeEvent) -> Void
+        onIFrameEvent: @escaping (IframeEvent) -> Void,
+        onOMEvent: @escaping (OMEvent) -> Void
     ) {
-        self.onIFrameEvent = onIFrameEvent
         self.eventPublisher = eventPublisher
+        self.onIFrameEvent = onIFrameEvent
+        self.onOMEvent = onOMEvent
+
+        let contentController = WKUserContentController()
+
+        if
+            let omsdkURL = Bundle.module.url(forResource: "omsdk-v1", withExtension: "js"),
+            let omsdkJS = try? String(contentsOf: omsdkURL, encoding: .utf8)
+        {
+            let omsdkScript = WKUserScript(
+                source: omsdkJS,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            )
+            contentController.addUserScript(omsdkScript)
+        }
 
         let js = """
         window.addEventListener('message', function(event) {
@@ -39,9 +57,28 @@ final class AdWebView: WKWebView {
             injectionTime: .atDocumentStart,
             forMainFrameOnly: false
         )
-
-        let contentController = WKUserContentController()
         contentController.addUserScript(userScript)
+
+        #if DEBUG
+        let consoleJS = """
+        (function() {
+            var orig = console.log.bind(console);
+            console.log = function() {
+                var msg = Array.prototype.slice.call(arguments).join(' ');
+                if (msg.indexOf('[OMID]') !== -1) {
+                    window.webkit.messageHandlers.consoleLog.postMessage(msg);
+                }
+                orig.apply(console, arguments);
+            };
+        })();
+        """
+        let consoleScript = WKUserScript(
+            source: consoleJS,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        contentController.addUserScript(consoleScript)
+        #endif
 
         self.updateIframeData = updateIframeData
         webConfiguration.allowsInlineMediaPlayback = true
@@ -52,10 +89,14 @@ final class AdWebView: WKWebView {
         isOpaque = false
         backgroundColor = .clear
         scrollView.isScrollEnabled = false
+        navigationDelegate = self
 
         scriptHandler = AdScriptMessageHandler(adWebView: self)
         if let scriptHandler {
             configuration.userContentController.add(scriptHandler, name: "iframeMessage")
+            #if DEBUG
+            configuration.userContentController.add(scriptHandler, name: "consoleLog")
+            #endif
         }
 
         observeEvents()
@@ -66,13 +107,25 @@ final class AdWebView: WKWebView {
     }
 
     deinit {
-        scriptHandler = nil
+        scriptHandler = nil        
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil {
+            hasEverHadWindow = true
+        }
     }
 
     override func removeFromSuperview() {
+        stopLoading()
         super.removeFromSuperview()
         webConfiguration.userContentController
             .removeScriptMessageHandler(forName: "iframeMessage")
+        #if DEBUG
+        webConfiguration.userContentController
+            .removeScriptMessageHandler(forName: "consoleLog")
+        #endif
     }
 
     func loadAd(from url: URL) {
@@ -80,7 +133,8 @@ final class AdWebView: WKWebView {
     }
 }
 
-// MARK: Private
+// MARK: - Events
+
 private extension AdWebView {
     func observeEvents() {
         eventPublisher?
@@ -128,7 +182,34 @@ private extension AdWebView {
     }
 }
 
+// MARK: - WKNavigationDelegate
+
+extension AdWebView: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        // Cancel navigation only after the view has been in a window and was then removed —
+        // this blocks WebKit's crash-recovery reload that fires ~6s after the WebContent process
+        // is terminated post-ad.cleared. We allow navigations before the view has ever been
+        // attached to a window (initial load), since load() may be called before the view
+        // enters the hierarchy.
+        guard window != nil || !hasEverHadWindow else {
+            decisionHandler(.cancel)
+            return
+        }
+        decisionHandler(.allow)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        onOMEvent(.didStart(webView, url))
+    }
+}
+
 // MARK: - AdScriptMessageHandler
+
+private let consoleLogFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm:ss.SSS"
+    return f
+}()
 
 private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
     private weak var adWebView: AdWebView?
@@ -142,6 +223,13 @@ private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
+        #if DEBUG
+        if message.name == "consoleLog", let msg = message.body as? String {
+            print("[\(consoleLogFormatter.string(from: Date()))] [WebView] \(msg)")
+            return
+        }
+        #endif
+
         guard
             message.name == "iframeMessage",
             let adWebView

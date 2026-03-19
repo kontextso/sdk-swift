@@ -1,8 +1,3 @@
-enum ScreenOrientation: String, Encodable {
-    case portrait
-    case landscape
-}
-
 struct ScreenDTO: Encodable {
     /// Width in pixels
     let width: Double

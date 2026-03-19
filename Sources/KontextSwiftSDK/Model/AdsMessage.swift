@@ -17,7 +17,7 @@ public struct AdsMessage: MessageRepresentable, Sendable {
     /// - Parameters:
     ///     - id: Unique identifier of the message.
     ///     - role: Role of the author (user or assistant).
-    ///     - content: Txt content of the message.
+    ///     - content: Text content of the message.
     ///     - createdAt: Date of message creation (defaults to the current date).
     public init(
         id: String,
