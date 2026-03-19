@@ -20,6 +20,7 @@ final class AdWebView: WKWebView {
 
     private var cancellables: Set<AnyCancellable> = []
     private var scriptHandler: AdScriptMessageHandler?
+    private var hasEverHadWindow = false
 
     init(
         frame: CGRect = .zero,
@@ -109,6 +110,13 @@ final class AdWebView: WKWebView {
         scriptHandler = nil        
     }
 
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil {
+            hasEverHadWindow = true
+        }
+    }
+
     override func removeFromSuperview() {
         stopLoading()
         super.removeFromSuperview()
@@ -178,9 +186,12 @@ private extension AdWebView {
 
 extension AdWebView: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        // Cancel any navigation when the view has no window — this blocks WebKit's crash-recovery
-        // reload that fires ~6s after the WebContent process is terminated post-ad.cleared.
-        guard window != nil else {
+        // Cancel navigation only after the view has been in a window and was then removed —
+        // this blocks WebKit's crash-recovery reload that fires ~6s after the WebContent process
+        // is terminated post-ad.cleared. We allow navigations before the view has ever been
+        // attached to a window (initial load), since load() may be called before the view
+        // enters the hierarchy.
+        guard window != nil || !hasEverHadWindow else {
             decisionHandler(.cancel)
             return
         }
