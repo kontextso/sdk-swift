@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.0
+* Add `requestTrackingAuthorization` option to `AdsProviderConfiguration` — set to `false` to suppress the SDK's ATT prompt and manage it yourself.
+* Fix manually supplied `advertisingId`/`vendorId` now correctly take priority over automatically collected values.
+
 ## 2.0.4
 * Add missing changelog entry for 2.0.3.
 

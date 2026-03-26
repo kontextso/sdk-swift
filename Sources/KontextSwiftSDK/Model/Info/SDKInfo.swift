@@ -4,7 +4,7 @@ import UIKit
 struct SDKInfo  {
     static let defaultAdServerURL: URL = URL(string: "https://server.megabrain.co")!
     static let sdkName = "sdk-swift"
-    static let sdkVersion = "2.0.4"
+    static let sdkVersion = "2.1.0"
 
     /// Name of the SDK's bundle, should be sdk-swift
     let name: String
