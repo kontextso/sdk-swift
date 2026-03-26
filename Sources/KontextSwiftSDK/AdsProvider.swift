@@ -67,7 +67,8 @@ public final class AdsProvider: @unchecked Sendable {
         Task {
             let result = await IFACollector.collect(
                 manualAdvertisingId: configuration.advertisingId,
-                manualVendorId: configuration.vendorId
+                manualVendorId: configuration.vendorId,
+                requestTrackingAuthorization: configuration.requestTrackingAuthorization
             )
             await dependencies.adsProviderActing.setIFA(
                 advertisingId: result.advertisingId,

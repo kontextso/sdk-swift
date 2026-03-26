@@ -48,6 +48,13 @@ public struct AdsProviderConfiguration: Sendable {
     public let otherParams: [String: String]
     /// Email of the user.
     public let userEmail: String?
+    /// Whether the SDK should request ATT (App Tracking Transparency) authorization automatically.
+    ///
+    /// Set to `false` if your app manages the ATT prompt itself. When disabled, you can still supply
+    /// the resolved IDFA via `advertisingId` so the SDK can use it for targeting.
+    ///
+    /// Defaults to `true`.
+    public let requestTrackingAuthorization: Bool
 
     /// Initializes a new AdsProviderConfiguration to be later passed to the AdsProvider.
     ///
@@ -56,7 +63,7 @@ public struct AdsProviderConfiguration: Sendable {
     ///     - userId: A unique string that should remain the same during the user’s lifetime (used for retargeting and rewarded ads).
     ///     - conversationId: Unique ID of the conversation. It is mostly used for pacing.
     ///     - enabledPlacementCodes: A list of placement codes that identify ad slots in your app. You receive them from your account manager.
-    ///     - character: Assistant's character information (if any).
+    ///     - character: Assistant’s character information (if any).
     ///     - variantId: String provided by the publisher to identify the user cohort in order to compare A/B test groups.
     ///     - advertisingId: Device-specific identifier provided by the operating systems (IDFA).
     ///     - vendorId: Vendor-specific identifier provided by the operating systems (IDFV).
@@ -64,6 +71,7 @@ public struct AdsProviderConfiguration: Sendable {
     ///     - regulatory: Information about regulatory requirements that apply.
     ///     - otherParams: An arbitrary key-value collection of values that the publisher can send. It varies per publisher, but all publishers provide at least the theme parameter.
     ///     - userEmail: Email of the user.
+    ///     - requestTrackingAuthorization: Whether the SDK should request ATT authorization automatically. Defaults to `true`.
     public init(
         publisherToken: String,
         userId: String,
@@ -76,7 +84,8 @@ public struct AdsProviderConfiguration: Sendable {
         adServerUrl: URL? = nil,
         regulatory: Regulatory? = nil,
         otherParams: [String: String] = [:],
-        userEmail: String? = nil
+        userEmail: String? = nil,
+        requestTrackingAuthorization: Bool = true
     ) {
         self.publisherToken = publisherToken
         self.userId = userId
@@ -90,5 +99,6 @@ public struct AdsProviderConfiguration: Sendable {
         self.regulatory = regulatory
         self.otherParams = otherParams
         self.userEmail = userEmail
+        self.requestTrackingAuthorization = requestTrackingAuthorization
     }
 }

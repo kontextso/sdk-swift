@@ -12,9 +12,12 @@ enum IFACollector {
 
     static func collect(
         manualAdvertisingId: String?,
-        manualVendorId: String?
+        manualVendorId: String?,
+        requestTrackingAuthorization: Bool
     ) async -> IFAResult {
-        await requestTrackingAuthorizationIfNeeded()
+        if requestTrackingAuthorization {
+            await requestTrackingAuthorizationIfNeeded()
+        }
 
         let advertisingId = resolveAdvertisingId(manual: manualAdvertisingId)
         let vendorId = await resolveVendorId(manual: manualVendorId)
