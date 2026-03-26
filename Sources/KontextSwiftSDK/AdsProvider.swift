@@ -60,6 +60,8 @@ public final class AdsProvider: @unchecked Sendable {
         self.delegate = delegate
         self.eventSubject = PassthroughSubject<AdsEvent, Never>()
 
+        dependencies.omService.activate()
+
         Task {
             await dependencies.adsProviderActing.setDelegate(delegate: self)
         }
@@ -132,6 +134,32 @@ public final class AdsProvider: @unchecked Sendable {
         }
     }
 }
+
+// MARK: - TODO: OMID session cleanup on dealloc
+//
+// When the publisher navigates away from the chat (e.g. opens a different conversation or closes
+// the chat screen), AdsProvider is deallocated without any explicit cleanup call. Any active OMID
+// sessions at that point are never properly retired or finished — OMIDAdSession.finish() is never
+// called, leaving the session incomplete from the measurement system's perspective.
+//
+// Currently, sessions are finished in three cases:
+//   1. A new user message arrives (setMessages) — retires all active sessions before preloading
+//   2. The inline WebView is removed from the view hierarchy (handleInlineWebViewDispose)
+//   3. The interstitial closes (handleComponentIframe / closeInterstitialAndNativeComponents)
+//
+// The gap: if the user navigates away while an ad is visible but no new message has been sent,
+// case 1 never fires. Case 2 may or may not fire depending on how the publisher tears down its UI.
+//
+// Recommended fix: add a deinit to AdsProvider that finishes all active OMID sessions:
+//
+//   deinit {
+//       let actor = dependencies.adsProviderActing
+//       Task { await actor.reset() }
+//   }
+//
+// AdsProviderActing.reset() would need to be extended to also retire+finish all omSessions
+// (currently it clears states/bids but does not touch omSessions).
+// The Task in deinit keeps the actor alive until cleanup completes, then releases it.
 
 // MARK: - Internal methods
 

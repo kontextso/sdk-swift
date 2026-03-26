@@ -4,15 +4,18 @@ struct DependencyContainer: Sendable {
     let networking: Networking
     let adsServerAPI: AdsServerAPI
     let adsProviderActing: AdsProviderActing
+    let omService: OMManaging
 
     init(
         networking: Networking,
         adsServerAPI: AdsServerAPI,
-        adsProviderActing: AdsProviderActing
+        adsProviderActing: AdsProviderActing,
+        omService: OMManaging
     ) {
         self.networking = networking
         self.adsServerAPI = adsServerAPI
         self.adsProviderActing = adsProviderActing
+        self.omService = omService
     }
 
     @MainActor
@@ -22,6 +25,7 @@ struct DependencyContainer: Sendable {
         isDisabled: Bool
     ) -> DependencyContainer {
         let networking = Network()
+        let omService = OMManager()
         let adsServerAPI = BaseURLAdsServerAPI(
             baseURL: configuration.adServerUrl,
             networking: networking
@@ -32,6 +36,7 @@ struct DependencyContainer: Sendable {
             isDisabled: isDisabled,
             adsServerAPI: adsServerAPI,
             urlOpener: UIApplication.shared,
+            omService: omService,
             skAdNetworkManager: DefaultSKAdNetworkManager.shared,
             skOverlayPresenter: SKOverlayManager.shared,
             skStoreProductPresenter: SKStoreProductManager.shared
@@ -40,7 +45,8 @@ struct DependencyContainer: Sendable {
         return DependencyContainer(
             networking: networking,
             adsServerAPI: adsServerAPI,
-            adsProviderActing: providerActor
+            adsProviderActing: providerActor,
+            omService: omService
         )
     }
 }

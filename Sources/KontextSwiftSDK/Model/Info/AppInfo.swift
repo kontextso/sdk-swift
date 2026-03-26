@@ -1,48 +1,22 @@
 import Foundation
 
-struct AppInfo  {
-    let name: String
+/// Current application metadata
+struct AppInfo {
     let bundleId: String?
     let version: String
     let storeUrl: String?
     let installTime: Int64?
     let updateTime: Int64?
     let startTime: Int64
-
-    init(
-        name: String,
-        bundleId: String?,
-        version: String,
-        storeUrl: String?,
-        installTime: Int64?,
-        updateTime: Int64?,
-        startTime: Int64    
-    ) {
-        self.name = name
-        self.bundleId = bundleId
-        self.version = version
-        self.storeUrl = storeUrl
-        self.installTime = installTime
-        self.updateTime = updateTime
-        self.startTime = startTime
-    }
 }
 
 extension AppInfo {
     /// Creates an AppInfo instance with current app information
     static func current() -> AppInfo {
         let bundle = Bundle.main
-        let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Unknown"
-        let bundleId = bundle.bundleIdentifier
-        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
-        let installTime = installTime
-        let updateTime = updateTime
-        let startTime = startTime
-
         return AppInfo(
-            name: name,
-            bundleId: bundleId,
-            version: version,
+            bundleId: bundle.bundleIdentifier,
+            version: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0",
             storeUrl: nil,
             installTime: installTime,
             updateTime: updateTime,
@@ -53,7 +27,7 @@ extension AppInfo {
 
 private extension AppInfo {
     static var installTime: Int64? {
-        // Determine install time as the first creation of the user documents folder.
+        // Approximated as the creation date of the app's documents directory
         if let documentsURL = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
@@ -67,7 +41,7 @@ private extension AppInfo {
     }
 
     static var updateTime: Int64? {
-        // Determine install time as the last modification of the user documents folder.
+        // Approximated as the last modification date of the app bundle
         let bundleURL = Bundle.main.bundleURL
         if let attributes = try? FileManager.default.attributesOfItem(atPath: bundleURL.path),
            let modificationDate = attributes[.modificationDate] as? Date {

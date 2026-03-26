@@ -90,7 +90,7 @@ private extension MyMessagesTableViewController {
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello my smart helpful assistant, how are you?",
+            content: "Hello, how are you?",
             createdAt: Date()
         )
         messages.append(message)

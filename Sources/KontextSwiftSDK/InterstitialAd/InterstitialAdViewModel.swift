@@ -6,10 +6,10 @@ final class InterstitialAdViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
 
     @Published private(set) var showIframe: Bool = false
-    @Published private(set) var url: URL?
+    let url: URL
 
     init(
-        url: URL?,
+        url: URL,
         events: AnyPublisher<InterstitialAdEvent, Never>
     ) {
         self.url = url

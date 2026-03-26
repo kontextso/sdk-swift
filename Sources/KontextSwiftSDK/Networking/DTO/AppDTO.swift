@@ -11,5 +11,5 @@ struct AppDTO: Encodable {
     /// Last update time as a timestamp
     let lastUpdateTime: Int64?
     /// Current process start time as a timestamp
-    let startTime: Int64?
+    let startTime: Int64
 }

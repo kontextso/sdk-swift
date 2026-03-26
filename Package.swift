@@ -14,8 +14,10 @@ let package = Package(
     targets: [
         .target(
             name: "KontextSwiftSDK",
+            dependencies: ["OMSDK_Megabrainco"],
             resources: [
-                .copy("PrivacyInfo.xcprivacy")
+                .copy("PrivacyInfo.xcprivacy"),
+                .copy("OMSDK/omsdk-v1.js")
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
@@ -25,8 +27,12 @@ let package = Package(
                 .linkedFramework("AppTrackingTransparency"),
             ]
         ),
+        .binaryTarget(
+            name: "OMSDK_Megabrainco",
+            path: "Frameworks/OMSDK_Megabrainco.xcframework"
+        ),
         .testTarget(
-            name: "KontextSwiftSDKTests",
+            name: "KontextAdsTests",
             dependencies: ["KontextSwiftSDK"]
         )
     ]

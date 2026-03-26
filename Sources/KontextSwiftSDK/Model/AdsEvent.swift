@@ -33,28 +33,28 @@ public enum AdsEvent: Sendable {
 /// Types that come as payloads in ad events.
 public extension AdsEvent {
     struct ViewedData: Sendable {
-        public let bidId: String
+        public let bidId: UUID
         public let content: String
         public let messageId: String
         public let format: String?
     }
-    
+
     struct ClickedData: Sendable {
-        public let bidId: String
+        public let bidId: UUID
         public let content: String
         public let messageId: String
         public let url: URL
         public let format: String?
         public let area: String?
     }
-    
+
     struct ErrorData: Sendable {
         public let message: String
         public let errCode: String
     }
 
     struct GeneralData: Sendable {
-        public let bidId: String
+        public let bidId: UUID
     }
 
     struct NoFillData: Sendable {

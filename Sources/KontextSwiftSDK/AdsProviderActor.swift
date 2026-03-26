@@ -1,6 +1,7 @@
 @preconcurrency import Combine
 import OSLog
 import UIKit
+import WebKit
 
 // MARK: - AdsProviderActor
 
@@ -20,6 +21,7 @@ actor AdsProviderActor {
     private var messages: [AdsMessage]
     private var bids: [Bid]
     private var states: [AdLoadingState]
+    private var omSessions: [OMSessionState]
 
     private let numberOfRelevantMessages = 30
 
@@ -35,14 +37,24 @@ actor AdsProviderActor {
     private let configuration: AdsProviderConfiguration
     private let adsServerAPI: AdsServerAPI
     private let urlOpener: URLOpening
+    private let omService: OMManaging
     private let skAdNetworkManager: any SKAdNetworkManaging
     private let skOverlayPresenter: any SKOverlayPresenting
     private let skStoreProductPresenter: any SKStoreProductPresenting
     private weak var delegate: AdsProviderActingDelegate?
-    private var skanOwner: (stateId: UUID, bidId: String)?
+    private var skanOwner: (stateId: UUID, bidId: UUID)?
 
     // stateId waiting for start after init
     private var pendingStart: UUID?
+
+    // Interstitial OMID: WebView reference captured on didFinish, consumed on initComponentIframe
+    // so that session.start() fires only after the modal is fully visible.
+    private var pendingInterstitialWebView: (webView: WKWebView, url: URL?, stateId: UUID)?
+
+    // Inline OMID: WebView reference captured on didFinish, consumed on adDoneIframe
+    // so that session.start() fires only after the ad content is fully rendered and
+    // the iframe has received its container dimensions (iframeLoaded = true in JS).
+    private var pendingInlineWebView: (webView: WKWebView, url: URL?, stateId: UUID, creativeType: OmCreativeType)?
 
     init(
         configuration: AdsProviderConfiguration,
@@ -50,6 +62,7 @@ actor AdsProviderActor {
         isDisabled: Bool,
         adsServerAPI: AdsServerAPI,
         urlOpener: URLOpening,
+        omService: OMManaging,
         skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared,
         skOverlayPresenter: any SKOverlayPresenting,
         skStoreProductPresenter: any SKStoreProductPresenting
@@ -59,13 +72,14 @@ actor AdsProviderActor {
         self.isDisabled = isDisabled
         self.adsServerAPI = adsServerAPI
         self.urlOpener = urlOpener
+        self.omService = omService
         self.skAdNetworkManager = skAdNetworkManager
         self.skOverlayPresenter = skOverlayPresenter
         self.skStoreProductPresenter = skStoreProductPresenter
-        delegate = nil
-        messages = []
         bids = []
+        messages = []
         states = []
+        omSessions = []
         lastPreloadUserMessageId = ""
         preloadTimeout = 60
     }
@@ -101,6 +115,17 @@ extension AdsProviderActor: AdsProviderActing {
         self.messages = messages
 
         if shouldPreload {
+            // Finish OM sessions while the WebView is still in the view hierarchy,
+            // then wait 1 second for the sessionFinish JS to execute before removing the WebView.
+            let sessionsToFinish = omSessions
+            omSessions = []
+            await MainActor.run {
+                for state in sessionsToFinish {
+                    state.session.retire()
+                    state.session.finish()
+                    os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
+                }
+            }
             await reset()
             notifyAdsCleared()
         } else {
@@ -110,7 +135,8 @@ extension AdsProviderActor: AdsProviderActing {
 
         lastPreloadUserMessageId = lastUserMessage.id
         do {
-            let preloadedData = try await preloadWithTimeout(
+            async let sleep: Void = Task.sleep(seconds: 1)
+            async let preload = preloadWithTimeout(
                 timeout: preloadTimeout,
                 sessionId: sessionId,
                 configuration: configuration,
@@ -120,6 +146,12 @@ extension AdsProviderActor: AdsProviderActing {
                 api: adsServerAPI,
                 messages: messagesToSend
             )
+            let (_, preloadedData) = try await (sleep, preload)
+
+            // Bail out if a newer setMessages call arrived while we were suspended.
+            // The new call has already overwritten lastPreloadUserMessageId, so our
+            // preload results are stale and should not be bound.
+            guard lastPreloadUserMessageId == lastUserMessage.id else { return }
 
             guard preloadedData.permanentError != true else {
                 notifyAdNotAvailable(messageId: lastUserMessage.id, skipCode: preloadedData.skipCode)
@@ -168,6 +200,15 @@ extension AdsProviderActor: AdsProviderActing {
         await cleanupSKAdNetwork()
         await dismissSKOverlay()
         await dismissSKStoreProduct()
+        let sessionsToFinish = omSessions
+        omSessions = []
+        await MainActor.run {
+            for state in sessionsToFinish {
+                state.session.retire()
+                state.session.finish()
+                os_log("[\(ts)] [OMID] Session finished in reset (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
+            }
+        }
         bids = []
         states = []
     }
@@ -177,6 +218,14 @@ extension AdsProviderActor: AdsProviderActing {
         resolvedVendorId = vendorId
     }
 }
+
+private let tsFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm:ss.SSS"
+    return f
+}()
+
+private var ts: String { tsFormatter.string(from: Date()) }
 
 // MARK: Data processing
 private extension AdsProviderActor {
@@ -222,22 +271,19 @@ private extension AdsProviderActor {
         let bids = self.bids.filter { $0.adDisplayPosition == adDisplayPosition }
         // Only take one bid for each unique code
         let uniqueBids = Dictionary(grouping: bids, by: { $0.code }).compactMap { $0.value.first }
-        // Insert new states for last message id
-        let stateId = UUID()
-
         var newStates: [AdLoadingState] = []
         for bid in uniqueBids {
             newStates.append(AdLoadingState(
-                id: stateId,
+                id: bid.bidId,
                 bid: bid,
                 messageId: lastMessageId,
-                show: true,
-                preferredHeight: nil, // Use default preferred height
                 webViewData: await prepareWebViewData(
-                    stateId: stateId,
+                    stateId: bid.bidId,
                     messageId: lastMessageId,
                     bid: bid
-                )
+                ),
+                show: true,
+                preferredHeight: nil, // Use default preferred height
             ))
         }
 
@@ -279,7 +325,7 @@ private extension AdsProviderActor {
         await AdLoadingState.WebViewData(
             url: adsServerAPI.frameURL(
                 messageId: messageId,
-                bidId: bid.bidId,
+                bidId: bid.bidId.uuidString.lowercased(),
                 bidCode: bid.code,
                 otherParams: configuration.otherParams
             ),
@@ -287,12 +333,23 @@ private extension AdsProviderActor {
                 sdk: await SDKInfo.current().name,
                 code: bid.code,
                 messageId: messageId,
-                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO (from: $0) },
+                messages: messages.suffix(numberOfRelevantMessages).map { MessageDTO(from: $0) },
                 otherParams: configuration.otherParams
             )),
             onIFrameEvent: { [weak self] event in
                 Task {
                     await self?.handleInlineIframeEvent(event: event, stateId: stateId)
+                }
+            },
+            onOMEvent: { [weak self] event in
+                // Interstitial bids: inline WebView is just a preview, OMID session
+                // starts when the modal WebView loads (handled in presentInterstitialAd).
+                guard bid.impressionTrigger != .component else {
+                    os_log("[\(ts)] [OMID] Skipping inline OM event (impressionTrigger: component) for stateId: \(stateId)")
+                    return
+                }
+                Task {
+                    await self?.handleOMEvent(event: event, stateId: stateId)
                 }
             },
             onDispose: { [weak self] in
@@ -320,7 +377,8 @@ private extension AdsProviderActor {
         api: AdsServerAPI,
         messages: [AdsMessage]
     ) async throws -> PreloadedData {
-        try await withTimeout(TimeInterval(timeout)) {
+
+        let response = try await withTimeout(TimeInterval(timeout)) {
             try await api.preload(
                 sessionId: sessionId,
                 configuration: configuration,
@@ -330,11 +388,17 @@ private extension AdsProviderActor {
                 messages: messages
             )
         }
+
+        return response
     }
 }
 
 // MARK: iFrame events
 private extension AdsProviderActor {
+    private func omSession(for stateId: UUID) -> OMSession? {
+        return omSessions.first(where: { $0.stateId == stateId })?.session
+    }
+
     func handleInlineIframeEvent(event: IframeEvent, stateId: UUID) async {
         guard let stateIndex = states.firstIndex(where: { $0.id == stateId }) else {
             return
@@ -360,9 +424,19 @@ private extension AdsProviderActor {
             }
 
         case .viewIframe(let viewData):
-            os_log(.info, "[InlineAd]: View Iframe with ID: \(viewData.id)")
+            os_log(.info, "[\(ts)] [InlineAd]: View Iframe with ID: \(viewData.id)")
 
         case .adDoneIframe:
+            // Ad content is fully rendered and iframe has received container dimensions —
+            // start the deferred OMID session now so impression fires with correct geometry.
+            if let pending = pendingInlineWebView, pending.stateId == newState.id {
+                pendingInlineWebView = nil
+                let (webView, url, stateId, creativeType) = (pending.webView, pending.url, pending.stateId, pending.creativeType)
+                Task {
+                    await startOMSession(webView: webView, url: url, stateId: stateId, creativeType: creativeType)
+                }
+            }
+
             if newState.bid.impressionTrigger == .immediate, newState.bid.skan != nil {
                 if skanOwner?.stateId == newState.id {
                     await startSKAdNetwork(for: newState)
@@ -393,8 +467,11 @@ private extension AdsProviderActor {
                 didReceiveEvent: AdsEvent.adHeight(newState.toModel())
             )
 
-        case .errorIframe(let message):
-            os_log(.error, "[InlineAd]: Error: \(message?.message ?? "unknown")")
+        case .errorIframe(let data):
+            os_log(.error, "[InlineAd]: Error: \(data?.message ?? "unknown")")
+            if let session = omSession(for: stateId) {
+                await MainActor.run { session.logError(errorType: data?.errorType, message: data?.message) }
+            }
             await reset()
             notifyAdsCleared()
 
@@ -428,25 +505,50 @@ private extension AdsProviderActor {
         }
     }
 
-    func handleInlineWebViewDispose(stateId: UUID, bidId: String) async {
+    func handleInlineWebViewDispose(stateId: UUID, bidId: UUID) async {
+        if pendingInlineWebView?.stateId == stateId {
+            pendingInlineWebView = nil
+        }
         await cleanupSKAdNetwork(stateId: stateId, bidId: bidId)
         await dismissSKOverlay()
         await dismissSKStoreProduct()
+        await finishOMSession(for: stateId)
+    }
+
+    func finishOMSession(for stateId: UUID) async {
+        guard let index = omSessions.firstIndex(where: { $0.stateId == stateId }) else { return }
+        let state = omSessions[index]
+        omSessions.remove(at: index)
+        await MainActor.run {
+            state.session.retire()
+            state.session.finish()
+        }
+        os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(stateId)")
+        try? await Task.sleep(seconds: 1)
     }
 
     func handleInterstitialIframeEvent(event: IframeEvent, state: AdLoadingState) {
         switch event {
         case .initComponentIframe:
+            // Modal content is loaded — show the WebView and cancel the timeout.
             // NOTE: Intentionally dispatched to @MainActor before sending.
-            // InterstitialAdViewModel observes this subject and updates @Published properties.
-            // Without this hop, the send() arrives on the actor's background executor,
-            // which causes "Publishing changes from background threads" warnings and potential
-            // crashes in future iOS versions. The actor isolation crossing is a known tradeoff.
             Task { @MainActor in
                 await interstitialEventSubject.send(.didChangeDisplay(true))
             }
             interstitialTimeoutTask?.cancel()
             interstitialTimeoutTask = nil
+
+        case .adDoneComponentIframe:
+            // Video has started playing — modal is fully visible and dimensions are stable.
+            // Start the deferred OMID session now so impression fires with correct geometry.
+            if let pending = pendingInterstitialWebView, pending.stateId == state.id,
+               let creativeType = state.bid.creativeType {
+                pendingInterstitialWebView = nil
+                let (webView, url, stateId) = (pending.webView, pending.url, pending.stateId)
+                Task {
+                    await startOMSession(webView: webView, url: url, stateId: stateId, creativeType: creativeType)
+                }
+            }
 
         case .openComponentIframe(let data):
             Task {
@@ -464,8 +566,12 @@ private extension AdsProviderActor {
                 )
             }
 
-        case .errorComponentIframe:
+        case .errorComponentIframe(let data):
+            let errorSession = omSession(for: state.id)
             Task {
+                if let session = errorSession {
+                    await MainActor.run { session.logError(errorType: data.errorType, message: data.message) }
+                }
                 await closeInterstitialAndNativeComponents(for: state)
             }
 
@@ -487,6 +593,59 @@ private extension AdsProviderActor {
     }
 }
 
+// MARK: OM Events
+private extension AdsProviderActor {
+    func handleOMEvent(event: OMEvent, stateId: UUID) async {
+        // Guard against a duplicate didFinish for an already-active session.
+        // In practice this cannot happen: didFinish only fires for main-frame navigations, and our
+        // WKWebView loads a static shell HTML that never navigates after the initial load. The DSP ad
+        // runs inside a <iframe> (subframe), so any window.location call there does not trigger
+        // didFinish on the outer WKWebView. Early-return is correct here.
+        if let existingIndex = omSessions.firstIndex(where: { $0.stateId == stateId }) {
+            let existingSession = omSessions[existingIndex].session
+            await MainActor.run {
+                existingSession.finish()
+            }
+            omSessions.remove(at: existingIndex)
+            return
+        }
+
+        switch event {
+        case .didStart(let webView, let url):
+            // Guard against spurious didFinish callbacks after the ad has been disposed/cleared
+            guard states.contains(where: { $0.id == stateId }) else { return }
+            // Killswitch: if the server didn't send an `om` object, OMID is disabled for this bid
+            guard let creativeType = states.first(where: { $0.id == stateId })?.bid.creativeType else { return }
+
+            // For interstitial ads, defer session start until initComponentIframe fires,
+            // so session.start() is called only after the modal is fully visible.
+            if states.first(where: { $0.id == stateId })?.bid.impressionTrigger == .component {
+                pendingInterstitialWebView = (webView: webView, url: url, stateId: stateId)
+                return
+            }
+
+            // For inline ads, defer session start until adDoneIframe fires,
+            // so session.start() is called only after the ad content is fully rendered
+            // and the iframe has received its container dimensions.
+            pendingInlineWebView = (webView: webView, url: url, stateId: stateId, creativeType: creativeType)
+        }
+    }
+
+    func startOMSession(webView: WKWebView, url: URL?, stateId: UUID, creativeType: OmCreativeType) async {
+        do {
+            let omSession = try await MainActor.run {
+                let session = try omService.createSession(webView, url: url, creativeType: creativeType)
+                session.start()
+                return session
+            }
+            let newState = OMSessionState(stateId: stateId, session: omSession, creativeType: creativeType)
+            omSessions.append(newState)
+        } catch {
+            os_log("OM failed to start: \(String(describing: error))")
+        }
+    }
+}
+
 // MARK: Components
 private extension AdsProviderActor {
     func handleComponentIframe(
@@ -500,9 +659,10 @@ private extension AdsProviderActor {
             }
             await presentInterstitialAd(data, state: state)
 
-        case (.close, .modal, .interstitial):
+        case (.close, .modal, .interstitial(let state)):
             interstitialTimeoutTask?.cancel()
             interstitialTimeoutTask = nil
+            await finishOMSession(for: state.id)
             Task { @MainActor in
                 await inlineEventSubject.send(.didFinishInterstitialAd)
             }
@@ -591,12 +751,17 @@ private extension AdsProviderActor {
         skan.fidelities?.contains(where: { $0.fidelity == 1 }) ?? false
     }
 
-    func closeInterstitialAndNativeComponents(for _: AdLoadingState) async {
+    func closeInterstitialAndNativeComponents(for state: AdLoadingState) async {
         interstitialTimeoutTask?.cancel()
         interstitialTimeoutTask = nil
 
+        if pendingInterstitialWebView?.stateId == state.id {
+            pendingInterstitialWebView = nil
+        }
+
         await dismissSKOverlay()
         await dismissSKStoreProduct()
+        await finishOMSession(for: state.id)
 
         Task { @MainActor in
             await inlineEventSubject.send(.didFinishInterstitialAd)
@@ -636,7 +801,7 @@ private extension AdsProviderActor {
         await skAdNetworkManager.startImpression()
     }
 
-    func cleanupSKAdNetwork(stateId: UUID, bidId: String) async {
+    func cleanupSKAdNetwork(stateId: UUID, bidId: UUID) async {
         guard skanOwner?.stateId == stateId, skanOwner?.bidId == bidId else {
             return
         }
@@ -709,13 +874,14 @@ private extension AdsProviderActor {
     ) async {
         let url = await adsServerAPI.componentURL(
             messageId: state.messageId,
-            bidId: state.bid.bidId,
+            bidId: state.bid.bidId.uuidString.lowercased(),
             bidCode: state.bid.code,
             component: data.component.rawValue,
             otherParams: configuration.otherParams
         )
 
         Task { @MainActor in
+            guard let url else { return }
             let params = await InterstitialAdView.Params(
                 url: url,
                 events: interstitialEventSubject.eraseToAnyPublisher(),
@@ -724,6 +890,14 @@ private extension AdsProviderActor {
                         await self?.handleInterstitialIframeEvent(
                             event: event,
                             state: state
+                        )
+                    }
+                },
+                onOMEvent: { [weak self] event in
+                    Task {
+                        await self?.handleOMEvent(
+                            event: event,
+                            stateId: state.id
                         )
                     }
                 }

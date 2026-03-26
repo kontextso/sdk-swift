@@ -9,7 +9,7 @@ struct PreloadResponseDTO: ModelConvertible, Decodable {
     func toModel() -> PreloadedData {
         PreloadedData(
             sessionId: sessionId,
-            bids: bids?.map { $0.model },
+            bids: bids?.compactMap { $0.model },
             remoteLogLevel: remoteLogLevel,
             permanentError: permanentError,
             skip: skip,

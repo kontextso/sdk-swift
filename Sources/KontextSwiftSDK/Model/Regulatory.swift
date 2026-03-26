@@ -21,16 +21,14 @@ public struct Regulatory: Sendable {
     /// https://github.com/InteractiveAdvertisingBureau/USPrivacy/blob/master/CCPA/US%20Privacy%20String.md
     public let usPrivacy: String?
 
-    /**
-     Initializes a new Regulatory object.
-     - Parameters:
-     - gdpr: Flag that indicates whether or not the request is subject to GDPR regulations (0 = No, 1 = Yes, null = Unknown).
-     - gdprConsent: When GDPR regulations are in effect this attribute contains the Transparency and Consent Framework's Consent String data structure.
-     - coppa: Flag whether the request is subject to COPPA (0 = No, 1 = Yes, null = Unknown).
-     - usPrivacy: Communicates signals regarding consumer privacy under US privacy regulation under CCPA and LSPA.
-     - gpp: Global Privacy Platform (GPP) consent string.
-     - gppSid: List of the section(s) of the GPP string which should be applied for this transaction.
-     */
+    /// Initializes a new Regulatory object.
+    /// - Parameters:
+    ///   - gdpr: Flag that indicates whether or not the request is subject to GDPR regulations (0 = No, 1 = Yes, null = Unknown).
+    ///   - gdprConsent: When GDPR regulations are in effect this attribute contains the Transparency and Consent Framework's Consent String data structure.
+    ///   - coppa: Flag whether the request is subject to COPPA (0 = No, 1 = Yes, null = Unknown).
+    ///   - usPrivacy: Communicates signals regarding consumer privacy under US privacy regulation under CCPA and LSPA.
+    ///   - gpp: Global Privacy Platform (GPP) consent string.
+    ///   - gppSid: List of the section(s) of the GPP string which should be applied for this transaction.
     public init(
         gdpr: Int? = nil,
         gdprConsent: String? = nil,

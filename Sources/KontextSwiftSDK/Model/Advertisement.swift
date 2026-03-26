@@ -13,5 +13,6 @@ public struct Advertisement: Sendable, Hashable {
     /// Ad bid metadata
     public let bid: Bid
 
+    /// Internal data required to render the ad web view
     let webViewData: AdLoadingState.WebViewData
 }
