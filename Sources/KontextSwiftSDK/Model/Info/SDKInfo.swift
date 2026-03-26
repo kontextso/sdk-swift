@@ -7,7 +7,7 @@ struct SDKInfo {
     /// SDK name identifier
     static let sdkName = "sdk-swift"
     /// Current SDK version in Major.Minor.Patch format
-    static let sdkVersion = "2.0.4"
+    static let sdkVersion = "2.1.0"
 
     /// Name of the SDK's bundle, should be sdk-swift
     let name: String
