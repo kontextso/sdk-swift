@@ -34,17 +34,15 @@ enum IFACollector {
     }
 
     private static func resolveAdvertisingId(manual: String?) -> String? {
-        // Automatic has precedence over manual (manual is deprecated)
-        let automatic: String? = ATTrackingManager.trackingAuthorizationStatus == .authorized
-            ? ASIdentifierManager.shared().advertisingIdentifier.uuidString
-            : nil
-        return normalize(automatic) ?? normalize(manual)
+        if let manual = normalize(manual) { return manual }
+        guard ATTrackingManager.trackingAuthorizationStatus == .authorized else { return nil }
+        return normalize(ASIdentifierManager.shared().advertisingIdentifier.uuidString)
     }
 
     @MainActor
     private static func resolveVendorId(manual: String?) async -> String? {
-        let automatic = UIDevice.current.identifierForVendor?.uuidString
-        return normalize(automatic) ?? normalize(manual)
+        if let manual = normalize(manual) { return manual }
+        return normalize(UIDevice.current.identifierForVendor?.uuidString)
     }
 
     private static func normalize(_ value: String?) -> String? {
