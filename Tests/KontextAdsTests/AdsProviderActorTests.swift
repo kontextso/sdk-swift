@@ -75,6 +75,45 @@ struct AdsProviderActorTests {
     }
 
     @Test
+    func testIFAPassedToPreload() async throws {
+        let adsServerAPI = MockAdsServerAPI()
+        let provider = await AdsProviderActor(
+            configuration: .minimal,
+            sessionId: nil,
+            isDisabled: false,
+            adsServerAPI: adsServerAPI,
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
+        )
+
+        await provider.setIFA(advertisingId: "test-idfa", vendorId: "test-idfv")
+        await provider.setMessages(messages: AdsMessage.variation1)
+
+        #expect(adsServerAPI.preloadAdvertisingId == "test-idfa")
+        #expect(adsServerAPI.preloadVendorId == "test-idfv")
+    }
+
+    @Test
+    func testNilIFAPassedToPreloadWhenNotSet() async throws {
+        let adsServerAPI = MockAdsServerAPI()
+        let provider = await AdsProviderActor(
+            configuration: .minimal,
+            sessionId: nil,
+            isDisabled: false,
+            adsServerAPI: adsServerAPI,
+            urlOpener: MockURLOpener(),
+            skOverlayPresenter: MockSKOverlayPresenter(),
+            skStoreProductPresenter: MockSKStoreProductPresenter()
+        )
+
+        await provider.setMessages(messages: AdsMessage.variation1)
+
+        #expect(adsServerAPI.preloadAdvertisingId == nil)
+        #expect(adsServerAPI.preloadVendorId == nil)
+    }
+
+    @Test
     func testAdNoFillSent() async throws {
         let adsServerAPI = MockAdsServerAPI(.adNotAvailable)
         let delegate = MockAdsProviderActingDelegate()
