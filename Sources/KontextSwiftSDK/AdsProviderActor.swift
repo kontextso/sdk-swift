@@ -140,11 +140,11 @@ extension AdsProviderActor: AdsProviderActing {
             // if the parent task is cancelled before the child tasks complete.
             let preloadedData: PreloadedData = try await withThrowingTaskGroup(of: PreloadedData?.self) { group in
                 group.addTask { try await Task.sleep(seconds: 1); return nil }
-                group.addTask {
+                group.addTask { [messagesToSend] in
                     try await self.preloadWithTimeout(
                         timeout: self.preloadTimeout,
                         sessionId: self.sessionId,
-                        configuration: configuration,
+                        configuration: self.configuration,
                         isDisabled: self.isDisabled,
                         advertisingId: self.resolvedAdvertisingId,
                         vendorId: self.resolvedVendorId,
