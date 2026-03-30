@@ -135,18 +135,39 @@ extension AdsProviderActor: AdsProviderActing {
 
         lastPreloadUserMessageId = lastUserMessage.id
         do {
-            async let sleep: Void = Task.sleep(seconds: 1)
-            async let preload = preloadWithTimeout(
-                timeout: preloadTimeout,
-                sessionId: sessionId,
-                configuration: configuration,
-                isDisabled: isDisabled,
-                advertisingId: resolvedAdvertisingId,
-                vendorId: resolvedVendorId,
-                api: adsServerAPI,
-                messages: messagesToSend
-            )
-            let (_, preloadedData) = try await (sleep, preload)
+            // withThrowingTaskGroup is used instead of async let to safely handle
+            // task cancellation on iOS 26+, where async let causes a fatal crash
+            // if the parent task is cancelled before the child tasks complete.
+            let preloadedData: PreloadedData = try await withThrowingTaskGroup(of: PreloadedData?.self) { group in
+                group.addTask { try await Task.sleep(seconds: 1); return nil }
+                group.addTask { [
+                    messagesToSend,
+                    timeout = preloadTimeout,
+                    sessionId,
+                    configuration,
+                    isDisabled,
+                    advertisingId = resolvedAdvertisingId,
+                    vendorId = resolvedVendorId,
+                    api = adsServerAPI
+                ] in
+                    try await self.preloadWithTimeout(
+                        timeout: timeout,
+                        sessionId: sessionId,
+                        configuration: configuration,
+                        isDisabled: isDisabled,
+                        advertisingId: advertisingId,
+                        vendorId: vendorId,
+                        api: api,
+                        messages: messagesToSend
+                    )
+                }
+                var result: PreloadedData?
+                for try await value in group {
+                    if let value { result = value }
+                }
+                group.cancelAll()
+                return result!
+            }
 
             // Bail out if a newer setMessages call arrived while we were suspended.
             // The new call has already overwritten lastPreloadUserMessageId, so our
