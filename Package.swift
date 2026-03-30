@@ -14,7 +14,7 @@ let package = Package(
     targets: [
         .target(
             name: "KontextSwiftSDK",
-            dependencies: ["OMSDK_Megabrainco"],
+            dependencies: ["OMSDK_Kontextso"],
             resources: [
                 .copy("PrivacyInfo.xcprivacy"),
                 .copy("OMSDK/omsdk-v1.js")
@@ -28,8 +28,8 @@ let package = Package(
             ]
         ),
         .binaryTarget(
-            name: "OMSDK_Megabrainco",
-            path: "Frameworks/OMSDK_Megabrainco.xcframework"
+            name: "OMSDK_Kontextso",
+            path: "Frameworks/OMSDK_Kontextso.xcframework"
         ),
         .testTarget(
             name: "KontextSwiftSDKTests",
