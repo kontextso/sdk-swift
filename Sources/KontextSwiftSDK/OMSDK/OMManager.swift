@@ -1,6 +1,6 @@
 import Foundation
 import WebKit
-@preconcurrency import OMSDK_Megabrainco
+@preconcurrency import OMSDK_Kontextso
 
 enum OMEvent: Sendable {
     /// Fired by WKNavigationDelegate.didFinish — the web view's main frame HTML has loaded
@@ -25,7 +25,7 @@ final class OMManager: OMManaging {
     }
 
     /// Used to identify integration
-    private let partner = OMIDMegabraincoPartner(
+    private let partner = OMIDKontextsoPartner(
         name: Constants.omPartnerName,
         versionString: Constants.omIntegrationVersion
     )
@@ -36,7 +36,7 @@ final class OMManager: OMManaging {
             return true
         }
 
-        OMIDMegabraincoSDK.shared.activate()
+        OMIDKontextsoSDK.shared.activate()
 
         return isActive
     }
@@ -52,7 +52,7 @@ final class OMManager: OMManaging {
         }
 
         do {
-            let context = try OMIDMegabraincoAdSessionContext(
+            let context = try OMIDKontextsoAdSessionContext(
                 partner: partner,
                 webView: webView,
                 contentUrl: url?.absoluteString,
@@ -73,7 +73,7 @@ final class OMManager: OMManaging {
                 mediaEventsOwner = .javaScriptOwner
             }
 
-            let configuration = try OMIDMegabraincoAdSessionConfiguration(
+            let configuration = try OMIDKontextsoAdSessionConfiguration(
                 creativeType: omCreativeType,
                 impressionType: .beginToRender,
                 impressionOwner: impressionOwner,
@@ -81,7 +81,7 @@ final class OMManager: OMManaging {
                 isolateVerificationScripts: false
             )
 
-            let session = try OMIDMegabraincoAdSession(
+            let session = try OMIDKontextsoAdSession(
                 configuration: configuration,
                 adSessionContext: context
             )
@@ -98,21 +98,21 @@ final class OMManager: OMManaging {
 
 private extension OMManager {
     var isActive: Bool {
-        OMIDMegabraincoSDK.shared.isActive
+        OMIDKontextsoSDK.shared.isActive
     }
 }
 
 // MARK: - OMSession
 
 final class OMSession {
-    private let session: OMIDMegabraincoAdSession
+    private let session: OMIDKontextsoAdSession
     private let webView: WKWebView
-    private let adEvents: OMIDMegabraincoAdEvents
+    private let adEvents: OMIDKontextsoAdEvents
 
-    init(session: OMIDMegabraincoAdSession, webView: WKWebView) throws {
+    init(session: OMIDKontextsoAdSession, webView: WKWebView) throws {
         self.session = session
         self.webView = webView
-        self.adEvents = try OMIDMegabraincoAdEvents(adSession: session)
+        self.adEvents = try OMIDKontextsoAdEvents(adSession: session)
     }
 
     func start() {
