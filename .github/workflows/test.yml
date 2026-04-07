@@ -11,7 +11,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: List available simulators
         run: xcrun simctl list devices available
