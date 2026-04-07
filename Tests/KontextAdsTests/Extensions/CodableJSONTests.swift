@@ -38,6 +38,13 @@ struct CodableJSONTests {
     }
 
     @Test
+    func decodeFromJSONThrowsForInvalidJSONObject() throws {
+        #expect(throws: DecodingError.self) {
+            try Person(fromJSON: "just a string")
+        }
+    }
+
+    @Test
     func roundtrip() throws {
         let original = Person(name: "Charlie", age: 40)
         let json = try original.encodeToJSON()
