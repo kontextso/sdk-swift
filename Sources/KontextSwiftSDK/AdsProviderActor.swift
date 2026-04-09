@@ -127,6 +127,7 @@ extension AdsProviderActor: AdsProviderActing {
                     os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
                 }
             }
+            deactivateAudioSessionIfNeeded()
             await reset()
             notifyAdsCleared()
         } else {
