@@ -43,6 +43,7 @@ actor AdsProviderActor {
     private let skStoreProductPresenter: any SKStoreProductPresenting
     private weak var delegate: AdsProviderActingDelegate?
     private var skanOwner: (stateId: UUID, bidId: UUID)?
+    private let omAudioSessionHelper = OMAudioSessionHelper()
 
     // stateId waiting for start after init
     private var pendingStart: UUID?
@@ -126,6 +127,7 @@ extension AdsProviderActor: AdsProviderActing {
                     os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
                 }
             }
+            deactivateAudioSessionIfNeeded()
             await reset()
             notifyAdsCleared()
         } else {
@@ -230,6 +232,7 @@ extension AdsProviderActor: AdsProviderActing {
                 os_log("[\(ts)] [OMID] Session finished in reset (\(state.creativeType.rawValue)) for stateId: \(state.stateId)")
             }
         }
+        deactivateAudioSessionIfNeeded()
         bids = []
         states = []
     }
@@ -545,6 +548,7 @@ private extension AdsProviderActor {
             state.session.finish()
         }
         os_log("[\(ts)] [OMID] Session finished (\(state.creativeType.rawValue)) for stateId: \(stateId)")
+        deactivateAudioSessionIfNeeded()
         try? await Task.sleep(seconds: 1)
     }
 
@@ -628,6 +632,7 @@ private extension AdsProviderActor {
                 existingSession.finish()
             }
             omSessions.remove(at: existingIndex)
+            deactivateAudioSessionIfNeeded()
             return
         }
 
@@ -654,6 +659,11 @@ private extension AdsProviderActor {
 
     func startOMSession(webView: WKWebView, url: URL?, stateId: UUID, creativeType: OmCreativeType) async {
         do {
+            // Activate audio session for video ads so the OMID SDK can detect device volume changes.
+            if creativeType == .video {
+                await MainActor.run { omAudioSessionHelper.activate() }
+            }
+
             let omSession = try await MainActor.run {
                 let session = try omService.createSession(webView, url: url, creativeType: creativeType)
                 session.start()
@@ -663,6 +673,15 @@ private extension AdsProviderActor {
             omSessions.append(newState)
         } catch {
             os_log("OM failed to start: \(String(describing: error))")
+            deactivateAudioSessionIfNeeded()
+        }
+    }
+
+    /// Deactivates the audio session when no video OM sessions remain.
+    private func deactivateAudioSessionIfNeeded() {
+        let hasVideoSessions = omSessions.contains(where: { $0.creativeType == .video })
+        if !hasVideoSessions {
+            Task { @MainActor in omAudioSessionHelper.deactivate() }
         }
     }
 }
