@@ -56,9 +56,14 @@ public final class InlineAdUIView: UIView {
 
 private extension InlineAdUIView {
     func setupUI() {
+        let mergedAdWebViewEvents = Publishers.Merge(
+            adWebViewEventsSubject.eraseToAnyPublisher(),
+            viewModel.ad.webViewData.webViewEvents
+        ).eraseToAnyPublisher()
+
         let adWebView = AdWebView(
             updateIframeData: viewModel.ad.webViewData.updateData,
-            eventPublisher: adWebViewEventsSubject.eraseToAnyPublisher(),
+            eventPublisher: mergedAdWebViewEvents,
             onIFrameEvent: { [weak self] event in
                 guard let self else {
                     return

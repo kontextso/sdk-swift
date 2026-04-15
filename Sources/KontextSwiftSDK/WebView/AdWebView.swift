@@ -7,6 +7,7 @@ import WebKit
 /// Events targeted for AdWebView
 enum AdWebViewUpdateEvent {
     case didPrepareUpdateDimensions(UpdateDimensionsIFrameDataDTO)
+    case didSendUserEvent(UserEventIFrameDTO)
 }
 
 // MARK: - AdWebView
@@ -138,10 +139,13 @@ final class AdWebView: WKWebView {
 private extension AdWebView {
     func observeEvents() {
         eventPublisher?
+            .receive(on: RunLoop.main)
             .sink { [weak self] event in
                 switch event {
                 case .didPrepareUpdateDimensions(let data):
-                    self?.sendUpdateIframe(data: data)
+                    self?.postMessage(data)
+                case .didSendUserEvent(let data):
+                    self?.postMessage(data)
                 }
             }
             .store(in: &cancellables)
@@ -150,14 +154,14 @@ private extension AdWebView {
     func sendIframeEvent(event: IframeEvent) {
         switch event {
         case .initIframe:
-            sendUpdateIframe(data: updateIframeData)
+            postMessage(updateIframeData)
         default:
             break
         }
         onIFrameEvent(event)
     }
 
-    func sendUpdateIframe<T: Encodable>(data: T?) {
+    func postMessage<T: Encodable>(_ data: T?) {
         guard let data else {
             return
         }

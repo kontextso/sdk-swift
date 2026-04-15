@@ -31,6 +31,7 @@ actor AdsProviderActor {
     /// Events published to interstitial and inline components
     private let inlineEventSubject = PassthroughSubject<InlineAdEvent, Never>()
     private let interstitialEventSubject = PassthroughSubject<InterstitialAdEvent, Never>()
+    private let adWebViewEventSubject: PassthroughSubject<AdWebViewUpdateEvent, Never>
     private var interstitialTimeoutTask: Task<Void, Never>?
 
     /// Initial configuration passed down by AdsProvider.
@@ -64,6 +65,7 @@ actor AdsProviderActor {
         adsServerAPI: AdsServerAPI,
         urlOpener: URLOpening,
         omService: OMManaging,
+        adWebViewEventSubject: PassthroughSubject<AdWebViewUpdateEvent, Never>,
         skAdNetworkManager: any SKAdNetworkManaging = DefaultSKAdNetworkManager.shared,
         skOverlayPresenter: any SKOverlayPresenting,
         skStoreProductPresenter: any SKStoreProductPresenting
@@ -74,6 +76,7 @@ actor AdsProviderActor {
         self.adsServerAPI = adsServerAPI
         self.urlOpener = urlOpener
         self.omService = omService
+        self.adWebViewEventSubject = adWebViewEventSubject
         self.skAdNetworkManager = skAdNetworkManager
         self.skOverlayPresenter = skOverlayPresenter
         self.skStoreProductPresenter = skStoreProductPresenter
@@ -215,6 +218,14 @@ extension AdsProviderActor: AdsProviderActing {
                         errCode: ""
                     )
                 )
+            )
+        }
+    }
+
+    func sendUserEvent(name: UserEventName) async {
+        await MainActor.run {
+            adWebViewEventSubject.send(
+                .didSendUserEvent(UserEventIFrameDTO(data: .init(name: name)))
             )
         }
     }
@@ -384,6 +395,7 @@ private extension AdsProviderActor {
                     )
                 }
             },
+            webViewEvents: adWebViewEventSubject.eraseToAnyPublisher(),
             events: inlineEventSubject.eraseToAnyPublisher()
         )
     }
@@ -925,6 +937,7 @@ private extension AdsProviderActor {
             let params = await InterstitialAdView.Params(
                 url: url,
                 events: interstitialEventSubject.eraseToAnyPublisher(),
+                webViewEvents: adWebViewEventSubject.eraseToAnyPublisher(),
                 onIFrameEvent: { [weak self] event in
                     Task {
                         await self?.handleInterstitialIframeEvent(

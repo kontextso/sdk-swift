@@ -51,11 +51,13 @@ public final class AdsProvider: @unchecked Sendable {
         isDisabled: Bool = false,
         delegate: AdsProviderDelegate? = nil
     ) {
+        let adWebViewEventSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
         self.configuration = configuration
         self.dependencies = DependencyContainer.defaultContainer(
             configuration: configuration,
             sessionId: sessionId,
-            isDisabled: isDisabled
+            isDisabled: isDisabled,
+            adWebViewEventSubject: adWebViewEventSubject
         )
         self.delegate = delegate
         self.eventSubject = PassthroughSubject<AdsEvent, Never>()
@@ -131,6 +133,16 @@ public final class AdsProvider: @unchecked Sendable {
     public func disable() {
         Task {
             await dependencies.adsProviderActing.setDisabled(true)
+        }
+    }
+
+    /// Broadcasts a publisher-originated user event into every currently mounted ad WebView.
+    ///
+    /// The event is delivered only to ad surfaces that are currently mounted. Events are not
+    /// buffered for future ads.
+    public func sendUserEvent(name: UserEventName) {
+        Task {
+            await dependencies.adsProviderActing.sendUserEvent(name: name)
         }
     }
 }

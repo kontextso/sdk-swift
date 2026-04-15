@@ -10,12 +10,14 @@ struct InterstitialAdView: View {
         let id: UUID = UUID()
         let url: URL
         let events: AnyPublisher<InterstitialAdEvent, Never>
+        let webViewEvents: AnyPublisher<AdWebViewUpdateEvent, Never>
         let onIFrameEvent: (IframeEvent) -> Void
         let onOMEvent: (OMEvent) -> Void
     }
 
     @StateObject private var viewModel: InterstitialAdViewModel
     private let events: AnyPublisher<InterstitialAdEvent, Never>
+    private let webViewEvents: AnyPublisher<AdWebViewUpdateEvent, Never>
     private var onIFrameEvent: (IframeEvent) -> Void
     private var onOMEvent: (OMEvent) -> Void
 
@@ -27,6 +29,7 @@ struct InterstitialAdView: View {
             )
         )
         self.events = params.events
+        self.webViewEvents = params.webViewEvents
         self.onIFrameEvent = params.onIFrameEvent
         self.onOMEvent = params.onOMEvent
     }
@@ -36,7 +39,7 @@ struct InterstitialAdView: View {
             AdWebViewRepresentable(
                 url: viewModel.url,
                 updateIFrameData: nil,
-                eventPublisher: nil,
+                eventPublisher: webViewEvents,
                 onIFrameEvent: { onIFrameEvent($0) },
                 onOMEvent: onOMEvent
             )

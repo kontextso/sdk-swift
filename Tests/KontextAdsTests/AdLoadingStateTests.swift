@@ -46,6 +46,7 @@ private func makeWebViewData(
         onIFrameEvent: { _ in },
         onOMEvent: { _ in },
         onDispose: onDispose,
+        webViewEvents: Empty<AdWebViewUpdateEvent, Never>().eraseToAnyPublisher(),
         events: Empty<InlineAdEvent, Never>().eraseToAnyPublisher()
     )
 }

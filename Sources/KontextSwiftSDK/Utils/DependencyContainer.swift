@@ -1,3 +1,4 @@
+@preconcurrency import Combine
 import UIKit
 
 struct DependencyContainer: Sendable {
@@ -22,7 +23,8 @@ struct DependencyContainer: Sendable {
     static func defaultContainer(
         configuration: AdsProviderConfiguration,
         sessionId: String?,
-        isDisabled: Bool
+        isDisabled: Bool,
+        adWebViewEventSubject: PassthroughSubject<AdWebViewUpdateEvent, Never>
     ) -> DependencyContainer {
         let networking = Network()
         let omService = OMManager()
@@ -37,6 +39,7 @@ struct DependencyContainer: Sendable {
             adsServerAPI: adsServerAPI,
             urlOpener: UIApplication.shared,
             omService: omService,
+            adWebViewEventSubject: adWebViewEventSubject,
             skAdNetworkManager: DefaultSKAdNetworkManager.shared,
             skOverlayPresenter: SKOverlayManager.shared,
             skStoreProductPresenter: SKStoreProductManager.shared

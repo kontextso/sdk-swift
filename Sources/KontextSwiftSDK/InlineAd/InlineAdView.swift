@@ -31,10 +31,15 @@ public struct InlineAdView: View {
     public var body: some View {
         Group {
             if let url = viewModel.ad.webViewData.url {
+                let mergedAdWebViewEvents = Publishers.Merge(
+                    adWebViewEventsSubject.eraseToAnyPublisher(),
+                    viewModel.ad.webViewData.webViewEvents
+                ).eraseToAnyPublisher()
+
                 AdWebViewRepresentable(
                     url: url,
                     updateIFrameData: viewModel.ad.webViewData.updateData,
-                    eventPublisher: adWebViewEventsSubject.eraseToAnyPublisher(),
+                    eventPublisher: mergedAdWebViewEvents,
                     onIFrameEvent: { event in
                         viewModel.ad.webViewData.onIFrameEvent(event)
                     },

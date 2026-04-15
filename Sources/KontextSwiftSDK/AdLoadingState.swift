@@ -31,6 +31,8 @@ extension AdLoadingState {
         let onOMEvent: @Sendable (OMEvent) -> Void
         /// Called when the ad web view is removed
         let onDispose: @Sendable () -> Void
+        /// Shared update stream for messages that should reach the mounted WebView.
+        let webViewEvents: AnyPublisher<AdWebViewUpdateEvent, Never>
         /// Stream of events from the inline ad
         let events: AnyPublisher<InlineAdEvent, Never>
 
