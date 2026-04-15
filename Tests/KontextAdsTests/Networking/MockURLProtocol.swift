@@ -29,6 +29,13 @@ final class MockURLProtocol: URLProtocol, @unchecked Sendable {
         }
     }
 
+    /// Clears only the captured-requests log, leaving the host handler map
+    /// intact. Prefer this in tests that run in parallel with other MockURLProtocol
+    /// consumers — calling `reset()` would wipe their handlers out from under them.
+    static func resetCapturedRequests() {
+        lock.sync { _capturedRequests.removeAll() }
+    }
+
     static var capturedRequests: [URLRequest] {
         lock.sync { _capturedRequests }
     }

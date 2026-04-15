@@ -31,7 +31,7 @@ struct NetworkTests {
 
     @Test
     func successfulPOSTReturnsDecodedResponse() async throws {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             let data = #"{"ok": true}"#.data(using: .utf8)!
             let response = HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 200, httpVersion: nil, headerFields: nil)
@@ -50,7 +50,7 @@ struct NetworkTests {
 
     @Test
     func voidRequestSucceedsAndIgnoresBody() async throws {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             let data = Data()
             let response = HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 204, httpVersion: nil, headerFields: nil)
@@ -70,7 +70,7 @@ struct NetworkTests {
 
     @Test
     func usesCorrectHTTPMethod() async throws {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             (nil, HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 200, httpVersion: nil, headerFields: nil), nil)
         }
@@ -81,7 +81,7 @@ struct NetworkTests {
 
     @Test
     func setsHeadersFromHTTPHeaderFieldEnum() async throws {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             (nil, HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 200, httpVersion: nil, headerFields: nil), nil)
         }
@@ -109,7 +109,7 @@ struct NetworkTests {
 
     @Test
     func isDisabledHeaderEmitsZeroForFalse() async throws {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             (nil, HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 200, httpVersion: nil, headerFields: nil), nil)
         }
@@ -126,7 +126,7 @@ struct NetworkTests {
     @Test
     func encodesBodyWithMillisecondsDateStrategy() async throws {
         struct DatedBody: Encodable { let ts: Date }
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             (nil, HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 200, httpVersion: nil, headerFields: nil), nil)
         }
@@ -163,7 +163,7 @@ struct NetworkTests {
 
     @Test
     func mapsTransportFailureToRequestFailed() async {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             (nil, nil, URLError(.notConnectedToInternet))
         }
@@ -186,7 +186,7 @@ struct NetworkTests {
 
     @Test
     func mapsNon2xxStatusToInvalidResponseWithCode() async {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             let data = Data()
             let response = HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 418, httpVersion: nil, headerFields: nil)
@@ -211,7 +211,7 @@ struct NetworkTests {
 
     @Test
     func mapsDecodingFailureToDecodingError() async {
-        MockURLProtocol.reset()
+        MockURLProtocol.resetCapturedRequests()
         MockURLProtocol.register(forHost: "example.com") { _ in
             let data = "this is not json".data(using: .utf8)!
             let response = HTTPURLResponse(url: URL(string: "https://example.com/endpoint")!, statusCode: 200, httpVersion: nil, headerFields: nil)
