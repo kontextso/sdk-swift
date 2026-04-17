@@ -11,6 +11,7 @@ final class MyMessagesTableViewController: UITableViewController {
     private var messages: [MyMessage]
     private var ads: [Advertisement] = []
     private var viewModels: [CellViewModel]
+    private var messageCount: Int = 0
 
     private let sendButton: UIButton = {
         let button = UIButton(type: .system)
@@ -83,14 +84,35 @@ final class MyMessagesTableViewController: UITableViewController {
 
 }
 
-// MARK: - Mock message sending
+// MARK: - Polybuzz simulation (KON-1580)
+// Simulates Polybuzz's flow: multiple message exchanges, no .cleared handling.
 
 private extension MyMessagesTableViewController {
+    static let userMessages = [
+        "Hello my smart helpful assistant, how are you?",
+        "Can you recommend a good restaurant nearby?",
+        "What about Italian food?",
+        "Do they have outdoor seating?",
+        "Great, can you book a table for two?",
+        "What time works best for dinner?",
+    ]
+
+    static let assistantMessages = [
+        "I'm doing well, thank you for asking!",
+        "Sure! There are several great options in your area.",
+        "There's a wonderful Italian place called Trattoria Roma.",
+        "Yes, they have a beautiful patio with garden views!",
+        "I'd be happy to help with that reservation.",
+        "Most people prefer between 7-8 PM for dinner.",
+    ]
+
     @objc func addMessage() {
+        guard messageCount < Self.userMessages.count else { return }
+
         let message = MyMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello my smart helpful assistant, how are you?",
+            content: Self.userMessages[messageCount],
             createdAt: Date()
         )
         messages.append(message)
@@ -98,16 +120,23 @@ private extension MyMessagesTableViewController {
         self.prepareViewModels()
         tableView.reloadData()
 
+        let responseIndex = messageCount
+        messageCount += 1
+        sendButton.setTitle("Send Message (\(messageCount + 1)/\(Self.userMessages.count))", for: .normal)
+        sendButton.isEnabled = messageCount < Self.userMessages.count
+
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
-            self.handleAssistantResponse()
+            self.handleAssistantResponse(index: responseIndex)
         }
     }
 
-    func handleAssistantResponse() {
+    func handleAssistantResponse(index: Int) {
+        guard index < Self.assistantMessages.count else { return }
+
         let assistantMessage = MyMessage(
             id: UUID().uuidString,
             role: .assistant,
-            content: "I'm doing well, thank you for asking!",
+            content: Self.assistantMessages[index],
             createdAt: Date()
         )
         messages.append(assistantMessage)
@@ -132,16 +161,17 @@ private extension MyMessagesTableViewController {
 
 extension MyMessagesTableViewController: AdsProviderDelegate {
     func adsProvider(_ adsProvider: AdsProvider, didReceiveEvent event: AdsEvent) {
-        print(event.name)
+        print("[Polybuzz sim] Event: \(event.name)")
         switch event {
         case .filled(let ads):
             self.ads = ads
             self.prepareViewModels()
             self.tableView.reloadData()
-        case .cleared:
-            self.ads = []
-            self.prepareViewModels()
-            self.tableView.reloadData()
+        // NOTE: Polybuzz does NOT handle .cleared — they don't cache ads locally
+        // case .cleared:
+        //     self.ads = []
+        //     self.prepareViewModels()
+        //     self.tableView.reloadData()
         case .adHeight:
             self.tableView.beginUpdates()
             self.tableView.endUpdates()

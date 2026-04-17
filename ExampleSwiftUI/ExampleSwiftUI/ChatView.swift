@@ -15,14 +15,35 @@ struct ChatMessage: Identifiable, MessageRepresentable {
     let createdAt: Date = Date()
 }
 
-// Example
+// Example — simulates Polybuzz's flow (KON-1580):
+// - Ads shown after every 2nd/3rd message exchange
+// - Does NOT handle .cleared events (Polybuzz doesn't cache ads locally)
+// - Calls setMessages() on every user + assistant message
 struct ChatView: View {
     @State private var adsProvider: AdsProvider
     @State private var messages: [ChatMessage] = []
     @State private var ads: [Advertisement] = []
+    @State private var messageCount: Int = 0
+
+    private let userMessages = [
+        "Hello my smart helpful assistant, how are you?",
+        "Can you recommend a good restaurant nearby?",
+        "What about Italian food?",
+        "Do they have outdoor seating?",
+        "Great, can you book a table for two?",
+        "What time works best for dinner?",
+    ]
+
+    private let assistantMessages = [
+        "I'm doing well, thank you for asking!",
+        "Sure! There are several great options in your area.",
+        "There's a wonderful Italian place called Trattoria Roma.",
+        "Yes, they have a beautiful patio with garden views!",
+        "I'd be happy to help with that reservation.",
+        "Most people prefer between 7-8 PM for dinner.",
+    ]
 
     init() {
-        // 1. Prepare Character information about the assistant (if any)
         let character = Character(
             id: "1",
             name: "Assistant",
@@ -33,9 +54,7 @@ struct ChatView: View {
             tags: ["friendly", "professional"]
         )
 
-        // 2. Create configuration with publisher token and relevant conversation data
         let configuration = AdsProviderConfiguration(
-            // Replace publisher token with your own to try out
             publisherToken: "<publisher-token>",
             userId: "1",
             conversationId: "1",
@@ -45,20 +64,18 @@ struct ChatView: View {
             otherParams: ["theme": "dark"]
         )
 
-        // 3. Create AdsProvider associated to this conversation
-        // Multiple instances can be created, for each conversation one
         _adsProvider = State(initialValue: AdsProvider(
             configuration: configuration
         ))
     }
-    
+
     var body: some View {
         VStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(messages, id: \.id) { message in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(message.content)
+                            Text("\(message.role == .user ? "You" : "Assistant"): \(message.content)")
                                 .padding()
                                 .background(message.role == .user ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
                                 .cornerRadius(8)
@@ -72,23 +89,24 @@ struct ChatView: View {
                 .padding()
             }
 
-            Button("Send Message") {
+            Button("Send Message (\(messageCount + 1)/\(userMessages.count))") {
                 sendMessage()
             }
+            .disabled(messageCount >= userMessages.count)
             .padding()
         }
         .onReceive(adsProvider.eventPublisher) { event in
-            print(event.name)
+            print("[Polybuzz sim] Event: \(event.name)")
             switch event {
             case .filled(let newAds):
                 ads = newAds
-            case .cleared:
-                ads = []
+            // NOTE: Polybuzz does NOT handle .cleared — they don't cache ads locally
+            // case .cleared:
+            //     ads = []
             case .adHeight(let newAd):
                 guard let index = ads.firstIndex(where: { $0.id == newAd.id }) else {
                     return
                 }
-
                 ads[index] = newAd
             default:
                 break
@@ -97,29 +115,33 @@ struct ChatView: View {
     }
 
     private func sendMessage() {
-        // Simulate user message
+        guard messageCount < userMessages.count else { return }
+
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            content: "Hello my smart helpful assistant, how are you?"
+            content: userMessages[messageCount]
         )
 
         messages.append(userMessage)
         adsProvider.setMessages(messages)
 
+        let responseIndex = messageCount
+        messageCount += 1
+
         Task {
-            // Simulate assistant response
-            try await Task.sleep(nanoseconds: 1_000_000_0)
-            handleAssistantResponse()
+            try await Task.sleep(nanoseconds: 2_000_000_000)
+            handleAssistantResponse(index: responseIndex)
         }
     }
 
-    private func handleAssistantResponse() {
-        // Simulate assistant message
+    private func handleAssistantResponse(index: Int) {
+        guard index < assistantMessages.count else { return }
+
         let assistantMessage = ChatMessage(
             id: UUID().uuidString,
             role: .assistant,
-            content: "I'm doing well, thank you for asking!"
+            content: assistantMessages[index]
         )
 
         messages.append(assistantMessage)
