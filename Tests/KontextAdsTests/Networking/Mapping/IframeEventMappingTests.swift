@@ -146,6 +146,34 @@ struct IframeEventMappingTests {
 
     // MARK: - EventIframeDataDTO wrapper
 
+    // MARK: - JSON decoding (webview → DTO)
+
+    /// The webview emits event names that must match `TypeName` raw values exactly.
+    /// If they drift, `init(from:)` silently falls through to `.event(dictionary)`.
+    @Test
+    func decodesKnownEventNamesToTypedCases() throws {
+        func decode(_ json: String) throws -> EventIframeDataDTO {
+            try JSONDecoder().decode(EventIframeDataDTO.self, from: Data(json.utf8))
+        }
+
+        let bidId = UUID().uuidString
+        let generalPayload = #"{"id":"\#(bidId)"}"#
+
+        let renderStarted = try decode(#"{"name":"ad.render-started","code":"inlineAd","payload":\#(generalPayload)}"#)
+        if case .renderStarted(let p) = renderStarted.type { #expect(p?.id == UUID(uuidString: bidId)) }
+        else { Issue.record("render-started decoded as \(renderStarted.type)") }
+
+        let renderCompleted = try decode(#"{"name":"ad.render-completed","code":"inlineAd","payload":\#(generalPayload)}"#)
+        if case .renderCompleted(let p) = renderCompleted.type { #expect(p?.id == UUID(uuidString: bidId)) }
+        else { Issue.record("render-completed decoded as \(renderCompleted.type)") }
+
+        let viewed = try decode(#"{"name":"ad.viewed","code":"inlineAd","payload":{"id":"\#(bidId)","content":"c","messageId":"m"}}"#)
+        if case .viewed = viewed.type {} else { Issue.record("viewed decoded as \(viewed.type)") }
+
+        let unknown = try decode(#"{"name":"ad.something-new","code":"inlineAd","payload":{"foo":"bar"}}"#)
+        if case .event = unknown.type {} else { Issue.record("unknown decoded as \(unknown.type)") }
+    }
+
     @Test
     func eventIframeDataDTOToModelDelegatesToTypeDTO() {
         let dto = EventIframeDataDTO(

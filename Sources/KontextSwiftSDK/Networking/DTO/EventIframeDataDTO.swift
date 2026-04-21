@@ -14,8 +14,8 @@ struct EventIframeDataDTO: Decodable, Hashable {
     enum TypeName: String {
         case viewed = "ad.viewed"
         case clicked = "ad.clicked"
-        case renderStarted = "ad.renderStarted"
-        case renderCompleted = "ad.render"
+        case renderStarted = "ad.render-started"
+        case renderCompleted = "ad.render-completed"
         case error = "ad.error"
         case rewardGranted = "reward.granted"
         case videoStarted = "video.started"
