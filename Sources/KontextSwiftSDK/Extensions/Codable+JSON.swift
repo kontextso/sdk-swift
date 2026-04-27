@@ -16,6 +16,14 @@ extension Encodable {
 
 extension Decodable {
     init(fromJSON json: Any) throws {
+        guard JSONSerialization.isValidJSONObject(json) else {
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: [],
+                    debugDescription: "Invalid JSON object: \(type(of: json)) is not serializable"
+                )
+            )
+        }
         let data = try JSONSerialization.data(withJSONObject: json, options: [])
         self = try JSONDecoder().decode(Self.self, from: data)
     }
