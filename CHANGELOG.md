@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.1
+* Fix crash in `AdScriptMessageHandler` when `WKScriptMessage.body` is not a valid JSON top-level object (e.g. a raw `String` posted by a third-party ad creative). `JSONSerialization.data(withJSONObject:)` was raising an Objective-C `NSException` that Swift `try/catch` could not catch; the bridge now validates with `JSONSerialization.isValidJSONObject` first and throws a catchable `DecodingError` instead.
+
 ## 2.1.0
 * Add `requestTrackingAuthorization` option to `AdsProviderConfiguration` — set to `false` to suppress the SDK's ATT prompt and manage it yourself.
 * Fix manually supplied `advertisingId`/`vendorId` now correctly take priority over automatically collected values.
