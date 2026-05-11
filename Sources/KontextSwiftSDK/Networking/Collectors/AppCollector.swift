@@ -1,4 +1,3 @@
-import Foundation
 import KontextKit
 
 /// Builds the `AppDTO` snapshot embedded in `PreloadRequestDTO.app`.

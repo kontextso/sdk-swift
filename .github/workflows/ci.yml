@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: SwiftLint version
+        run: swiftlint --version
+
+      - name: Run SwiftLint
+        run: swiftlint lint --reporter github-actions-logging
+
+      - name: Build for SwiftLint analyze
+        run: |
+          set -o pipefail
+          # Clean build (no -quiet) so the log includes per-file swiftc
+          # invocations — `swiftlint analyze` parses those to find sources.
+          # `generic/platform=iOS Simulator` doesn't require a concrete
+          # simulator instance — robust across Xcode/runner versions.
+          xcodebuild clean build \
+            -scheme KontextSwiftSDK \
+            -destination 'generic/platform=iOS Simulator' \
+            -skipPackagePluginValidation \
+            > xcodebuild.log 2>&1 || (tail -100 xcodebuild.log; exit 1)
+
+      - name: Run SwiftLint analyze
+        run: swiftlint analyze --compiler-log-path xcodebuild.log --reporter github-actions-logging
+
+  test:
+    name: Run tests
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme KontextSwiftSDK \
+            -destination 'platform=iOS Simulator,OS=18.5,name=iPhone 16' \
+            CODE_SIGNING_ALLOWED=NO
