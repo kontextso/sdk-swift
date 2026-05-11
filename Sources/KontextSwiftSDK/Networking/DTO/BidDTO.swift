@@ -1,113 +1,46 @@
 import Foundation
+import KontextKit
 
-struct BidDTO: Decodable {
-    let bidId: String
+/// Wire-format bid as decoded from the `/preload` response.
+/// Convert to the SDK-internal `Bid` domain type via `toBid()`.
+///
+/// Strict on identity (`bidId: UUID`, `code: String`) — a malformed
+/// required field is treated as a server bug and fails the whole
+/// response decode rather than silently producing a half-broken bid.
+/// Tolerant on optional metadata (`revenue`, `impressionTrigger`,
+/// `creativeType`, `skan`) — unknown enum values or type mismatches
+/// fall back to nil so server-side additions don't break old SDKs.
+struct BidDTO: Sendable, Decodable {
+    let bidId: UUID
     let code: String
-    let adDisplayPosition: AdDisplayPositionDTO
-    let skan: SkanDTO?
-    let impressionTrigger: ImpressionTrigger
-    let om: OmInfoDTO?
+    let revenue: Double?
+    let impressionTrigger: ImpressionTrigger?
+    let creativeType: OMCreativeType?
+    let skan: Skan?
 
-    private enum CodingKeys: String, CodingKey {
-        case bidId
-        case code
-        case adDisplayPosition
-        case skan
-        case impressionTrigger
-        case om
+    enum CodingKeys: String, CodingKey {
+        case bidId, code, revenue, impressionTrigger, creativeType, skan
     }
 
-    init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        bidId = try container.decode(String.self, forKey: .bidId)
-        code = try container.decode(String.self, forKey: .code)
-        adDisplayPosition = (try? container.decode(
-            AdDisplayPositionDTO.self,
-            forKey: .adDisplayPosition
-        )) ?? .afterAssistantMessage
-        do {
-            skan = try container.decodeIfPresent(SkanDTO.self, forKey: .skan)
-        } catch {
-            skan = nil
-        }
-        let decodedImpressionTrigger = try? container.decodeIfPresent(
-            String.self,
-            forKey: .impressionTrigger
-        )
-        impressionTrigger = ImpressionTrigger(
-            rawValue: decodedImpressionTrigger ?? ""
-        ) ?? .immediate
-        do {
-            om = try container.decodeIfPresent(OmInfoDTO.self, forKey: .om)
-        } catch {
-            om = nil
-        }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.bidId             = try c.decode(UUID.self, forKey: .bidId)
+        self.code              = try c.decode(String.self, forKey: .code)
+        self.revenue           = try? c.decode(Double.self, forKey: .revenue)
+        self.impressionTrigger = try? c.decode(ImpressionTrigger.self, forKey: .impressionTrigger)
+        self.creativeType      = try? c.decode(OMCreativeType.self, forKey: .creativeType)
+        self.skan              = try? c.decode(Skan.self, forKey: .skan)
     }
 
-    var model: Bid? {
-        guard let uuid = UUID(uuidString: bidId) else {
-            return nil
-        }
-        return Bid(
-            bidId: uuid,
+    /// Maps the wire-format bid into the SDK-internal `Bid` domain type.
+    func toBid() -> Bid {
+        Bid(
+            bidId: bidId,
             code: code,
-            adDisplayPosition: adDisplayPosition.model,
-            skan: skan?.model,
+            revenue: revenue,
             impressionTrigger: impressionTrigger,
-            creativeType: om?.model
-        )
-    }
-}
-
-struct OmInfoDTO: Decodable {
-    let creativeType: String?
-
-    var model: OmCreativeType? {
-        guard let creativeType else { return nil }
-        return OmCreativeType(rawValue: creativeType)
-    }
-}
-
-struct SkanDTO: Decodable {
-    let version: String
-    let network: String
-    let itunesItem: String
-    let sourceApp: String
-    let sourceIdentifier: String?
-    let campaign: String?
-    let fidelities: [AttributionFidelityDTO]?
-    let nonce: String?
-    let timestamp: String?
-    let signature: String?
-
-    var model: Skan {
-        Skan(
-            version: version,
-            network: network,
-            itunesItem: itunesItem,
-            sourceApp: sourceApp,
-            sourceIdentifier: sourceIdentifier,
-            campaign: campaign,
-            fidelities: fidelities?.map(\.model),
-            nonce: nonce,
-            timestamp: timestamp,
-            signature: signature
-        )
-    }
-}
-
-struct AttributionFidelityDTO: Decodable {
-    let fidelity: Int
-    let signature: String
-    let nonce: String
-    let timestamp: String
-
-    var model: AttributionFidelity {
-        AttributionFidelity(
-            fidelity: fidelity,
-            signature: signature,
-            nonce: nonce,
-            timestamp: timestamp
+            creativeType: creativeType,
+            skan: skan
         )
     }
 }

@@ -1,12 +1,18 @@
-struct ScreenDTO: Encodable {
-    /// Width in pixels
-    let width: Double
-    /// Height in pixels
-    let height: Double
-    /// Device pixel ratio, DPR, e.g. 3.0
+/// Screen and display information.
+///
+/// `width` and `height` are reported in **physical pixels**
+/// (CSS pixels × `dpr`) so the ad server receives
+/// resolution-independent dimensions.
+///
+/// `brightness` is **0–100** — the SDK normalises iOS's native
+/// `UIScreen.main.brightness` (0–1) by multiplying at the collector
+/// boundary, matching the convention used by `audio.volume` and
+/// `power.batteryLevel`.
+struct ScreenDTO: Encodable, Sendable {
+    let width: Int
+    let height: Int
     let dpr: Double
-    /// Orientation of the device, e.g. "portrait" or "landscape", can be nil
-    let orientation: ScreenOrientation?
-    /// Whether the device is in dark mode
+    let orientation: ScreenOrientation
     let darkMode: Bool
+    let brightness: Double
 }

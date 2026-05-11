@@ -1,39 +1,38 @@
 // swift-tools-version: 5.9
-
 import PackageDescription
 
 let package = Package(
     name: "KontextSwiftSDK",
-    platforms: [.iOS(.v14)],
+    platforms: [
+        .iOS(.v14)
+    ],
     products: [
         .library(
             name: "KontextSwiftSDK",
             targets: ["KontextSwiftSDK"]
-        ),
+        )
+    ],
+    dependencies: [
+        .package(url: "https://github.com/kontextso/kontextkit-ios.git", from: "0.0.1")
     ],
     targets: [
         .target(
             name: "KontextSwiftSDK",
-            dependencies: ["OMSDK_Kontextso"],
+            dependencies: [
+                .product(name: "KontextKit", package: "kontextkit-ios"),
+            ],
+            path: "Sources/KontextSwiftSDK",
             resources: [
                 .copy("PrivacyInfo.xcprivacy"),
-                .copy("OMSDK/omsdk-v1.js")
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
-            ],
-            linkerSettings: [
-                .linkedFramework("AdSupport"),
-                .linkedFramework("AppTrackingTransparency"),
             ]
         ),
-        .binaryTarget(
-            name: "OMSDK_Kontextso",
-            path: "Frameworks/OMSDK_Kontextso.xcframework"
-        ),
         .testTarget(
-            name: "KontextAdsTests",
-            dependencies: ["KontextSwiftSDK"]
+            name: "KontextSwiftSDKTests",
+            dependencies: ["KontextSwiftSDK"],
+            path: "Tests/KontextSwiftSDKTests"
         )
     ]
 )

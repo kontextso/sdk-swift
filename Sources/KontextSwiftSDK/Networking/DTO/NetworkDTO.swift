@@ -1,10 +1,25 @@
-struct NetworkDTO: Encodable {
-    /// User agent string for the network request
-    let userAgent: String?
-    /// Network connection type (wifi/cellular/ethernet/other)
+/// Network connectivity information. Server treats every field as
+/// optional, but KontextKit's `NetworkInfoProvider` always classifies
+/// `type` (falling back to `.other` when the connection is unknown,
+/// or after a 100ms `NWPathMonitor` timeout). The other three are
+/// honestly optional: iOS 16+ never has a `carrier` (CTCarrier removed),
+/// `userAgent` requires a `WKWebView` eval that can fail, and `detail`
+/// is only present on cellular.
+struct NetworkDTO: Encodable, Sendable {
     let type: NetworkType
-    /// Network technology detail (5g/lte/hspa/...)
-    let detail: NetworkDetail?
-    /// Carrier name (e.g., "T-Mobile CZ")
     let carrier: String?
+    let detail: String?
+    let userAgent: String?
+
+    init(
+        type: NetworkType,
+        carrier: String? = nil,
+        detail: String? = nil,
+        userAgent: String? = nil
+    ) {
+        self.type = type
+        self.carrier = carrier
+        self.detail = detail
+        self.userAgent = userAgent
+    }
 }

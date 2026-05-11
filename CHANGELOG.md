@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.0.0
+### Breaking
+Complete API redesign. The `AdsProvider`-centric model from v1–v2 is replaced by a session/ad pattern: `KontextAds.createSession(...)` returns a `Session`, you feed messages via `session.addMessage(...)`, then create one `Ad` per assistant message via `session.createAd(messageId:)`. Render with `InlineAdView` (SwiftUI) or `InlineAdUIView` (UIKit). See https://docs.kontext.so/sdk/v4/swift for the integration guide.
+
+* New `KontextAds`, `Session`, `Ad` entry points; `AdsProvider` and `AdsProviderConfiguration` removed.
+* Event delivery via `Session.onEvent` callback and `eventPublisher` (Combine).
+* Native primitives (IDFA / ATT / StoreKit / OMID / device info) moved to a separate shared package, [KontextKit](https://github.com/kontextso/kontextkit-ios). KontextSwiftSDK now depends on it instead of vendoring the OMID xcframework directly — smaller source tree and a single OMID certification path shared with `sdk-react-native` and `sdk-flutter` iOS halves.
+* Add server-controlled telemetry toggles (`reportErrors`, `reportDebug`) gated by the `/init` response.
+* Add `MutablePublisherOptions` for live-updating session options (consent, character, variant, etc.) without recreating the session.
+* Add `sendUserEvent(name:payload:)` for forwarding events into the ad iframe.
+
 ## 2.1.1
 * Fix crash in `AdScriptMessageHandler` when `WKScriptMessage.body` is not a valid JSON top-level object (e.g. a raw `String` posted by a third-party ad creative). `JSONSerialization.data(withJSONObject:)` was raising an Objective-C `NSException` that Swift `try/catch` could not catch; the bridge now validates with `JSONSerialization.isValidJSONObject` first and throws a catchable `DecodingError` instead.
 

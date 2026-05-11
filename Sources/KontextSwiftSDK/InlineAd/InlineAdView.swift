@@ -1,93 +1,178 @@
 import Combine
 import SwiftUI
+import WebKit
 
-enum InlineAdEvent {
-    case didRequestInterstitialAd(
-        InterstitialAdView.Params,
-        UIModalPresentationStyle = .fullScreen
-    )
-    case didFinishInterstitialAd
-}
-
-/// SwiftUI view that represents an inline ad in the chat UI.
+/// A SwiftUI view that renders an inline ad.
+///
+/// Can be initialized with either an `Ad` instance directly, or with convenience
+/// parameters that create one from a session.
+///
+/// Reports container viewport dimensions to the iframe every 200ms for
+/// ad visibility tracking and layout optimization.
+///
+/// Usage:
+/// ```swift
+/// // From an Ad instance
+/// let ad = session.createAd("a1", options: AdOptions(theme: "dark"))
+/// InlineAdView(ad: ad)
+///
+/// // Convenience: creates the ad automatically
+/// InlineAdView(messageId: "a1", session: session)
+/// ```
 public struct InlineAdView: View {
-    @StateObject private var viewModel: InlineAdViewModel
-    @State private var interstitialParams: InterstitialAdView.Params?
+    @ObservedObject private var ad: Ad
+    @State private var adWebView: AdWebView?
+    @State private var containerRect: CGRect = .zero
     @State private var keyboardHeight: CGFloat = 0
-    @State private var rect: CGRect = .zero
-    /// Events targeted for AdWebView
-    @State private var adWebViewEventsSubject = PassthroughSubject<AdWebViewUpdateEvent, Never>()
-    @State private var timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
+    @State private var interstitialURL: IdentifiableURL?
 
-    private let ad: Advertisement
-
-    /// - Parameters:
-    ///   - ad: Advertisement to be displayed.
-    public init(ad: Advertisement) {
+    /// Creates an `InlineAdView` with an existing `Ad` instance.
+    public init(ad: Ad) {
+        // Equivalent of `self._ad = ObservedObject(wrappedValue: ad)`.
         self.ad = ad
-        _viewModel = StateObject(wrappedValue: InlineAdViewModel(ad: ad))
+    }
+
+    /// Convenience initializer that creates an `Ad` from a session.
+    public init(messageId: String, session: Session, code: String? = nil, theme: String? = nil) {
+        let ad = session.createAd(messageId, options: AdOptions(code: code ?? Constants.defaultPlacementCode, theme: theme))
+        self.ad = ad
     }
 
     public var body: some View {
         Group {
-            if let url = viewModel.ad.webViewData.url {
-                AdWebViewRepresentable(
-                    url: url,
-                    updateIFrameData: viewModel.ad.webViewData.updateData,
-                    eventPublisher: adWebViewEventsSubject.eraseToAnyPublisher(),
-                    onIFrameEvent: { event in
-                        viewModel.ad.webViewData.onIFrameEvent(event)
-                    },
-                    onOMEvent: viewModel.ad.webViewData.onOMEvent
-                )
-                .readRect(coordinateSpace: .global) {
-                    rect = $0
-                }
-                .frame(height: viewModel.ad.preferredHeight)
+            if ad.iframeUrl != nil, !ad.destroyed, let adWebView {
+                AdWebViewRepresentable(webView: adWebView.webView)
+                    .frame(height: ad.isVisible ? max(ad.height, 0) : 0)
+                    .clipped()
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(
+                                key: ContainerRectKey.self,
+                                value: geo.frame(in: .global)
+                            )
+                        }
+                    )
+                    .onPreferenceChange(ContainerRectKey.self) { rect in
+                        containerRect = rect
+                    }
             }
         }
-        .fullScreenCover(item: $interstitialParams) { params in
-            InterstitialAdView(params: params)
+        .onChange(of: ad.iframeUrl) { newUrl in
+            if newUrl != nil {
+                setupWebViewIfNeeded()
+            }
         }
-        .onChange(of: ad) { newAd in
-            viewModel.replaceAd(newAd)
+        .onAppear {
+            if ad.iframeUrl != nil {
+                setupWebViewIfNeeded()
+            }
+            setupModalCallbacks()
         }
-        .onDisappear {
-            viewModel.disposeCurrentAttributionIfNeeded()
+        .onReceive(Timer.publish(every: Constants.dimensionReportIntervalMs / 1000, on: .main, in: .common).autoconnect()) { _ in
+            reportDimensions()
         }
-        .onReceive(Publishers.keyboardHeight) { height in
+        .onReceive(keyboardHeightPublisher) { height in
             keyboardHeight = height
         }
-        .onReceive(timer) { _ in
-            reportUpdateDimensions()
+        .fullScreenCover(item: $interstitialURL) { item in
+            InterstitialAdView(ad: ad, url: item.url)
         }
-        .onReceive(viewModel.ad.webViewData.events) { event in
-            switch event {
-            case .didRequestInterstitialAd(let params, _):
-                interstitialParams = params
-            case .didFinishInterstitialAd:
-                interstitialParams = nil
+        // Note: do NOT destroy the ad in onDisappear — in LazyVStack or
+        // when the keyboard appears, SwiftUI fires onDisappear for views
+        // that scroll off-screen. The ad is destroyed when Ad.destroy()
+        // is called explicitly or when the Ad object is deallocated.
+    }
+
+    private func setupModalCallbacks() {
+        ad.onRequestModal = { [weak ad] urlString, _ in
+            guard ad != nil, let url = URL(string: urlString) else { return }
+            interstitialURL = IdentifiableURL(url: url)
+        }
+        ad.onDismissModal = {
+            interstitialURL = nil
+        }
+    }
+
+    private func setupWebViewIfNeeded() {
+        guard adWebView == nil else { return }
+        let webView = AdWebView(ad: ad)
+        adWebView = webView
+        webView.load()
+    }
+
+    private func reportDimensions() {
+        guard let adWebView,
+              ad.isVisible, !ad.destroyed else { return }
+
+        let screenSize = UIScreen.main.bounds.size
+        // `windowSize` reflects the app's UIWindow bounds — different
+        // from the physical screen on iPad split-view / Slide Over.
+        // SwiftUI doesn't expose the window directly, so we look up
+        // the key window via UIApplication and fall back to the screen
+        // if there isn't one (unlikely after view appearance).
+        let windowSize = Self.activeWindowSize() ?? screenSize
+        adWebView.sendDimensionUpdate(DimensionUpdate(
+            windowWidth: windowSize.width,
+            windowHeight: windowSize.height,
+            screenWidth: screenSize.width,
+            screenHeight: screenSize.height,
+            containerWidth: containerRect.width,
+            containerHeight: containerRect.height,
+            containerX: containerRect.minX,
+            containerY: containerRect.minY,
+            keyboardHeight: keyboardHeight
+        ))
+    }
+
+    private static func activeWindowSize() -> CGSize? {
+        UIApplication.shared
+            .connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: { $0.isKeyWindow })?
+            .bounds
+            .size
+    }
+
+    /// Publisher that emits keyboard height changes.
+    private var keyboardHeightPublisher: AnyPublisher<CGFloat, Never> {
+        let willShow = NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .compactMap { notification -> CGFloat? in
+                (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect)?.height
             }
-        }
+        let willHide = NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .map { _ in CGFloat(0) }
+        return willShow.merge(with: willHide)
+            .eraseToAnyPublisher()
     }
 }
 
-// MARK: Private
-private extension InlineAdView {
-    func reportUpdateDimensions() {
-        let screenSize = UIScreen.main.bounds.size
-        let data = UpdateDimensionsIFrameDataDTO.Data(
-            screenWidth: screenSize.width,
-            screenHeight: screenSize.height,
-            containerWidth: rect.width,
-            containerHeight: rect.height,
-            containerX: rect.minX,
-            containerY: rect.minY,
-            keyboardHeight: keyboardHeight
-        )
+// MARK: - Geometry Preference Key
 
-        adWebViewEventsSubject.send(.didPrepareUpdateDimensions(
-            UpdateDimensionsIFrameDataDTO(data: data)
-        ))
+private struct ContainerRectKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+// MARK: - Identifiable URL (for fullScreenCover)
+
+struct IdentifiableURL: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+// MARK: - UIViewRepresentable
+
+struct AdWebViewRepresentable: UIViewRepresentable {
+    let webView: WKWebView
+
+    func makeUIView(context: Context) -> WKWebView {
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        // No-op -- webView is managed by AdWebView
     }
 }
