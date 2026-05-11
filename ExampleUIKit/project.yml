@@ -1,0 +1,27 @@
+name: ExampleUIKit
+options:
+  bundleIdPrefix: so.kontext
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "16.0"
+
+packages:
+  KontextSwiftSDK:
+    path: ../
+
+targets:
+  ExampleUIKit:
+    type: application
+    platform: iOS
+    sources:
+      - ExampleUIKit
+    dependencies:
+      - package: KontextSwiftSDK
+        product: KontextSwiftSDK
+    settings:
+      base:
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_NSUserTrackingUsageDescription: "This identifier will be used to deliver personalized ads to you."
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+        PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example-uikit
