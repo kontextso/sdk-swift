@@ -45,16 +45,46 @@ public struct InlineAdView: View {
                     .frame(height: ad.isVisible ? max(ad.height, 0) : 0)
                     .clipped()
                     .background(
+                        // The preference-based capture path used to flake on
+                        // some iOS versions — `onPreferenceChange` stayed
+                        // wedged at the `.zero` default even after layout
+                        // settled, leaving the iframe with `containerRect ==
+                        // .zero` forever (the iframe's viewability calc
+                        // then concluded the ad was off-screen and never
+                        // fired `ad.viewed`). Capture explicitly inside the
+                        // GeometryReader closure on every layout-affecting
+                        // lifecycle event (isVisible flip, height change,
+                        // appear) — those are the only moments the rect can
+                        // actually change.
                         GeometryReader { geo in
-                            Color.clear.preference(
-                                key: ContainerRectKey.self,
-                                value: geo.frame(in: .global)
-                            )
+                            let frame = geo.frame(in: .global)
+                            let size = geo.size
+                            Color.clear
+                                .onAppear {
+                                    containerRect = frame
+                                    ad.session.config.onDebugEvent?(
+                                        "InlineAdView: geometry-onAppear",
+                                        [
+                                            "messageId": ad.messageId,
+                                            "size": "\(size.width)x\(size.height)",
+                                            "frame": "\(frame.minX),\(frame.minY) \(frame.width)x\(frame.height)",
+                                        ]
+                                    )
+                                }
+                                .onChange(of: size) { newSize in
+                                    let newFrame = geo.frame(in: .global)
+                                    containerRect = newFrame
+                                    ad.session.config.onDebugEvent?(
+                                        "InlineAdView: geometry-onChange-size",
+                                        [
+                                            "messageId": ad.messageId,
+                                            "size": "\(newSize.width)x\(newSize.height)",
+                                            "frame": "\(newFrame.minX),\(newFrame.minY) \(newFrame.width)x\(newFrame.height)",
+                                        ]
+                                    )
+                                }
                         }
                     )
-                    .onPreferenceChange(ContainerRectKey.self) { rect in
-                        containerRect = rect
-                    }
             }
         }
         .onChange(of: ad.iframeUrl) { newUrl in
@@ -101,8 +131,28 @@ public struct InlineAdView: View {
     }
 
     private func reportDimensions() {
-        guard let adWebView,
-              ad.isVisible, !ad.destroyed else { return }
+        // Diagnostic: log every tick of the 200ms heartbeat with the
+        // current guard state so a non-firing dimensions pipeline (the
+        // upstream cause of a missing `ad.viewed` event) is observable
+        // via `onDebugEvent` without attaching the Safari Web Inspector.
+        guard let adWebView else {
+            ad.session.config.onDebugEvent?("InlineAdView: dimensions-skip-no-webview", [
+                "messageId": ad.messageId,
+            ])
+            return
+        }
+        guard ad.isVisible else {
+            ad.session.config.onDebugEvent?("InlineAdView: dimensions-skip-not-visible", [
+                "messageId": ad.messageId,
+            ])
+            return
+        }
+        guard !ad.destroyed else {
+            ad.session.config.onDebugEvent?("InlineAdView: dimensions-skip-destroyed", [
+                "messageId": ad.messageId,
+            ])
+            return
+        }
 
         let screenSize = UIScreen.main.bounds.size
         // `windowSize` reflects the app's UIWindow bounds — different
@@ -111,6 +161,16 @@ public struct InlineAdView: View {
         // the key window via UIApplication and fall back to the screen
         // if there isn't one (unlikely after view appearance).
         let windowSize = Self.activeWindowSize() ?? screenSize
+        ad.session.config.onDebugEvent?("InlineAdView: send-dimensions", [
+            "messageId": ad.messageId,
+            "windowW": windowSize.width,
+            "windowH": windowSize.height,
+            "containerX": containerRect.minX,
+            "containerY": containerRect.minY,
+            "containerW": containerRect.width,
+            "containerH": containerRect.height,
+            "keyboardH": keyboardHeight,
+        ])
         adWebView.sendDimensionUpdate(DimensionUpdate(
             windowWidth: windowSize.width,
             windowHeight: windowSize.height,
@@ -144,15 +204,6 @@ public struct InlineAdView: View {
             .map { _ in CGFloat(0) }
         return willShow.merge(with: willHide)
             .eraseToAnyPublisher()
-    }
-}
-
-// MARK: - Geometry Preference Key
-
-private struct ContainerRectKey: PreferenceKey {
-    nonisolated(unsafe) static var defaultValue: CGRect = .zero
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
     }
 }
 

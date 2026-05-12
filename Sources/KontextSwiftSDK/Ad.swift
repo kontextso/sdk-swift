@@ -295,6 +295,7 @@ private extension Ad {
         // (the wire-level handler), not here, because Ad doesn't own
         // the postMessage channel. That happens BEFORE this handler
         // runs.
+        session.config.onDebugEvent?("Ad: handle-init-iframe", ["messageId": messageId])
         initSKAdNetwork()
     }
 
@@ -314,6 +315,10 @@ private extension Ad {
         // duplicate `adHeight` events for any iframe that resends.
         guard data.height != height else { return }
         height = data.height
+        session.config.onDebugEvent?("Ad: handle-resize-iframe", [
+            "messageId": messageId,
+            "height": data.height,
+        ])
         guard let bidId = currentBid?.bidId else { return }
         session.emitEvent(.adHeight(.init(bidId: bidId, messageId: messageId, height: data.height)))
     }
@@ -323,13 +328,21 @@ private extension Ad {
         // every assignment regardless of value equality, so without
         // this guard a repeated `show-iframe` triggers redundant
         // SwiftUI re-renders and `$isVisible` Combine deliveries.
-        guard !isVisible else { return }
+        guard !isVisible else {
+            session.config.onDebugEvent?("Ad: handle-show-iframe-deduped", ["messageId": messageId])
+            return
+        }
+        session.config.onDebugEvent?("Ad: handle-show-iframe → isVisible=true", ["messageId": messageId])
         isVisible = true
     }
 
     func handleHideIframe() {
         // Same dedupe rationale as `handleShowIframe`.
-        guard isVisible else { return }
+        guard isVisible else {
+            session.config.onDebugEvent?("Ad: handle-hide-iframe-deduped", ["messageId": messageId])
+            return
+        }
+        session.config.onDebugEvent?("Ad: handle-hide-iframe → isVisible=false", ["messageId": messageId])
         isVisible = false
         // Note: don't reset height here. Both `InlineAdView` and
         // `InlineAdUIView` already gate display on `isVisible`
@@ -342,6 +355,11 @@ private extension Ad {
     func handleEventIframe(data: IframeEvent.EventData) {
         let name = data.name
         let payload = data.payload
+        session.config.onDebugEvent?("Ad: handle-event-iframe", [
+            "messageId": messageId,
+            "name": name,
+            "payload": payload as Any,
+        ])
         // bidId for events that don't carry their own — falls back to
         // the resolved bid for this Ad. Events emitted before a bid is
         // resolved (rare; iframe shouldn't be loaded yet) are dropped.
@@ -371,6 +389,13 @@ private extension Ad {
                     format: format,
                     revenue: revenue
                 )))
+            } else {
+                session.config.onDebugEvent?("Ad: ad-viewed-dropped-missing-fields", [
+                    "messageId": messageId,
+                    "hasBidId": resolvedBidId != nil,
+                    "hasContent": (payload?["content"] as? String) != nil,
+                    "hasFormat": (payload?["format"] as? String) != nil,
+                ])
             }
 
         case "ad.clicked":
@@ -435,6 +460,7 @@ private extension Ad {
     }
 
     func handleErrorIframe() {
+        session.config.onDebugEvent?("Ad: handle-error-iframe", ["messageId": messageId])
         // The `error-iframe` wire message has no data. Two side
         // effects happen here:
         //
@@ -470,6 +496,11 @@ private extension Ad {
     /// than retrying the other SKStoreProduct path — matches v3 sdk-rn's
     /// `if/else-if/else` structure.
     func handleClickIframe(data: IframeEvent.ClickData) {
+        session.config.onDebugEvent?("Ad: handle-click-iframe", [
+            "messageId": messageId,
+            "url": data.url as Any,
+            "target": data.target as Any,
+        ])
         Task {
             let skan = currentBid?.skan
 
@@ -531,6 +562,11 @@ private extension Ad {
     }
 
     func handleAdDoneIframe(data: IframeEvent.AdDoneData) {
+        session.config.onDebugEvent?("Ad: handle-ad-done-iframe", [
+            "messageId": messageId,
+            "impressionTrigger": currentBid?.impressionTrigger as Any,
+            "creativeType": currentBid?.creativeType as Any,
+        ])
         // `data` is parsed for protocol fidelity (id / content /
         // messageId / cachedContent) but currently unused — analytics
         // flow through the `event-iframe` channel and v4 sdk-swift
@@ -569,6 +605,10 @@ private extension Ad {
     // MARK: Component (modal) iframe
 
     func handleOpenComponentIframe(data: IframeEvent.OpenComponentData) {
+        session.config.onDebugEvent?("Ad: handle-open-component-iframe", [
+            "messageId": messageId,
+            "brightnessDelta": data.brightnessDelta as Any,
+        ])
         // Brightness increase for interstitials (A/B test).
         // Server's brightnessDelta is in [-1, 1] (iframe protocol);
         // KontextKit's get/setBrightness use 0–100, so scale.
@@ -585,6 +625,7 @@ private extension Ad {
     }
 
     func handleInitComponentIframe() {
+        session.config.onDebugEvent?("Ad: handle-init-component-iframe", ["messageId": messageId])
         // Modal iframe initialized — cancel the safety timeout. The
         // visibility/reveal half is driven by `AdWebView.onComponentInitialized`
         // → `InterstitialAdView.componentInitialized`, not by Ad state.
@@ -593,10 +634,16 @@ private extension Ad {
     }
 
     func handleCloseComponentIframe() {
+        session.config.onDebugEvent?("Ad: handle-close-component-iframe", ["messageId": messageId])
         tearDown()
     }
 
     func handleErrorComponentIframe(data: IframeEvent.ErrorComponentData) {
+        session.config.onDebugEvent?("Ad: handle-error-component-iframe", [
+            "messageId": messageId,
+            "errorType": data.errorType as Any,
+            "message": data.message as Any,
+        ])
         // OMID diagnostics before tearing down the session in tearDown.
         // Mirrors v3 sdk-swift's pattern.
         omSession?.logError(errorType: data.errorType, message: data.message ?? "modal component error")
@@ -612,6 +659,11 @@ private extension Ad {
 
     func handleAdDoneComponentIframe() {
         // Start OM session for interstitial (50ms delay inside OMManager.createSession)
+        session.config.onDebugEvent?("Ad: handle-ad-done-component-iframe", [
+            "messageId": messageId,
+            "omSessionAlreadyStarted": omSession != nil,
+            "creativeType": currentBid?.creativeType as Any,
+        ])
         if omSession == nil, let creativeType = currentBid?.creativeType {
             startOMSession(creativeType: creativeType)
         }

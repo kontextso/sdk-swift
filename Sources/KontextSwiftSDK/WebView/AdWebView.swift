@@ -137,7 +137,19 @@ final class AdWebView: NSObject {
     private func handleMessage(_ body: Any) {
         guard let dict = body as? [String: Any],
               let type = dict["type"] as? String else {
+            ad.session.config.onDebugEvent?("AdWebView: inbound-message-unparseable", nil)
             return
+        }
+
+        // Log every inbound postMessage with its wire type so a missing
+        // handler (or a missing message type from the iframe entirely)
+        // is observable via `onDebugEvent`. Suppress the `_console`
+        // chatter since the interceptor pipes those separately.
+        if type != "_console" {
+            ad.session.config.onDebugEvent?("AdWebView: inbound-message", [
+                "messageId": ad.messageId,
+                "type": type,
+            ])
         }
 
         switch type {
