@@ -108,6 +108,13 @@ final class ChatViewController: UIViewController {
         guard !text.isEmpty else { return }
         inputField.text = ""
 
+        // A new user message triggers a new preload; tear down any ads
+        // bound to earlier assistant messages so the chat only shows
+        // the ad for the latest reply. v4 leaves Ad lifecycle to the
+        // publisher (no auto-clear event like v3's `.cleared`).
+        for ad in ads.values { ad.destroy() }
+        ads.removeAll()
+
         let user = Message(id: UUID().uuidString, role: .user, content: text)
         appendMessage(user)
 
@@ -119,8 +126,6 @@ final class ChatViewController: UIViewController {
                 content: "This is a static reply. Replace with your own LLM."
             )
             self.appendMessage(assistant)
-            // Create the Ad placeholder for the assistant message — it
-            // resolves to a bid asynchronously as preload completes.
             self.ads[assistant.id] = self.session.createAd(assistant.id)
             self.rebuildItems()
         }
