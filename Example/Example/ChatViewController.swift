@@ -45,6 +45,13 @@ final class ChatViewController: UIViewController {
             enabledPlacementCodes: ["inlineAd"],
             onEvent: { event in
                 print("[kontext] \(event)")
+            },
+            onDebugEvent: { name, data in
+                if let data {
+                    print("[kontext-debug] \(name) \(data)")
+                } else {
+                    print("[kontext-debug] \(name)")
+                }
             }
         ))
         super.init(nibName: nil, bundle: nil)
