@@ -257,13 +257,6 @@ final class AdWebView: NSObject {
         (function() {
             var expectedOrigin = '\(adServerUrl)';
             window.addEventListener('message', function(event) {
-                // Ignore messages the host posted to this window via
-                // evaluateJavaScript('window.postMessage(...)') — those
-                // are outbound host→iframe traffic that the listener
-                // sees on the same window. Without this guard the
-                // bridge echoes every outbound message back to native
-                // as a spurious "inbound" message of the same type.
-                if (event.source === window) return;
                 if (event.origin !== expectedOrigin) return;
                 try {
                     var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
@@ -354,11 +347,6 @@ private extension AdWebView {
             debug("postMessage encoding failed for \(T.self)")
             return
         }
-        let type = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["type"] as? String
-        ad.session.config.onDebugEvent?("AdWebView: outbound-message", [
-            "messageId": ad.messageId,
-            "type": type ?? String(describing: T.self),
-        ])
         let origin = ad.session.config.adServerUrl
         webView.evaluateJavaScript("window.postMessage(\(json), '\(origin)');", completionHandler: nil)
     }
