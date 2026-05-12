@@ -17,9 +17,9 @@ Swift 5.9 ships with Xcode 16; nothing extra to install. The SDK itself is a Swi
 sdk-swift/
 ├── Sources/KontextSwiftSDK/         # public SDK source (entry points, networking, WebView bridge, models)
 ├── Tests/KontextSwiftSDKTests/      # XCTest + swift-testing suites
-├── ExampleUIKit/                    # UIKit demo app (XcodeGen)
+├── Example/                    # UIKit demo app (XcodeGen)
 │   ├── project.yml                  # XcodeGen input
-│   └── ExampleUIKit/                # app sources
+│   └── Example/                # app sources
 ├── ExampleSecrets.swift.example     # template for the gitignored ExampleSecrets.swift (see "Setting your publisher token")
 ├── Package.swift                    # SPM manifest
 ├── KontextSwiftSDK.podspec          # CocoaPods manifest (alternative distribution)
@@ -59,7 +59,7 @@ xcrun simctl list devices available
 
 ## Running the example app
 
-The demo app lives in `ExampleUIKit/`. It consumes the local SDK via SPM and demonstrates the public v4 API end-to-end.
+The demo app lives in `Example/`. It consumes the local SDK via SPM and demonstrates the public v4 API end-to-end.
 
 ### Setting your publisher token
 
@@ -83,8 +83,8 @@ The example has its `.xcodeproj` checked in (regenerated from `project.yml` via 
 
 ```bash
 xcodebuild build \
-  -project ExampleUIKit/ExampleUIKit.xcodeproj \
-  -scheme ExampleUIKit \
+  -project Example/Example.xcodeproj \
+  -scheme Example \
   -destination 'platform=iOS Simulator,OS=latest,name=iPhone 17 Pro'
 ```
 
@@ -97,7 +97,7 @@ The SDK logs every internal event (preload start/response, bid assignment, ad mo
 ```bash
 # Stream the booted simulator's stdout for the example app's bundle id
 xcrun simctl spawn booted log stream \
-  --predicate 'process == "ExampleUIKit"' \
+  --predicate 'process == "Example"' \
   --style compact
 ```
 
@@ -133,7 +133,7 @@ open -a Simulator
 The example app's `.xcodeproj` is generated from `project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen). The `.pbxproj` is committed so cloning + opening in Xcode Just Works, but if you change `project.yml` (e.g. to add a new source file) you have to regenerate:
 
 ```bash
-cd ExampleUIKit && xcodegen generate
+cd Example && xcodegen generate
 ```
 
 Commit the regenerated `.pbxproj` alongside the `project.yml` change.

@@ -12,7 +12,7 @@ SwiftUI views (`InlineAdView`, `InterstitialAdView`) have been removed — the S
 * Add server-controlled telemetry toggles (`reportErrors`, `reportDebug`) gated by the `/init` response.
 * Add `MutablePublisherOptions` for live-updating session options (consent, character, variant, etc.) without recreating the session.
 * Add `sendUserEvent(name:payload:)` for forwarding events into the ad iframe.
-* Refresh `ExampleUIKit` example app for the v4 API. Consumes the SDK via SwiftPM local-path (`packages.KontextSwiftSDK.path: ../`) so cloning the repo gives a working integration playground out of the box. Xcode project is generated from `project.yml` via [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+* Refresh `Example` UIKit demo app for the v4 API. Consumes the SDK via SwiftPM local-path (`packages.KontextSwiftSDK.path: ../`) so cloning the repo gives a working integration playground out of the box. Xcode project is generated from `project.yml` via [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ## 2.1.1
 * Fix crash in `AdScriptMessageHandler` when `WKScriptMessage.body` is not a valid JSON top-level object (e.g. a raw `String` posted by a third-party ad creative). `JSONSerialization.data(withJSONObject:)` was raising an Objective-C `NSException` that Swift `try/catch` could not catch; the bridge now validates with `JSONSerialization.isValidJSONObject` first and throws a catchable `DecodingError` instead.

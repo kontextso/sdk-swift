@@ -1,4 +1,4 @@
-name: ExampleUIKit
+name: Example
 options:
   bundleIdPrefix: so.kontext
   deploymentTarget:
@@ -10,13 +10,13 @@ packages:
     path: ../
 
 targets:
-  ExampleUIKit:
+  Example:
     type: application
     platform: iOS
     sources:
-      - ExampleUIKit
+      - Example
       - path: ../ExampleSecrets.swift
-        group: ExampleUIKit
+        group: Example
     dependencies:
       - package: KontextSwiftSDK
         product: KontextSwiftSDK
@@ -26,4 +26,4 @@ targets:
         INFOPLIST_KEY_NSUserTrackingUsageDescription: "This identifier will be used to deliver personalized ads to you."
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: "5.9"
-        PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example-uikit
+        PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example
