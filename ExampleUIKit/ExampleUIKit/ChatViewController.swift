@@ -29,7 +29,7 @@ final class ChatViewController: UITableViewController {
 
     init() {
         session = KontextAds.createSession(SessionOptions(
-            publisherToken: "nexus-dev",
+            publisherToken: ExampleSecrets.publisherToken,
             userId: UUID().uuidString,
             conversationId: UUID().uuidString,
             enabledPlacementCodes: ["inlineAd"],

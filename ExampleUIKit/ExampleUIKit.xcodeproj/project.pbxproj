@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		17CF8FBA4C24966457E367E3 /* KontextSwiftSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 61D456EBD7A78259681348CB /* KontextSwiftSDK */; };
+		923308891F750D9544DA4805 /* ExampleSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB243F1206D34C967097D7C /* ExampleSecrets.swift */; };
 		A504CDD15F361A13CA961BD7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6071080EC749207887492B2 /* AppDelegate.swift */; };
 		A7C9B769DFF47E3AA8FADAD2 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3312CFFDAB67B644847A081E /* ChatViewController.swift */; };
 /* End PBXBuildFile section */
@@ -15,6 +16,7 @@
 /* Begin PBXFileReference section */
 		2DFEFAEF0D89B55F2635A60C /* ExampleUIKit.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExampleUIKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3312CFFDAB67B644847A081E /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
+		8EB243F1206D34C967097D7C /* ExampleSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExampleSecrets.swift; path = ../../ExampleSecrets.swift; sourceTree = "<group>"; };
 		973B5E538BF5019F30CAEBB9 /* sdk-swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sdk-swift"; path = ..; sourceTree = SOURCE_ROOT; };
 		F6071080EC749207887492B2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -53,6 +55,7 @@
 			children = (
 				F6071080EC749207887492B2 /* AppDelegate.swift */,
 				3312CFFDAB67B644847A081E /* ChatViewController.swift */,
+				8EB243F1206D34C967097D7C /* ExampleSecrets.swift */,
 			);
 			path = ExampleUIKit;
 			sourceTree = "<group>";
@@ -127,6 +130,7 @@
 			files = (
 				A504CDD15F361A13CA961BD7 /* AppDelegate.swift in Sources */,
 				A7C9B769DFF47E3AA8FADAD2 /* ChatViewController.swift in Sources */,
+				923308891F750D9544DA4805 /* ExampleSecrets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

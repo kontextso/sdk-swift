@@ -18,7 +18,7 @@ struct ChatView: View {
 
     init() {
         let session = KontextAds.createSession(SessionOptions(
-            publisherToken: "nexus-dev",
+            publisherToken: ExampleSecrets.publisherToken,
             userId: UUID().uuidString,
             conversationId: UUID().uuidString,
             enabledPlacementCodes: ["inlineAd"],

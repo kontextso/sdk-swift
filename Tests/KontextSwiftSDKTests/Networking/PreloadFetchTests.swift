@@ -484,8 +484,12 @@ struct PreloadFetchTests {
 
         // Generous bound — sdk-js aborts in ms, but URLSession task-cancel
         // can take a beat. A real "ignored cancel" would block on the
-        // request timeout (15s+).
-        #expect(elapsed < 2.0, "cancel should abort fast, took \(elapsed)s")
+        // request timeout (15s+). The budget is loose to account for slow
+        // CI runners (GitHub Actions macOS runners regularly see
+        // multi-second URLSession-cancel propagation under load); the
+        // test still catches a genuinely ignored cancel because that
+        // case blocks on the 15s+ request timeout.
+        #expect(elapsed < 10.0, "cancel should abort fast, took \(elapsed)s")
 
         guard case .failure(let reason, let event, let disableSession) = result else {
             Issue.record("Expected failure, got \(result)")

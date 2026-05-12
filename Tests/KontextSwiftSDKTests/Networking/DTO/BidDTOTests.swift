@@ -1,6 +1,6 @@
 import Foundation
-@testable import KontextSwiftSDK
 import KontextKit
+@testable import KontextSwiftSDK
 import Testing
 
 /// Wire-format decoding + domain mapping for `BidDTO`. The v4 server emits
