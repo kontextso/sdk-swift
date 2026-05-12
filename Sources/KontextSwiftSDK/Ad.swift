@@ -7,13 +7,12 @@ import WebKit
 ///
 /// Represents a single ad instance for a specific assistant message.
 /// The publisher creates it via `session.createAd()` and renders it
-/// in a SwiftUI view via `InlineAdView(ad:)`.
+/// via `InlineAdUIView(ad:)`.
 @MainActor
 public final class Ad: ObservableObject, Identifiable {
-    /// Stable identifier for SwiftUI list-diffing (`ForEach`). Set
-    /// once at init; since `Session.createAd` is idempotent for the
-    /// same `(messageId, code)` pair, the same logical ad always has
-    /// the same `id`.
+    /// Stable identifier. Set once at init; since `Session.createAd`
+    /// is idempotent for the same `(messageId, code)` pair, the same
+    /// logical ad always has the same `id`.
     public let id = UUID()
 
     /// The id of the message this ad is bound to. By convention the
@@ -102,8 +101,8 @@ public final class Ad: ObservableObject, Identifiable {
     /// session for the same ad.
     ///
     /// `weak` to avoid keeping a discarded modal WebView alive after
-    /// dismissal — the WebView's owning view (SwiftUI/UIKit hierarchy)
-    /// is the actual lifecycle root.
+    /// dismissal — the WebView's owning view (the UIKit hierarchy) is
+    /// the actual lifecycle root.
     weak var currentWebView: WKWebView?
 
     /// Internal -- use `session.createAd()` instead.
@@ -139,8 +138,8 @@ public final class Ad: ObservableObject, Identifiable {
         destroyed = true
         session.config.onDebugEvent?("Ad: destroy", ["messageId": messageId, "code": code])
 
-        // 1) Detach listeners FIRST so we don't react to inbound bid
-        //    updates mid-teardown (sdk-js parity).
+        // 1) Detach listeners so we don't react to inbound bid updates
+        //    mid-teardown (sdk-js parity).
         unsubscribe?()
         unsubscribe = nil
 
@@ -157,6 +156,33 @@ public final class Ad: ObservableObject, Identifiable {
         //    state. Mirrors sdk-js's Ad.destroy().
         session.removeAd(messageId: messageId, code: code)
         session.removePreload(messageId)
+    }
+
+    // MARK: - InlineAdUIView Lifecycle Hook
+
+    /// Synchronously ends the inline OMID session (retire → finish).
+    /// Called from `InlineAdUIView.willMove(toWindow: nil)` — the
+    /// pre-removal hook fires while the WebView is still attached to
+    /// a window, so the in-iframe JS verification script can flush its
+    /// final `sessionFinish` event before the geometry observer would
+    /// otherwise see a detached element and emit a spurious
+    /// `geometryChange { reasons: ["notFound"] }`. Matches the
+    /// OMID-certified v3 sdk-swift behaviour.
+    ///
+    /// For component-trigger ads, OMID is bound to the modal WebView,
+    /// not the inline one — `tearDown` (driven by close/error component
+    /// events) handles the modal-side teardown. Skip here.
+    ///
+    /// Idempotent: nil-safe and clears `omSession` so repeated calls
+    /// (e.g. multiple window changes) are no-ops.
+    public func finishOMSession() {
+        guard !destroyed else { return }
+        guard currentBid?.impressionTrigger != .component else { return }
+        guard omSession != nil else { return }
+        session.config.onDebugEvent?("Ad: finish-om-session", ["messageId": messageId])
+        omSession?.retire()
+        omSession?.finish()
+        omSession = nil
     }
 
     // MARK: - Iframe Event Handling
@@ -308,11 +334,11 @@ private extension Ad {
         guard data.height > 0 else { return }
         // Dedupe — avoid redundant adHeight events when the iframe
         // resends the same height. v3 sdk-swift had this. `@Published`
-        // already dedupes the SwiftUI render path (assigning an equal
-        // CGFloat doesn't fire objectWillChange), but `emitEvent` runs
-        // unconditionally — without this guard the publisher's
-        // `onEvent` and the Combine stream would see a flood of
-        // duplicate `adHeight` events for any iframe that resends.
+        // dedupes the Combine path (assigning an equal CGFloat doesn't
+        // fire objectWillChange), but `emitEvent` runs unconditionally
+        // — without this guard the publisher's `onEvent` and the
+        // Combine stream would see a flood of duplicate `adHeight`
+        // events for any iframe that resends.
         guard data.height != height else { return }
         height = data.height
         session.config.onDebugEvent?("Ad: handle-resize-iframe", [
@@ -327,7 +353,7 @@ private extension Ad {
         // v3 sdk-swift parity dedupe — `@Published` fires willSet on
         // every assignment regardless of value equality, so without
         // this guard a repeated `show-iframe` triggers redundant
-        // SwiftUI re-renders and `$isVisible` Combine deliveries.
+        // `$isVisible` Combine deliveries.
         guard !isVisible else {
             session.config.onDebugEvent?("Ad: handle-show-iframe-deduped", ["messageId": messageId])
             return
@@ -344,12 +370,12 @@ private extension Ad {
         }
         session.config.onDebugEvent?("Ad: handle-hide-iframe → isVisible=false", ["messageId": messageId])
         isVisible = false
-        // Note: don't reset height here. Both `InlineAdView` and
-        // `InlineAdUIView` already gate display on `isVisible`
-        // (`isVisible ? max(height, 0) : 0`), so resetting would be
-        // dead code that diverges from sdk-react-native, sdk-js, and
-        // v3 sdk-swift — and could cause a "flash of small ad" if the
-        // iframe ever does a hide→show cycle without resending resize.
+        // Note: don't reset height here. `InlineAdUIView` already gates
+        // display on `isVisible` (`isVisible ? max(height, 0) : 0`), so
+        // resetting would be dead code that diverges from
+        // sdk-react-native, sdk-js, and v3 sdk-swift — and could cause
+        // a "flash of small ad" if the iframe ever does a hide→show
+        // cycle without resending resize.
     }
 
     func handleEventIframe(data: IframeEvent.EventData) {
@@ -628,7 +654,8 @@ private extension Ad {
         session.config.onDebugEvent?("Ad: handle-init-component-iframe", ["messageId": messageId])
         // Modal iframe initialized — cancel the safety timeout. The
         // visibility/reveal half is driven by `AdWebView.onComponentInitialized`
-        // → `InterstitialAdView.componentInitialized`, not by Ad state.
+        // → `InterstitialAdViewController` (hides spinner, fades the
+        // WebView in), not by Ad state.
         modalTimeoutTask?.cancel()
         modalTimeoutTask = nil
     }

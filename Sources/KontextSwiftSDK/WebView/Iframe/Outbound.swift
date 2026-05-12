@@ -39,9 +39,9 @@ struct UpdateIframeMessageDTO: Encodable, Sendable {
 
 /// `update-dimensions-iframe`: periodic viewport / container geometry
 /// snapshot used by the iframe for visibility tracking. The payload is
-/// `DimensionUpdate` directly — the same struct call sites construct
-/// in `InlineAdView` / `InlineAdUIView`, so there's no duplicate-shape
-/// boilerplate at the wire boundary.
+/// `DimensionUpdate` directly — the same struct `InlineAdUIView`
+/// constructs, so there's no duplicate-shape boilerplate at the wire
+/// boundary.
 struct UpdateDimensionsIframeMessageDTO: Encodable, Sendable {
     let type: String
     let data: DimensionUpdate

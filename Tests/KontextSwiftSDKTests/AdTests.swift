@@ -135,8 +135,8 @@ struct AdTests {
         // `@Published` wrapper does NOT auto-dedupe — it fires
         // `objectWillChange` on every assignment regardless of value
         // equality — so without the dedupe guard, three resize
-        // messages for the same height would trigger three SwiftUI
-        // re-renders and three `adHeight` event emits.
+        // messages for the same height would trigger three redundant
+        // Combine deliveries and three `adHeight` event emits.
         //
         // Observed via the Combine projection of `height`: a fresh
         // sink fires once on subscribe (initial 0), then once per
@@ -178,11 +178,10 @@ struct AdTests {
 
     @Test func handleHidePreservesHeight() {
         // sdk-react-native / sdk-js / v3 sdk-swift parity: hide doesn't
-        // reset height. The view layer (`InlineAdView` /
-        // `InlineAdUIView`) already gates visibility on `isVisible`, so
-        // resetting would be dead code AND would cause a "flash of
-        // small ad" on a subsequent show before the iframe re-sends
-        // `resize-iframe`.
+        // reset height. `InlineAdUIView` already gates visibility on
+        // `isVisible`, so resetting would be dead code AND would cause
+        // a "flash of small ad" on a subsequent show before the iframe
+        // re-sends `resize-iframe`.
         let session = makeSession()
         let ad = Ad(session: session, messageId: "a1")
 
@@ -197,8 +196,8 @@ struct AdTests {
     @Test func handleShowAndHideDedupe() {
         // v3 sdk-swift parity dedupe — `@Published` fires willSet on
         // every assignment, so repeated show/hide messages without
-        // dedupe would trigger redundant SwiftUI re-renders and
-        // duplicate `$isVisible` Combine deliveries.
+        // dedupe would trigger redundant `$isVisible` Combine
+        // deliveries.
         let session = makeSession()
         let ad = Ad(session: session, messageId: "a1")
         var visibleUpdates: [Bool] = []

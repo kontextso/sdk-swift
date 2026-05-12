@@ -277,14 +277,13 @@ public final class Session {
     /// Creates an ad instance for the given message, or returns the
     /// existing one if an ad for the same `messageId` + `code` already
     /// exists. Idempotent — calling `createAd` repeatedly with the same
-    /// arguments returns the same `Ad`, which is essential for SwiftUI
-    /// hosts where `init` runs on every parent body re-evaluation.
+    /// arguments returns the same `Ad`.
     ///
     /// Options on subsequent calls (theme, etc.) are ignored — destroy
     /// the existing ad first to change them. Mirrors sdk-js's
     /// `Session.createAd`.
     ///
-    /// The returned `Ad` should be rendered using `InlineAdView(ad:)`.
+    /// The returned `Ad` should be rendered using `InlineAdUIView(ad:)`.
     public func createAd(_ messageId: String, options: AdOptions? = nil) -> Ad {
         // Unlike the other public mutators, `createAd` doesn't trap
         // here: `Ad.init` calls `session.subscribeBidUpdates(...)`,

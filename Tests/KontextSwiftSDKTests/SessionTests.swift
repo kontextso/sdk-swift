@@ -182,9 +182,7 @@ struct SessionTests {
     @Test func createAdReturnsExistingForSameMessageIdAndCode() {
         // sdk-js parity: createAd is idempotent for the same
         // (messageId, code) pair — second call returns the same Ad,
-        // does not destroy and recreate. Critical for SwiftUI hosts
-        // where the view struct's init runs on every parent body
-        // re-evaluation.
+        // does not destroy and recreate.
         let session = makeSession()
 
         let ad1 = session.createAd("a1")

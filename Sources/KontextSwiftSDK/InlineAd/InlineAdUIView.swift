@@ -1,5 +1,4 @@
 import Combine
-import SwiftUI
 import UIKit
 
 /// A UIKit view that renders an inline ad for a given message.
@@ -120,6 +119,15 @@ public final class InlineAdUIView: UIView {
         } else {
             stopDimensionTimer()
             unregisterKeyboardObservers()
+            // OMID retire+finish must run while the WebView is still
+            // attached to a window — otherwise the in-iframe JS
+            // verification script polls geometry one more time, sees the
+            // detached element, and emits a spurious
+            // `geometryChange { reasons: ["notFound"] }` before
+            // sessionFinish dispatches. willMove fires BEFORE removal,
+            // which gives us that pre-removal hook. Matches the
+            // OMID-certified v3 sdk-swift behaviour.
+            ad.finishOMSession()
         }
     }
 
@@ -198,11 +206,9 @@ public final class InlineAdUIView: UIView {
     private func presentInterstitialAd(url: URL) {
         guard let topVC = topMostViewController else { return }
 
-        let interstitialView = InterstitialAdView(ad: ad, url: url)
-        let hostingController = UIHostingController(rootView: interstitialView)
-        hostingController.modalPresentationStyle = .overFullScreen
-        interstitialViewController = hostingController
-        topVC.present(hostingController, animated: true)
+        let viewController = InterstitialAdViewController(ad: ad, url: url)
+        interstitialViewController = viewController
+        topVC.present(viewController, animated: true)
     }
 
     private func dismissInterstitialAd() {

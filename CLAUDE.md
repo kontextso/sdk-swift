@@ -42,10 +42,11 @@ The project uses `.enableExperimentalFeature("StrictConcurrency")` in `Package.s
 
 | Component | Type | Purpose |
 |---|---|---|
-| `InlineAdView` | SwiftUI View | Embeds ad in chat feed; reports dimensions to server |
-| `InlineAdUIView` | UIView | UIKit equivalent of `InlineAdView` |
-| `InterstitialAdView` | SwiftUI View | Full-screen ad overlay |
-| `AdWebView` | WKWebView subclass | Internal: renders ad iframe; bridges JS `postMessage` to Swift |
+| `InlineAdUIView` | UIView | Embeds ad in chat feed; reports dimensions to server |
+| `InterstitialAdViewController` | UIViewController | Internal: full-screen modal ad overlay (presented by `InlineAdUIView`) |
+| `AdWebView` | WKWebView wrapper | Internal: renders ad iframe; bridges JS `postMessage` to Swift |
+
+The SDK is UIKit-only. SwiftUI hosts can wrap `InlineAdUIView` in a `UIViewRepresentable`.
 
 **`AdEvent`** (`Sources/KontextSwiftSDK/Model/AdEvent.swift`) — discriminated enum covering `adFilled`, `adNoFill`, `adViewed`, `adClicked`, `adRenderStarted`, `adRenderCompleted`, `adError`, `videoStarted`, `videoCompleted`, `rewardGranted`, `event`. Each case carries placement code + bid id where applicable.
 
@@ -56,7 +57,7 @@ The project uses `.enableExperimentalFeature("StrictConcurrency")` in `Package.s
 - `Sources/KontextSwiftSDK/` — public types (`KontextAds`, `Session`, `Ad`, `SessionOptions`, …) at the top.
 - `Sources/KontextSwiftSDK/Networking/` — `Init`, `Preload`, `ErrorCapture`, `DebugCapture`, `HTTPRetry`, DTOs in `DTO/`, request collectors in `Collectors/`.
 - `Sources/KontextSwiftSDK/WebView/` — `AdWebView` + the JS `postMessage` bridge.
-- `Sources/KontextSwiftSDK/View/` — SwiftUI + UIKit ad views.
+- `Sources/KontextSwiftSDK/InlineAd/`, `InterstitialAd/` — UIKit ad views (`InlineAdUIView`, `InterstitialAdViewController`).
 - `Sources/KontextSwiftSDK/Model/` — Swift-side domain models (`Message`, `Bid`, `AdEvent`, `Character`, `Regulatory`, …).
 - `Sources/KontextSwiftSDK/Utils/` — `DependencyContainer` (the only place concrete types get wired), helpers.
 

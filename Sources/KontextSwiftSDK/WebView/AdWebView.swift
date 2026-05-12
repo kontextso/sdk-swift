@@ -14,7 +14,7 @@ import WebKit
 ///
 /// Two flavours: inline (default) and interstitial (`isInterstitial: true`),
 /// the latter exposing `onComponentInitialized` / `onComponentDone`
-/// callbacks for `InterstitialAdView` lifecycle hooks.
+/// callbacks for `InterstitialAdViewController` lifecycle hooks.
 ///
 /// See `IframeEvent` for the inbound vocabulary.
 @MainActor
@@ -122,7 +122,7 @@ final class AdWebView: NSObject {
         webView.load(URLRequest(url: url))
     }
 
-    /// Loads a specific URL (used by InterstitialAdView for modal URLs).
+    /// Loads a specific URL (used by `InterstitialAdViewController` for modal URLs).
     func loadURL(_ url: URL) {
         debug("loading interstitial URL: \(url)")
         webView.load(URLRequest(url: url))
@@ -217,7 +217,7 @@ final class AdWebView: NSObject {
 
     /// Sends a dimension update to the iframe.
     ///
-    /// Called periodically (every 200ms) by InlineAdView to report the
+    /// Called periodically (every 200ms) by `InlineAdUIView` to report the
     /// container's position and size for viewport-based ad optimization.
     func sendDimensionUpdate(_ update: DimensionUpdate) {
         postPayloadToIframe(UpdateDimensionsIframeMessageDTO(data: update))

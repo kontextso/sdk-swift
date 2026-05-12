@@ -2,7 +2,9 @@
 
 ## 4.0.0
 ### Breaking
-Complete API redesign. The `AdsProvider`-centric model from v1–v2 is replaced by a session/ad pattern: `KontextAds.createSession(...)` returns a `Session`, you feed messages via `session.addMessage(...)`, then create one `Ad` per assistant message via `session.createAd(messageId:)`. Render with `InlineAdView` (SwiftUI) or `InlineAdUIView` (UIKit). See https://docs.kontext.so/sdk/v4/swift for the integration guide.
+Complete API redesign. The `AdsProvider`-centric model from v1–v2 is replaced by a session/ad pattern: `KontextAds.createSession(...)` returns a `Session`, you feed messages via `session.addMessage(...)`, then create one `Ad` per assistant message via `session.createAd(messageId:)`. Render with `InlineAdUIView` (UIKit). See https://docs.kontext.so/sdk/v4/swift for the integration guide.
+
+SwiftUI views (`InlineAdView`, `InterstitialAdView`) have been removed — the SDK is UIKit-only. SwiftUI hosts can wrap `InlineAdUIView` in a `UIViewRepresentable` (~10 lines).
 
 * New `KontextAds`, `Session`, `Ad` entry points; `AdsProvider` and `AdsProviderConfiguration` removed.
 * Event delivery via `Session.onEvent` callback and `eventPublisher` (Combine).
@@ -10,7 +12,7 @@ Complete API redesign. The `AdsProvider`-centric model from v1–v2 is replaced 
 * Add server-controlled telemetry toggles (`reportErrors`, `reportDebug`) gated by the `/init` response.
 * Add `MutablePublisherOptions` for live-updating session options (consent, character, variant, etc.) without recreating the session.
 * Add `sendUserEvent(name:payload:)` for forwarding events into the ad iframe.
-* Refresh `ExampleSwiftUI` and `ExampleUIKit` example apps for the v4 API. Both consume the SDK via SwiftPM local-path (`packages.KontextSwiftSDK.path: ../`) so cloning the repo gives a working integration playground out of the box. Xcode projects are generated from `project.yml` via [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+* Refresh `ExampleUIKit` example app for the v4 API. Consumes the SDK via SwiftPM local-path (`packages.KontextSwiftSDK.path: ../`) so cloning the repo gives a working integration playground out of the box. Xcode project is generated from `project.yml` via [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ## 2.1.1
 * Fix crash in `AdScriptMessageHandler` when `WKScriptMessage.body` is not a valid JSON top-level object (e.g. a raw `String` posted by a third-party ad creative). `JSONSerialization.data(withJSONObject:)` was raising an Objective-C `NSException` that Swift `try/catch` could not catch; the bridge now validates with `JSONSerialization.isValidJSONObject` first and throws a catchable `DecodingError` instead.

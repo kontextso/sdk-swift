@@ -17,7 +17,7 @@ public enum AdEvent: Sendable, Equatable {
     case noFill(NoFillData)
     /// The ad iframe reported a new height. Swift-only event (sdk-js
     /// handles iframe resize internally); publishers consume it for
-    /// SwiftUI/UIKit auto-layout.
+    /// UIKit auto-layout.
     case adHeight(AdHeightData)
     /// The ad was viewed by the user.
     case viewed(ViewedData)

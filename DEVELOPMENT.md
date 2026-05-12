@@ -17,12 +17,9 @@ Swift 5.9 ships with Xcode 16; nothing extra to install. The SDK itself is a Swi
 sdk-swift/
 ├── Sources/KontextSwiftSDK/         # public SDK source (entry points, networking, WebView bridge, models)
 ├── Tests/KontextSwiftSDKTests/      # XCTest + swift-testing suites
-├── ExampleSwiftUI/                  # SwiftUI demo app (XcodeGen)
-│   ├── project.yml                  # XcodeGen input
-│   └── ExampleSwiftUI/              # app sources
 ├── ExampleUIKit/                    # UIKit demo app (XcodeGen)
-│   ├── project.yml
-│   └── ExampleUIKit/
+│   ├── project.yml                  # XcodeGen input
+│   └── ExampleUIKit/                # app sources
 ├── ExampleSecrets.swift.example     # template for the gitignored ExampleSecrets.swift (see "Setting your publisher token")
 ├── Package.swift                    # SPM manifest
 ├── KontextSwiftSDK.podspec          # CocoaPods manifest (alternative distribution)
@@ -60,13 +57,13 @@ The exact simulator name (`iPhone 17 Pro` here) must exist on your machine. List
 xcrun simctl list devices available
 ```
 
-## Running the example apps
+## Running the example app
 
-Two demo apps live in `ExampleSwiftUI/` and `ExampleUIKit/`. Both consume the local SDK via SPM and demonstrate the public v4 API end-to-end.
+The demo app lives in `ExampleUIKit/`. It consumes the local SDK via SPM and demonstrates the public v4 API end-to-end.
 
 ### Setting your publisher token
 
-The example apps reference `ExampleSecrets.publisherToken` at build time. The file `ExampleSecrets.swift` is **gitignored** — your token never gets committed.
+The example app references `ExampleSecrets.publisherToken` at build time. The file `ExampleSecrets.swift` is **gitignored** — your token never gets committed.
 
 1. Copy the template into place:
 
@@ -82,16 +79,9 @@ If `ExampleSecrets.swift` is missing the Xcode build fails immediately with "No 
 
 ### Building & running
 
-Each example has its `.xcodeproj` checked in (regenerated from `project.yml` via XcodeGen — see "Regenerating the Xcode projects" below). Open the project in Xcode and Run, or use the CLI:
+The example has its `.xcodeproj` checked in (regenerated from `project.yml` via XcodeGen — see "Regenerating the Xcode project" below). Open the project in Xcode and Run, or use the CLI:
 
 ```bash
-# SwiftUI demo
-xcodebuild build \
-  -project ExampleSwiftUI/ExampleSwiftUI.xcodeproj \
-  -scheme ExampleSwiftUI \
-  -destination 'platform=iOS Simulator,OS=latest,name=iPhone 17 Pro'
-
-# UIKit demo
 xcodebuild build \
   -project ExampleUIKit/ExampleUIKit.xcodeproj \
   -scheme ExampleUIKit \
@@ -102,12 +92,12 @@ Run via Xcode's Run button (⌘R) or `xcrun simctl install` + `xcrun simctl laun
 
 ### Watching SDK logs
 
-The SDK logs every internal event (preload start/response, bid assignment, ad mount, errors, etc.) to stdout via the publisher's `onDebugEvent` callback. The example apps wire it up to `print("[kontext-debug] ...")`. Stream them live with Xcode's debug console or by tailing the simulator:
+The SDK logs every internal event (preload start/response, bid assignment, ad mount, errors, etc.) to stdout via the publisher's `onDebugEvent` callback. The example app wires it up to `print("[kontext-debug] ...")`. Stream them live with Xcode's debug console or by tailing the simulator:
 
 ```bash
 # Stream the booted simulator's stdout for the example app's bundle id
 xcrun simctl spawn booted log stream \
-  --predicate 'process == "ExampleSwiftUI"' \
+  --predicate 'process == "ExampleUIKit"' \
   --style compact
 ```
 
@@ -138,13 +128,12 @@ open -a Simulator
 - **No comments by default** — add one only when the *why* is non-obvious (hidden constraint, subtle invariant, workaround for a specific bug, behaviour that would surprise a reader). Don't reference PRs or tickets in code.
 - **SwiftLint** runs over `Sources/` and `Tests/` per `.swiftlint.yml`. Configuration is intentionally minimal — most rules use SwiftLint defaults.
 
-## Regenerating the Xcode projects
+## Regenerating the Xcode project
 
-The example app `.xcodeproj` files are generated from each `project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen). Both projects' `.pbxproj` are committed so cloning + opening in Xcode Just Works, but if you change a `project.yml` (e.g. to add a new source file) you have to regenerate:
+The example app's `.xcodeproj` is generated from `project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen). The `.pbxproj` is committed so cloning + opening in Xcode Just Works, but if you change `project.yml` (e.g. to add a new source file) you have to regenerate:
 
 ```bash
-cd ExampleSwiftUI && xcodegen generate
-cd ../ExampleUIKit && xcodegen generate
+cd ExampleUIKit && xcodegen generate
 ```
 
 Commit the regenerated `.pbxproj` alongside the `project.yml` change.
