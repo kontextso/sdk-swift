@@ -47,6 +47,12 @@ final class ChatViewController: UIViewController {
                 print("[kontext] \(event)")
             },
             onDebugEvent: { name, data in
+                // Filter out the 200ms dimension-tick chatter — uncomment
+                // if you need to debug viewport reporting.
+                if let dict = data as? [String: Any],
+                   dict["type"] as? String == "update-dimensions-iframe" {
+                    return
+                }
                 if let data {
                     print("[kontext-debug] \(name) \(data)")
                 } else {
