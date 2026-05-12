@@ -22,8 +22,7 @@ targets:
         product: KontextSwiftSDK
     settings:
       base:
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
-        INFOPLIST_KEY_NSUserTrackingUsageDescription: "This identifier will be used to deliver personalized ads to you."
-        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Example/Info.plist
         SWIFT_VERSION: "5.9"
-        PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example
+        PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example-uikit
+        TARGETED_DEVICE_FAMILY: "1"

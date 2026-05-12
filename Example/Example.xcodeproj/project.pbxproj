@@ -8,13 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		41C43241AE1620FC8A0606FF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A263B39369367A3901B6B7C0 /* AppDelegate.swift */; };
+		7254B0BC560166BD2514C7E1 /* InlineAdTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01426EF6ABF72940FD3AA46 /* InlineAdTableViewCell.swift */; };
 		85832E9EB068A8B91FE8D8CF /* KontextSwiftSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 554A20106246F318F5AE301F /* KontextSwiftSDK */; };
+		AC88DDA5C7A1AF78D816D392 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67979B086750BD69A85512EA /* SceneDelegate.swift */; };
+		D2D1F443B455399ED78F14CC /* MyMessageTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F88DFC8758B7128A8995CCF /* MyMessageTableViewCell.swift */; };
+		E949E475E44E6B4A52756706 /* UITableViewCell+ReuseIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96E5AA73DDE6FC2F4368E8D3 /* UITableViewCell+ReuseIdentifier.swift */; };
 		EAFA60E6108351FC5CFFF7D0 /* ExampleSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B80411A41727867FEDE04700 /* ExampleSecrets.swift */; };
 		F0EE05BC1F63D85086E655CD /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B0D13A748DDD1BAC92D249 /* ChatViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0F88DFC8758B7128A8995CCF /* MyMessageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyMessageTableViewCell.swift; sourceTree = "<group>"; };
+		67979B086750BD69A85512EA /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		96E5AA73DDE6FC2F4368E8D3 /* UITableViewCell+ReuseIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableViewCell+ReuseIdentifier.swift"; sourceTree = "<group>"; };
 		A263B39369367A3901B6B7C0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A70CCE019BA3AE518E7FE7F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B01426EF6ABF72940FD3AA46 /* InlineAdTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineAdTableViewCell.swift; sourceTree = "<group>"; };
 		B80411A41727867FEDE04700 /* ExampleSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExampleSecrets.swift; path = ../../ExampleSecrets.swift; sourceTree = "<group>"; };
 		D0B0D13A748DDD1BAC92D249 /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
 		E379CEF328860544C767BD19 /* sdk-swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sdk-swift"; path = ..; sourceTree = SOURCE_ROOT; };
@@ -55,6 +64,11 @@
 				A263B39369367A3901B6B7C0 /* AppDelegate.swift */,
 				D0B0D13A748DDD1BAC92D249 /* ChatViewController.swift */,
 				B80411A41727867FEDE04700 /* ExampleSecrets.swift */,
+				A70CCE019BA3AE518E7FE7F3 /* Info.plist */,
+				B01426EF6ABF72940FD3AA46 /* InlineAdTableViewCell.swift */,
+				0F88DFC8758B7128A8995CCF /* MyMessageTableViewCell.swift */,
+				67979B086750BD69A85512EA /* SceneDelegate.swift */,
+				96E5AA73DDE6FC2F4368E8D3 /* UITableViewCell+ReuseIdentifier.swift */,
 			);
 			path = Example;
 			sourceTree = "<group>";
@@ -131,6 +145,10 @@
 				41C43241AE1620FC8A0606FF /* AppDelegate.swift in Sources */,
 				F0EE05BC1F63D85086E655CD /* ChatViewController.swift in Sources */,
 				EAFA60E6108351FC5CFFF7D0 /* ExampleSecrets.swift in Sources */,
+				7254B0BC560166BD2514C7E1 /* InlineAdTableViewCell.swift in Sources */,
+				D2D1F443B455399ED78F14CC /* MyMessageTableViewCell.swift in Sources */,
+				AC88DDA5C7A1AF78D816D392 /* SceneDelegate.swift in Sources */,
+				E949E475E44E6B4A52756706 /* UITableViewCell+ReuseIdentifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,17 +216,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSUserTrackingUsageDescription = "This identifier will be used to deliver personalized ads to you.";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_FILE = Example/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = so.kontext.example;
+				PRODUCT_BUNDLE_IDENTIFIER = "so.kontext.example-uikit";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -217,17 +233,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSUserTrackingUsageDescription = "This identifier will be used to deliver personalized ads to you.";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_FILE = Example/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = so.kontext.example;
+				PRODUCT_BUNDLE_IDENTIFIER = "so.kontext.example-uikit";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};

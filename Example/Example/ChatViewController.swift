@@ -1,30 +1,40 @@
-import UIKit
 import KontextSwiftSDK
+import UIKit
 
-final class ChatViewController: UITableViewController {
+final class ChatViewController: UIViewController {
     private let session: Session
-    private var messages: [ChatItem] = []
-    private var loading = false
+    private var messages: [Message] = []
+    private var items: [Item] = []
+    private var ads: [String: Ad] = [:]
 
-    /// Cache ad views by message ID to avoid recreating on cell reuse
-    private var adViews: [String: InlineAdUIView] = [:]
+    private let tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.separatorStyle = .none
+        tableView.keyboardDismissMode = .interactive
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.allowsSelection = false
+        return tableView
+    }()
+
+    private let inputField: UITextField = {
+        let field = UITextField()
+        field.placeholder = "Type a message…"
+        field.borderStyle = .roundedRect
+        field.font = .systemFont(ofSize: 15)
+        field.translatesAutoresizingMaskIntoConstraints = false
+        return field
+    }()
 
     private let sendButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Send", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
         button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
-    }()
-
-    private let inputField: UITextField = {
-        let field = UITextField()
-        field.placeholder = "Type a message..."
-        field.borderStyle = .roundedRect
-        field.translatesAutoresizingMaskIntoConstraints = false
-        return field
     }()
 
     init() {
@@ -37,155 +47,137 @@ final class ChatViewController: UITableViewController {
                 print("[kontext] \(event)")
             }
         ))
-        super.init(style: .plain)
+        super.init(nibName: nil, bundle: nil)
     }
 
-    required init?(coder: NSCoder) { fatalError() }
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Kontext v4 — UIKit"
-        navigationItem.largeTitleDisplayMode = .never
-        navigationController?.navigationBar.prefersLargeTitles = false
+        view.backgroundColor = .systemBackground
+        title = "Kontext v4"
+        setupTableView()
+        setupInputBar()
+        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+    }
 
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+    private func setupTableView() {
+        tableView.register(MyMessageTableViewCell.self, forCellReuseIdentifier: MyMessageTableViewCell.reuseIdentifier)
+        tableView.register(InlineAdTableViewCell.self, forCellReuseIdentifier: InlineAdTableViewCell.reuseIdentifier)
+        tableView.dataSource = self
+        view.addSubview(tableView)
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+    }
 
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "MessageCell")
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "AdCell")
-        tableView.separatorStyle = .none
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.contentInsetAdjustmentBehavior = .automatic
-        tableView.contentInset.bottom = 70
-
-        let footer = UIView()
-        footer.translatesAutoresizingMaskIntoConstraints = false
-        footer.backgroundColor = .systemBackground
-        view.addSubview(footer)
-        footer.addSubview(inputField)
-        footer.addSubview(sendButton)
+    private func setupInputBar() {
+        let bar = UIView()
+        bar.backgroundColor = .secondarySystemBackground
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        bar.addSubview(inputField)
+        bar.addSubview(sendButton)
+        view.addSubview(bar)
 
         NSLayoutConstraint.activate([
-            footer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            footer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            footer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            footer.heightAnchor.constraint(equalToConstant: 60),
+            bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            bar.topAnchor.constraint(equalTo: tableView.bottomAnchor),
+            bar.heightAnchor.constraint(equalToConstant: 56),
 
-            inputField.leadingAnchor.constraint(equalTo: footer.leadingAnchor, constant: 16),
-            inputField.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
-            inputField.heightAnchor.constraint(equalToConstant: 40),
+            inputField.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
+            inputField.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            inputField.heightAnchor.constraint(equalToConstant: 36),
 
             sendButton.leadingAnchor.constraint(equalTo: inputField.trailingAnchor, constant: 8),
-            sendButton.trailingAnchor.constraint(equalTo: footer.trailingAnchor, constant: -16),
-            sendButton.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
-            sendButton.widthAnchor.constraint(equalToConstant: 70),
-            sendButton.heightAnchor.constraint(equalToConstant: 40),
+            sendButton.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -12),
+            sendButton.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            sendButton.widthAnchor.constraint(equalToConstant: 64),
+            sendButton.heightAnchor.constraint(equalToConstant: 36),
         ])
-
-        sendButton.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
     }
 
-    @objc private func sendMessage() {
-        let content = inputField.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        guard !content.isEmpty, !loading else { return }
+    @objc private func sendTapped() {
+        let text = inputField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        guard !text.isEmpty else { return }
         inputField.text = ""
 
-        // Remove previous ad row
-        if let adIndex = messages.lastIndex(where: { $0.isAd }) {
-            let adItem = messages[adIndex]
-            adViews[adItem.id]?.removeFromSuperview()
-            adViews.removeValue(forKey: adItem.id)
-            messages.remove(at: adIndex)
-        }
+        let user = Message(id: UUID().uuidString, role: .user, content: text)
+        appendMessage(user)
 
-        let userMsg = ChatItem(id: UUID().uuidString, role: .user, content: content, isAd: false)
-        messages.append(userMsg)
-        tableView.reloadData()
-
-        Task { await session.addMessage(Message(id: userMsg.id, role: .user, content: content)) }
-
-        loading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             guard let self else { return }
-
-            let assistantMsg = ChatItem(
+            let assistant = Message(
                 id: UUID().uuidString,
                 role: .assistant,
-                content: "This is a response from the assistant.",
-                isAd: false
+                content: "This is a static reply. Replace with your own LLM."
             )
-            messages.append(assistantMsg)
-            messages.append(ChatItem(id: assistantMsg.id, role: .assistant, content: "", isAd: true))
-
-            loading = false
-            tableView.reloadData()
-
-            Task { await self.session.addMessage(Message(id: assistantMsg.id, role: .assistant, content: assistantMsg.content)) }
+            self.appendMessage(assistant)
+            // Create the Ad placeholder for the assistant message — it
+            // resolves to a bid asynchronously as preload completes.
+            self.ads[assistant.id] = self.session.createAd(assistant.id)
+            self.rebuildItems()
         }
     }
 
-    // MARK: - Ad View Cache
-
-    private func adView(for messageId: String) -> InlineAdUIView {
-        if let cached = adViews[messageId] {
-            return cached
-        }
-        let view = InlineAdUIView(messageId: messageId, session: session)
-        view.onHeightChange = { [weak self] _ in
-            self?.tableView.beginUpdates()
-            self?.tableView.endUpdates()
-        }
-        adViews[messageId] = view
-        return view
+    private func appendMessage(_ message: Message) {
+        messages.append(message)
+        session.addMessage(message)
+        rebuildItems()
+        scrollToBottom()
     }
 
-    // MARK: - Table View
-
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        messages.count
+    private func rebuildItems() {
+        var built: [Item] = []
+        for message in messages {
+            built.append(.message(message))
+            if let ad = ads[message.id] {
+                built.append(.ad(ad))
+            }
+        }
+        items = built
+        tableView.reloadData()
     }
 
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let msg = messages[indexPath.row]
-
-        if msg.isAd {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "AdCell", for: indexPath)
-            cell.selectionStyle = .none
-            cell.clipsToBounds = true
-            cell.contentView.clipsToBounds = true
-
-            // Remove any previous ad subview
-            cell.contentView.subviews.forEach { $0.removeFromSuperview() }
-
-            let adView = adView(for: msg.id)
-            // Remove from previous cell if reused
-            adView.removeFromSuperview()
-            cell.contentView.addSubview(adView)
-            NSLayoutConstraint.activate([
-                adView.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
-                adView.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
-                adView.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
-                adView.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
-            ])
-            return cell
-        }
-
-        let cell = tableView.dequeueReusableCell(withIdentifier: "MessageCell", for: indexPath)
-        var config = cell.defaultContentConfiguration()
-        config.text = "\(msg.role == .user ? "You" : "Assistant"): \(msg.content)"
-        config.textProperties.font = .preferredFont(forTextStyle: .subheadline)
-        config.textProperties.numberOfLines = 0
-        cell.contentConfiguration = config
-        cell.backgroundColor = msg.role == .user ? .systemBlue.withAlphaComponent(0.1) : .systemGray6
-        return cell
+    private func scrollToBottom(animated: Bool = true) {
+        guard !items.isEmpty else { return }
+        let last = IndexPath(row: items.count - 1, section: 0)
+        tableView.scrollToRow(at: last, at: .bottom, animated: animated)
     }
 }
 
-private struct ChatItem {
-    let id: String
-    let role: Message.Role
-    let content: String
-    let isAd: Bool
+extension ChatViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        items.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        switch items[indexPath.row] {
+        case .message(let message):
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: MyMessageTableViewCell.reuseIdentifier,
+                for: indexPath
+            ) as! MyMessageTableViewCell
+            cell.configure(with: message)
+            return cell
+        case .ad(let ad):
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: InlineAdTableViewCell.reuseIdentifier,
+                for: indexPath
+            ) as! InlineAdTableViewCell
+            cell.configure(with: ad)
+            return cell
+        }
+    }
+}
+
+private enum Item {
+    case message(Message)
+    case ad(Ad)
 }
