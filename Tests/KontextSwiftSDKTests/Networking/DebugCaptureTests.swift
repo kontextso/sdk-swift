@@ -2,6 +2,80 @@ import Foundation
 @testable import KontextSwiftSDK
 import Testing
 
+/// Captures every `URLRequest` handed to a stubbed `URLSession` so
+/// network-leg assertions can verify that `DebugCapture.capture(...)`
+/// actually fires a POST with the expected shape. Carries
+/// process-global mutable state, so the suite that uses it must run
+/// serialised.
+private final class DebugStubProtocol: URLProtocol {
+
+    nonisolated(unsafe) static var capturedRequest: URLRequest?
+    nonisolated(unsafe) static var capturedBody: Data?
+    nonisolated(unsafe) static var didFire = false
+
+    static func reset() {
+        capturedRequest = nil
+        capturedBody = nil
+        didFire = false
+    }
+
+    // swiftlint:disable static_over_final_class
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    // swiftlint:enable static_over_final_class
+
+    override func startLoading() {
+        DebugStubProtocol.capturedRequest = request
+        if let body = request.httpBody {
+            DebugStubProtocol.capturedBody = body
+        } else if let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            var data = Data()
+            let bufferSize = 1024
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+            defer { buffer.deallocate() }
+            while stream.hasBytesAvailable {
+                let read = stream.read(buffer, maxLength: bufferSize)
+                if read <= 0 { break }
+                data.append(buffer, count: read)
+            }
+            DebugStubProtocol.capturedBody = data
+        }
+        DebugStubProtocol.didFire = true
+
+        let response = HTTPURLResponse(
+            url: request.url ?? URL(string: "https://example.test/debug")!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data())
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+}
+
+private func makeStubbedSession() -> URLSession {
+    let config = URLSessionConfiguration.ephemeral
+    config.protocolClasses = [DebugStubProtocol.self]
+    return URLSession(configuration: config)
+}
+
+/// Waits up to `timeoutMs` for `condition` to return true, sampling
+/// every 10ms. The fire-and-forget network leg runs on a detached
+/// Task so there's no await point on the calling side.
+private func waitFor(timeoutMs: Int = 1000, _ condition: () -> Bool) async {
+    let deadline = Date().addingTimeInterval(Double(timeoutMs) / 1000)
+    while Date() < deadline {
+        if condition() { return }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+}
+
+@Suite(.serialized)
 struct DebugCaptureTests {
 
     // MARK: - DebugContext
@@ -121,11 +195,52 @@ struct DebugCaptureTests {
         #expect(additionalData?["sdk"] != nil)
     }
 
-    @Test func urlFormationUsesDebugEndpoint() throws {
-        let adServerUrl = "https://custom.server.com"
-        let url = URL(string: "\(adServerUrl)/debug")
+    @Test func urlFormationUsesDebugEndpoint() {
+        // Exercises the same `appendingPathComponent` path
+        // `DebugCapture.capture` uses to build the endpoint URL.
+        let url = URL(string: "https://custom.server.com")!.appendingPathComponent("debug")
+        #expect(url.absoluteString == "https://custom.server.com/debug")
+    }
 
-        #expect(url != nil)
-        #expect(url?.absoluteString == "https://custom.server.com/debug")
+    // MARK: - Network leg
+
+    @Test func captureFiresPostToDebugEndpoint() async throws {
+        // Positive case: the request leaves the SDK with the expected
+        // URL, method, headers, and body shape. Complements the
+        // DTO-encoding tests by pinning the wire path end-to-end.
+        DebugStubProtocol.reset()
+        let session = makeStubbedSession()
+        let ctx = DebugContext(
+            adServerUrl: URL(string: "https://example.test")!,
+            publisherToken: "tok",
+            conversationId: "conv",
+            userId: "user",
+            sessionId: "sess"
+        )
+
+        DebugCapture.capture(
+            name: "Session: probe",
+            data: ["k": "v"],
+            context: ctx,
+            session: session
+        )
+
+        await waitFor { DebugStubProtocol.didFire }
+        let request = try #require(DebugStubProtocol.capturedRequest)
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.absoluteString == "https://example.test/debug")
+        #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
+
+        let body = try #require(DebugStubProtocol.capturedBody)
+        let dict = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(dict["name"] as? String == "Session: probe")
+        #expect(dict["data"] as? String == #"{"k":"v"}"#)
+
+        let additionalData = try #require(dict["additionalData"] as? [String: Any])
+        #expect(additionalData["publisherToken"] as? String == "tok")
+        #expect(additionalData["conversationId"] as? String == "conv")
+        #expect(additionalData["userId"] as? String == "user")
+        #expect(additionalData["sessionId"] as? String == "sess")
+        #expect(additionalData["sdk"] != nil)
     }
 }

@@ -50,9 +50,19 @@ enum DebugCapture {
     ///   - data: Optional structured payload from the call site.
     ///     Serialised to JSON when possible, falls back to
     ///     `String(describing:)` for non-JSON-representable values
-    ///     (errors, dates, etc.). nil when omitted.
+    ///     (errors, dates, etc.). nil when omitted. Consumed
+    ///     synchronously via `stringify` before the detached Task is
+    ///     spawned, so its non-`Sendable` shape never crosses an
+    ///     actor boundary.
     ///   - context: Session attribution metadata.
-    static func capture(name: String, data: Any? = nil, context: DebugContext) {
+    ///   - session: Injectable purely for tests — production calls
+    ///     always use `URLSession.shared` via the default.
+    static func capture(
+        name: String,
+        data: Any? = nil,
+        context: DebugContext,
+        session: URLSession = .shared
+    ) {
         let url = context.adServerUrl.appendingPathComponent("debug")
 
         let dto = DebugRequestDTO(
@@ -77,7 +87,12 @@ enum DebugCapture {
         // is opt-in but should never stall the publisher's network.
         request.timeoutInterval = Constants.errorReportTimeoutMs / 1000
 
-        Task { try? await URLSession.shared.data(for: request) }
+        // Detached so the request survives the caller's lifetime — a
+        // plain `Task { ... }` inherits the caller's actor, so
+        // destroying the Session mid-flight would cancel the
+        // diagnostic POST. Matches `ErrorCapture` and sdk-js's
+        // `keepalive: true`.
+        Task.detached { try? await session.data(for: request) }
     }
 
     /// Best-effort serialisation of an arbitrary `data: Any?` to a
