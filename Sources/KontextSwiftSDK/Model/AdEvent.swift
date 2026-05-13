@@ -8,8 +8,9 @@ import Foundation
 /// Mirrors the sdk-js `AdEvent` contract in `sdk-common/src/ad-events.ts`:
 /// every case carries a single typed payload struct (the analogue of
 /// sdk-js's `event.payload`). Each case's primary identifier is the bid
-/// ID; payload structs match sdk-js's type definitions field-by-field —
-/// only `ViewedData.revenue` is optional, everything else is required.
+/// ID; payload structs match sdk-js's type definitions field-by-field.
+/// `revenue` (on `FilledData` and `ViewedData`) is the only optional
+/// field — everything else is required.
 public enum AdEvent: Sendable, Equatable {
     /// A bid was successfully filled.
     case filled(FilledData)
@@ -94,6 +95,13 @@ public enum AdEvent: Sendable, Equatable {
         public let bidId: UUID
         public let content: String
         public let messageId: String
+        /// Click destination, as sent by the ad iframe. Three valid shapes:
+        /// absolute (`https://example.com/...`), server-relative
+        /// (`/clicks/abc123` — `Ad.openUrl` joins with `adServerUrl`), or a
+        /// custom scheme (`amazon://...`, `fb://...`). `String` because
+        /// (a) it's the honest type for what's on the wire, and (b)
+        /// matches sdk-js's `url: string`. Publishers who need a `URL`
+        /// can `URL(string: data.url)`.
         public let url: String
         public let format: String
         public let area: String

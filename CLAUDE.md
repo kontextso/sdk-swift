@@ -55,7 +55,7 @@ The SDK is UIKit-only. SwiftUI hosts can wrap `InlineAdUIView` in a `UIViewRepre
 ### Internal organization
 
 - `Sources/KontextSwiftSDK/` — public types (`KontextAds`, `Session`, `Ad`, `SessionOptions`, …) at the top.
-- `Sources/KontextSwiftSDK/Networking/` — `Init`, `Preload`, `ErrorCapture`, `DebugCapture`, `HTTPRetry`, DTOs in `DTO/`, request collectors in `Collectors/`.
+- `Sources/KontextSwiftSDK/Networking/` — `Init`, `Preload`, `ErrorCapture`, `DebugCapture`, `HTTPRetry`, DTOs in `DTO/`, request collectors in `Collectors/`. **Convention in `DTO/`**: wire-record structs carry the `*DTO` suffix (`MessageDTO`, `BidDTO`); single-string enums that type a single DTO field (`HardwareType`, `BatteryState`, `ScreenOrientation`, …) live next to their parent DTO without a suffix — the naming (`Type` / `State` / `Orientation`) already conveys wire vocabulary. Anything that *also* appears in the domain layer (e.g. `ImpressionTrigger`, shared by `Bid` and `BidDTO`) belongs in `Model/`, not here.
 - `Sources/KontextSwiftSDK/WebView/` — `AdWebView` + the JS `postMessage` bridge.
 - `Sources/KontextSwiftSDK/InlineAd/`, `InterstitialAd/` — UIKit ad views (`InlineAdUIView`, `InterstitialAdViewController`).
 - `Sources/KontextSwiftSDK/Model/` — Swift-side domain models (`Message`, `Bid`, `AdEvent`, `Character`, `Regulatory`, …).
