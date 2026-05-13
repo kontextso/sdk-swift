@@ -7,9 +7,14 @@ import KontextKit
 /// Strict on identity (`bidId: UUID`, `code: String`) — a malformed
 /// required field is treated as a server bug and fails the whole
 /// response decode rather than silently producing a half-broken bid.
-/// Tolerant on optional metadata (`revenue`, `impressionTrigger`,
-/// `creativeType`, `skan`) — unknown enum values or type mismatches
-/// fall back to nil so server-side additions don't break old SDKs.
+/// Tolerant on optional metadata (`revenue`, `creativeType`, `skan`)
+/// — unknown enum values or type mismatches fall back to nil so
+/// server-side additions don't break old SDKs.
+///
+/// `impressionTrigger` is normalised to `.immediate` when missing or
+/// unparseable — every consumer treats nil as `.immediate` anyway, so
+/// collapsing it at the decode boundary keeps that semantics in one
+/// place (same pattern as `InitResponseDTO.enabled/reportErrors/reportDebug`).
 ///
 /// The v4 ad server emits the OMID creative type on a nested `om` block
 /// (`bids[i].om.creativeType`), not as a top-level field. Decode both
@@ -22,7 +27,7 @@ struct BidDTO: Sendable, Decodable {
     let bidId: UUID
     let code: String
     let revenue: Double?
-    let impressionTrigger: ImpressionTrigger?
+    let impressionTrigger: ImpressionTrigger
     let creativeType: OMCreativeType?
     let om: OMDTO?
     let skan: Skan?
@@ -36,7 +41,7 @@ struct BidDTO: Sendable, Decodable {
         self.bidId             = try c.decode(UUID.self, forKey: .bidId)
         self.code              = try c.decode(String.self, forKey: .code)
         self.revenue           = try? c.decode(Double.self, forKey: .revenue)
-        self.impressionTrigger = try? c.decode(ImpressionTrigger.self, forKey: .impressionTrigger)
+        self.impressionTrigger = (try? c.decode(ImpressionTrigger.self, forKey: .impressionTrigger)) ?? .immediate
         self.creativeType      = try? c.decode(OMCreativeType.self, forKey: .creativeType)
         self.om                = try? c.decode(OMDTO.self, forKey: .om)
         self.skan              = try? c.decode(Skan.self, forKey: .skan)

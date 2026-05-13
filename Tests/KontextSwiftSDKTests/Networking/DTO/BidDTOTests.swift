@@ -45,7 +45,10 @@ struct BidDTOTests {
         """
         let bid = try decode(json)
         #expect(bid.revenue == nil)
-        #expect(bid.impressionTrigger == nil)
+        // Missing wire value collapses to `.immediate` at decode — see
+        // `BidDTO.init(from:)`. Every consumer treats nil as immediate
+        // anyway, so we normalise once at the boundary.
+        #expect(bid.impressionTrigger == .immediate)
         #expect(bid.creativeType == nil)
         #expect(bid.om == nil)
     }

@@ -15,8 +15,12 @@ struct Bid: Sendable, Equatable {
     let code: String
     /// Estimated revenue for this impression, if available.
     let revenue: Double?
-    /// When the ad impression should be triggered.
-    let impressionTrigger: ImpressionTrigger?
+    /// When the ad impression should be triggered. Non-optional —
+    /// `BidDTO.init(from:)` collapses a missing/null wire value to
+    /// `.immediate` so every call site can treat this as a definitive
+    /// signal. Mirrors `InitResponseDTO`'s pattern for behavior-gating
+    /// flags.
+    let impressionTrigger: ImpressionTrigger
     /// Creative format for Open Measurement tracking.
     let creativeType: OMCreativeType?
     /// SKAdNetwork attribution data, passed through to Apple's SKAdNetwork
@@ -27,7 +31,7 @@ struct Bid: Sendable, Equatable {
         bidId: UUID,
         code: String,
         revenue: Double? = nil,
-        impressionTrigger: ImpressionTrigger? = nil,
+        impressionTrigger: ImpressionTrigger = .immediate,
         creativeType: OMCreativeType? = nil,
         skan: Skan? = nil
     ) {

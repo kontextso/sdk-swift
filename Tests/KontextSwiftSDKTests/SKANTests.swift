@@ -87,7 +87,7 @@ struct SKANTests {
     /// Creates an ad that has a resolved bid with SKAN data.
     private func makeAdWithSkanBid(
         skanManager: MockSKAdNetworkManager,
-        impressionTrigger: ImpressionTrigger? = .immediate,
+        impressionTrigger: ImpressionTrigger = .immediate,
         skan: Skan? = Skan(version: "2.2", network: "test.skadnetwork", itunesItem: "123456", sourceApp: "987654")
     ) -> (Ad, Session) {
         let session = makeSession(skanManager: skanManager)

@@ -625,9 +625,10 @@ private extension Ad {
             startOMSession(creativeType: creativeType)
         }
 
-        // SKAN attribution. Both `nil` and `.immediate` triggers fire
-        // here — matches sdk-react-native's
-        // `bid?.impressionTrigger !== 'component'`.
+        // SKAN attribution fires on the immediate path. Component-trigger
+        // bids defer SKAN to `handleOpenComponentIframe`. (BidDTO normalises
+        // a missing wire value to `.immediate`, so the guard above is
+        // total — no nil case to consider here.)
         startSKAdNetwork()
     }
 

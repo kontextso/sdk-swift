@@ -240,9 +240,10 @@ struct PreloadResponseDecodingTests {
         }
     }
 
-    @Test func decodeAcceptsUnknownImpressionTriggerAsNil() throws {
-        // Unknown enum value falls back to nil at the DTO boundary so
-        // server-side additions don't break old SDKs.
+    @Test func decodeAcceptsUnknownImpressionTriggerAsImmediate() throws {
+        // Unknown enum value collapses to `.immediate` at the DTO boundary
+        // — same default as a completely missing field. Server-side
+        // additions don't break old SDKs.
         let uuid = "12345678-1234-1234-1234-123456789012"
         let json = """
         {
@@ -258,7 +259,7 @@ struct PreloadResponseDecodingTests {
         """
         let response = try decode(json)
         let bid = response.bids![0].toBid()
-        #expect(bid.impressionTrigger == nil)
+        #expect(bid.impressionTrigger == .immediate)
     }
 
     @Test func decodeAcceptsUnknownCreativeTypeAsNil() throws {
