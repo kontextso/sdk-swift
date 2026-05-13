@@ -120,16 +120,16 @@ final class ChatViewController: UIViewController {
             bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             bar.topAnchor.constraint(equalTo: tableView.bottomAnchor),
-            bar.heightAnchor.constraint(equalToConstant: 96),
+            bar.heightAnchor.constraint(equalToConstant: 112),
 
             trackOnlyLabel.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
-            trackOnlyLabel.topAnchor.constraint(equalTo: bar.topAnchor, constant: 8),
+            trackOnlyLabel.topAnchor.constraint(equalTo: bar.topAnchor, constant: 14),
 
             trackOnlySwitch.leadingAnchor.constraint(equalTo: trackOnlyLabel.trailingAnchor, constant: 8),
             trackOnlySwitch.centerYAnchor.constraint(equalTo: trackOnlyLabel.centerYAnchor),
 
             inputField.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
-            inputField.topAnchor.constraint(equalTo: trackOnlyLabel.bottomAnchor, constant: 8),
+            inputField.topAnchor.constraint(equalTo: trackOnlySwitch.bottomAnchor, constant: 14),
             inputField.heightAnchor.constraint(equalToConstant: 36),
 
             sendButton.leadingAnchor.constraint(equalTo: inputField.trailingAnchor, constant: 8),
