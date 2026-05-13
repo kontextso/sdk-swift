@@ -2,6 +2,79 @@ import Foundation
 @testable import KontextSwiftSDK
 import Testing
 
+/// Captures every `URLRequest` handed to a stubbed `URLSession` so
+/// network-leg assertions can verify that `ErrorCapture.capture(...)`
+/// does (or doesn't) actually fire a POST. Carries process-global
+/// mutable state, so the suite that uses it must run serialised.
+private final class ErrorStubProtocol: URLProtocol {
+
+    nonisolated(unsafe) static var capturedRequest: URLRequest?
+    nonisolated(unsafe) static var capturedBody: Data?
+    nonisolated(unsafe) static var didFire = false
+
+    static func reset() {
+        capturedRequest = nil
+        capturedBody = nil
+        didFire = false
+    }
+
+    // swiftlint:disable static_over_final_class
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    // swiftlint:enable static_over_final_class
+
+    override func startLoading() {
+        ErrorStubProtocol.capturedRequest = request
+        if let body = request.httpBody {
+            ErrorStubProtocol.capturedBody = body
+        } else if let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            var data = Data()
+            let bufferSize = 1024
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+            defer { buffer.deallocate() }
+            while stream.hasBytesAvailable {
+                let read = stream.read(buffer, maxLength: bufferSize)
+                if read <= 0 { break }
+                data.append(buffer, count: read)
+            }
+            ErrorStubProtocol.capturedBody = data
+        }
+        ErrorStubProtocol.didFire = true
+
+        let response = HTTPURLResponse(
+            url: request.url ?? URL(string: "https://example.test/error")!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data())
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+}
+
+private func makeStubbedSession() -> URLSession {
+    let config = URLSessionConfiguration.ephemeral
+    config.protocolClasses = [ErrorStubProtocol.self]
+    return URLSession(configuration: config)
+}
+
+/// Waits up to `timeoutMs` for `condition` to return true, sampling
+/// every 10ms. The fire-and-forget network leg runs on a detached
+/// Task so there's no await point on the calling side.
+private func waitFor(timeoutMs: Int = 1000, _ condition: () -> Bool) async {
+    let deadline = Date().addingTimeInterval(Double(timeoutMs) / 1000)
+    while Date() < deadline {
+        if condition() { return }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+}
+
+@Suite(.serialized)
 struct ErrorCaptureTests {
 
     // MARK: - ErrorContext
@@ -183,5 +256,69 @@ struct ErrorCaptureTests {
 
         #expect(url != nil)
         #expect(url?.absoluteString == "https://custom.server.com/error")
+    }
+
+    // MARK: - Network leg
+
+    @Test func reportEnabledFalseSkipsNetworkPost() async {
+        // Pins the kill-switch behaviour: when `/init` returns
+        // `reportErrors: false`, ErrorCapture must not POST to /error.
+        // Without a stubbed URLSession the original test could only
+        // verify "doesn't crash" — this one verifies the request never
+        // leaves the SDK.
+        ErrorStubProtocol.reset()
+        let session = makeStubbedSession()
+
+        ErrorCapture.capture(
+            message: "suppressed",
+            context: ErrorContext(adServerUrl: URL(string: "https://example.test")!),
+            reportEnabled: false,
+            session: session
+        )
+
+        // Give the (skipped) detached Task a window to fire if the
+        // gate ever regresses. 100ms is plenty — the actual POST is
+        // a single sub-millisecond loopback hop via URLProtocol.
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(!ErrorStubProtocol.didFire)
+        #expect(ErrorStubProtocol.capturedRequest == nil)
+    }
+
+    @Test func reportEnabledTrueFiresPostToErrorEndpoint() async throws {
+        // Positive case: with the default `reportEnabled: true`, the
+        // request leaves the SDK with the expected URL, method, and
+        // body shape. Complements the DTO-encoding tests by pinning
+        // the wire path end-to-end.
+        ErrorStubProtocol.reset()
+        let session = makeStubbedSession()
+        let ctx = ErrorContext(
+            adServerUrl: URL(string: "https://example.test")!,
+            publisherToken: "tok",
+            conversationId: "conv",
+            userId: "user",
+            bidId: "bid"
+        )
+
+        ErrorCapture.capture(
+            message: "boom",
+            stack: "trace",
+            context: ctx,
+            session: session
+        )
+
+        await waitFor { ErrorStubProtocol.didFire }
+        let request = try #require(ErrorStubProtocol.capturedRequest)
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.absoluteString == "https://example.test/error")
+        #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
+
+        let body = try #require(ErrorStubProtocol.capturedBody)
+        let dict = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(dict["error"] as? String == "boom")
+        #expect(dict["stack"] as? String == "trace")
+        let additionalData = try #require(dict["additionalData"] as? [String: Any])
+        #expect(additionalData["publisherToken"] as? String == "tok")
+        #expect(additionalData["bidId"] as? String == "bid")
     }
 }

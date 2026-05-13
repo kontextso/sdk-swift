@@ -62,22 +62,28 @@ enum ErrorCapture {
         _ error: Error,
         source: String? = nil,
         context: ErrorContext?,
-        reportEnabled: Bool = true
+        reportEnabled: Bool = true,
+        session: URLSession = .shared
     ) {
         capture(
             message: error.localizedDescription,
             stack: source ?? String(describing: error),
             context: context,
-            reportEnabled: reportEnabled
+            reportEnabled: reportEnabled,
+            session: session
         )
     }
 
     /// Sends an error report with a custom message.
+    ///
+    /// `session` is injectable purely for tests — production calls
+    /// always use `URLSession.shared` via the default.
     static func capture(
         message: String,
         stack: String? = nil,
         context: ErrorContext?,
-        reportEnabled: Bool = true
+        reportEnabled: Bool = true,
+        session: URLSession = .shared
     ) {
         // Local leg: always runs. Mirrors `console.error` in sdk-js
         // and `Log.e` in sdk-kotlin so a publisher debugging in the
@@ -114,7 +120,13 @@ enum ErrorCapture {
         // many URLSession tasks alive on a slow network.
         request.timeoutInterval = Constants.errorReportTimeoutMs / 1000
 
-        // Fire-and-forget — match Init/Preload's async URLSession idiom.
-        Task { try? await URLSession.shared.data(for: request) }
+        // Detached so the request survives the caller's lifetime —
+        // a plain `Task { ... }` inherits the caller's actor, which
+        // means destroying a Session mid-flight cancels the diagnostic
+        // POST and the report is lost. `URLSession.shared` is process-wide,
+        // so it's safe to detach from the actor context. Mirrors
+        // sdk-kotlin's process-wide `SupervisorJob + Dispatchers.IO`
+        // scope and sdk-js's `keepalive: true`.
+        Task.detached { try? await session.data(for: request) }
     }
 }
