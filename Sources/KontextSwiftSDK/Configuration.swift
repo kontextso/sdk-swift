@@ -4,11 +4,14 @@ import Foundation
 ///
 /// Identity / server-binding fields (`publisherToken`, `userId`,
 /// `conversationId`, `adServerUrl`, `enabledPlacementCodes`,
-/// `requestTrackingAuthorization`, callbacks) are immutable for the
-/// lifetime of the session.
+/// `character`, `requestTrackingAuthorization`, callbacks) are
+/// immutable for the lifetime of the session. `character` is in
+/// this group because the accumulated conversation history is
+/// targeted at the original persona — swap it via session
+/// recreation, not mid-session mutation.
 ///
-/// Preload-scoped fields (`character`, `variantId`, `regulatory`,
-/// `userEmail`, `advertisingId`, `vendorId`) are settable via
+/// Preload-scoped fields (`variantId`, `regulatory`, `userEmail`,
+/// `advertisingId`, `vendorId`) are settable via
 /// `Session.updateOptions(_:)` so publishers can update targeting /
 /// consent / IFA mid-session without recreating the session. The
 /// next `/preload` request reads the new values.
@@ -18,7 +21,7 @@ public struct ResolvedConfig: Sendable {
     public let conversationId: String
     public let enabledPlacementCodes: [String]
     public let adServerUrl: URL
-    public internal(set) var character: Character?
+    public let character: Character?
     public internal(set) var variantId: String?
     public internal(set) var regulatory: Regulatory?
     public internal(set) var userEmail: String?
