@@ -22,6 +22,17 @@
 	<true/>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>This identifier will be used to deliver personalized ads to you.</string>
+	<!-- Placeholder SKAdNetwork IDs for local testing only. In production
+	     apps, replace this list with the SKAdNetworkIdentifier values
+	     provided by Kontext during onboarding. Missing or stale IDs mean
+	     conversions from those DSPs won't be attributed. -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

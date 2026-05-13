@@ -56,9 +56,22 @@ final class ChatViewController: UIViewController {
     init() {
         session = KontextAds.createSession(SessionOptions(
             publisherToken: ExampleSecrets.publisherToken,
-            userId: UUID().uuidString,
-            conversationId: UUID().uuidString,
-            enabledPlacementCodes: ["inlineAd"],
+            // Stable demo values so it's obvious these are placeholders —
+            // replace with your real user/conversation identifiers.
+            userId: "user-id-1",
+            conversationId: "conversation-id-1",
+            character: Character(
+                id: "character-id-1",
+                name: "Aria",
+                avatarUrl: URL(string: "https://example.com/avatars/aria.png"),
+                greeting: "Hi! I'm Aria, your friendly AI companion.",
+                persona: "Curious, upbeat, and loves talking about science.",
+                tags: ["assistant", "friendly", "sci-fi"],
+                isNsfw: false
+            ),
+            // adServerUrl is optional — omit it to use the production
+            // endpoint (`Constants.defaultAdServerUrl`). Set here so
+            // the example can target a local ad server during dev.
             adServerUrl: ExampleSecrets.adServerUrl,
             onEvent: { event in
                 print("[kontext] \(event)")
