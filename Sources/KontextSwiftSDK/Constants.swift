@@ -9,9 +9,11 @@ import Foundation
 ///
 /// Time-valued constants are named in milliseconds (matching the sdk-js
 /// naming) and converted to `TimeInterval` (seconds) at the use site.
-/// `defaultAdServerUrl` and `defaultPlacementCode` are intentionally `public` —
-/// they're referenced as default argument values by the public `SessionOptions.init`,
-/// so Swift requires them to match that visibility. Everything else stays internal.
+/// `defaultPlacementCode` is `public` because it's referenced as a default
+/// argument value by the public `AdOptions.init` and `Session.createAd`,
+/// so Swift requires it to match that visibility. `defaultAdServerUrl` is
+/// `public` so publishers can compare against the production URL in their
+/// own diagnostics. Everything else stays internal.
 public enum Constants {
     // MARK: - Server
 
