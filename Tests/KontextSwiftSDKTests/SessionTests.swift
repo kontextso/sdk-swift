@@ -499,4 +499,93 @@ struct SessionTests {
         let session = Session(config: config)
         #expect(session.config.requestTrackingAuthorization == false)
     }
+
+    // MARK: - applyInitResult
+
+    /// Decodes an `InitResponseDTO` from a JSON literal so tests can
+    /// build server-shaped responses without depending on a memberwise
+    /// init (the DTO is `Decodable`-only on purpose).
+    private func decodeInitResponse(_ json: String) throws -> InitResponseDTO {
+        try JSONDecoder().decode(InitResponseDTO.self, from: Data(json.utf8))
+    }
+
+    @Test func applyInitResultDisablesSessionOnEnabledFalse() throws {
+        // When `/init` returns `enabled: false`, the session must be
+        // marked disabled and emit a session_disabled_by_init error
+        // event so the publisher's onEvent / Combine subscribers learn
+        // about the server-side kill switch.
+        let collector = TestCollector<AdEvent>()
+        let session = makeSession(onEvent: { collector.append($0) })
+
+        let response = try decodeInitResponse(#"{"enabled": false}"#)
+        session.applyInitResult(response)
+
+        #expect(session.disabled == true)
+        // Verifies the error event reaches onEvent with the documented errCode.
+        let errorEvents = collector.values.compactMap { event -> AdEvent.ErrorData? in
+            if case .error(let data) = event { return data }
+            return nil
+        }
+        #expect(errorEvents.count == 1)
+        #expect(errorEvents.first?.errCode == "session_disabled_by_init")
+    }
+
+    @Test func applyInitResultAppliesPreloadTimeout() throws {
+        // Server-provided preloadTimeout overrides the SDK default.
+        // Sanity-check the default first so a regression in either
+        // direction is visible.
+        let session = makeSession()
+        #expect(session.preloadTimeout == Constants.defaultPreloadTimeoutMs)
+
+        let response = try decodeInitResponse(#"{"enabled": true, "preloadTimeout": 8000}"#)
+        session.applyInitResult(response)
+
+        #expect(session.preloadTimeout == 8000)
+        #expect(session.disabled == false)
+    }
+
+    @Test func applyInitResultPropagatesReportingToggles() throws {
+        // The server-controlled kill switch (reportErrors) and opt-in
+        // (reportDebug) — Session must trust the DTO values verbatim.
+        let session = makeSession()
+        // Pre-init defaults verified separately in reportingFlagsDefaults;
+        // exercise the flip here.
+        let response = try decodeInitResponse(#"""
+        {"enabled": true, "reportErrors": false, "reportDebug": true}
+        """#)
+        session.applyInitResult(response)
+
+        #expect(session.reportErrors == false)
+        #expect(session.reportDebug == true)
+    }
+
+    @Test func applyInitResultEnabledTrueLeavesSessionAlone() throws {
+        // The most common path: server returns `enabled: true` with
+        // default flags. Session stays enabled, defaults stick around.
+        let session = makeSession()
+
+        let response = try decodeInitResponse(#"{"enabled": true}"#)
+        session.applyInitResult(response)
+
+        #expect(session.disabled == false)
+        #expect(session.preloadTimeout == Constants.defaultPreloadTimeoutMs)
+        #expect(session.reportErrors == true)
+        #expect(session.reportDebug == false)
+    }
+
+    // MARK: - preloadParams (trackOnly → isDisabled)
+
+    @Test func preloadParamsMapsTrackOnlyToIsDisabledHeader() {
+        // The full end-to-end path of `trackOnly` is:
+        //   addMessage(options: AddMessageOptions(trackOnly: true))
+        //     → preloadParams(trackOnly: true).isDisabled == true
+        //     → Kontextso-Is-Disabled: "1" header (verified in PreloadFetchTests).
+        // The Preload-side leg is pinned in PreloadFetchTests
+        // (`Kontextso-Is-Disabled: 0/1`); this test pins the Session
+        // leg so the chain is exercised end-to-end.
+        let session = makeSession()
+
+        #expect(session.preloadParams(trackOnly: false).isDisabled == false)
+        #expect(session.preloadParams(trackOnly: true).isDisabled == true)
+    }
 }

@@ -516,7 +516,15 @@ public final class Session {
         // preloadTimeout. Mirrors sdk-js's `if (this.destroyed) return`.
         if destroyed { return }
         guard let result = result else { return }
+        applyInitResult(result)
+    }
 
+    /// Applies an `/init` response to the session — disables on
+    /// `enabled: false`, updates `preloadTimeout`, and propagates the
+    /// `reportErrors` / `reportDebug` toggles. Split out of
+    /// `fireInit` so tests can drive each branch without a real HTTP
+    /// round-trip.
+    internal func applyInitResult(_ result: InitResponseDTO) {
         if !result.enabled {
             disabled = true
             emitEvent(.error(.init(message: "Session is disabled", errCode: "session_disabled_by_init")))
@@ -576,7 +584,11 @@ public final class Session {
     }
 
     /// Builds a `PreloadParams` snapshot from current session state.
-    private func preloadParams(trackOnly: Bool = false) -> PreloadParams {
+    /// Builds the `PreloadParams` for a `/preload` request.
+    /// `internal` (rather than private) so tests can pin the
+    /// `trackOnly → isDisabled` mapping that drives the
+    /// `Kontextso-Is-Disabled` header on the wire.
+    internal func preloadParams(trackOnly: Bool = false) -> PreloadParams {
         PreloadParams(
             config: config,
             sessionId: sessionId,
