@@ -37,6 +37,22 @@ final class ChatViewController: UIViewController {
         return button
     }()
 
+    private let trackOnlySwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.isOn = false
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        return toggle
+    }()
+
+    private let trackOnlyLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Track only (no ad)"
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
     init() {
         session = KontextAds.createSession(SessionOptions(
             publisherToken: ExampleSecrets.publisherToken,
@@ -93,6 +109,8 @@ final class ChatViewController: UIViewController {
         let bar = UIView()
         bar.backgroundColor = .secondarySystemBackground
         bar.translatesAutoresizingMaskIntoConstraints = false
+        bar.addSubview(trackOnlyLabel)
+        bar.addSubview(trackOnlySwitch)
         bar.addSubview(inputField)
         bar.addSubview(sendButton)
         view.addSubview(bar)
@@ -102,15 +120,21 @@ final class ChatViewController: UIViewController {
             bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             bar.topAnchor.constraint(equalTo: tableView.bottomAnchor),
-            bar.heightAnchor.constraint(equalToConstant: 56),
+            bar.heightAnchor.constraint(equalToConstant: 96),
+
+            trackOnlyLabel.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
+            trackOnlyLabel.topAnchor.constraint(equalTo: bar.topAnchor, constant: 8),
+
+            trackOnlySwitch.leadingAnchor.constraint(equalTo: trackOnlyLabel.trailingAnchor, constant: 8),
+            trackOnlySwitch.centerYAnchor.constraint(equalTo: trackOnlyLabel.centerYAnchor),
 
             inputField.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
-            inputField.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            inputField.topAnchor.constraint(equalTo: trackOnlyLabel.bottomAnchor, constant: 8),
             inputField.heightAnchor.constraint(equalToConstant: 36),
 
             sendButton.leadingAnchor.constraint(equalTo: inputField.trailingAnchor, constant: 8),
             sendButton.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -12),
-            sendButton.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            sendButton.centerYAnchor.constraint(equalTo: inputField.centerYAnchor),
             sendButton.widthAnchor.constraint(equalToConstant: 64),
             sendButton.heightAnchor.constraint(equalToConstant: 36),
         ])
@@ -128,8 +152,9 @@ final class ChatViewController: UIViewController {
         for ad in ads.values { ad.destroy() }
         ads.removeAll()
 
+        let trackOnly = trackOnlySwitch.isOn
         let user = Message(id: UUID().uuidString, role: .user, content: text)
-        appendMessage(user)
+        appendMessage(user, trackOnly: trackOnly)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             guard let self else { return }
@@ -139,14 +164,23 @@ final class ChatViewController: UIViewController {
                 content: "This is a static reply. Replace with your own LLM."
             )
             self.appendMessage(assistant)
-            self.ads[assistant.id] = self.session.createAd(assistant.id)
+            // When the preceding user message was sent with trackOnly,
+            // the server skipped ad generation for this turn — don't
+            // create an Ad placeholder under the assistant reply.
+            if !trackOnly {
+                self.ads[assistant.id] = self.session.createAd(assistant.id)
+            }
             self.rebuildItems()
         }
     }
 
-    private func appendMessage(_ message: Message) {
+    private func appendMessage(_ message: Message, trackOnly: Bool = false) {
         messages.append(message)
-        session.addMessage(message)
+        if trackOnly {
+            session.addMessage(message, options: AddMessageOptions(trackOnly: true))
+        } else {
+            session.addMessage(message)
+        }
         rebuildItems()
         scrollToBottom()
     }
