@@ -128,9 +128,7 @@ final class Preload {
         do {
             debug(config, "request-ad-start")
 
-            guard var request = buildRequest(params: params) else {
-                return .failure(reason: "Invalid URL", event: nil, disableSession: false)
-            }
+            var request = buildRequest(params: params)
             request.httpBody = try await buildBody(params: params)
 
             let (data, response) = try await HTTPRetry.fetch(request: request, session: session)
@@ -143,10 +141,9 @@ final class Preload {
     // MARK: - Private
 
     /// Builds the `URLRequest` (URL + headers + timeout) without a body.
-    /// Returns nil if the configured ad-server URL can't be parsed.
-    private func buildRequest(params: PreloadParams) -> URLRequest? {
+    private func buildRequest(params: PreloadParams) -> URLRequest {
         let config = params.config
-        guard let url = URL(string: "\(config.adServerUrl)/preload") else { return nil }
+        let url = config.adServerUrl.appendingPathComponent("preload")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

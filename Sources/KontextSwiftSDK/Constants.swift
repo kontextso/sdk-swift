@@ -16,7 +16,7 @@ public enum Constants {
     // MARK: - Server
 
     /// Production ad-server base URL.
-    public static let defaultAdServerUrl = "https://server.megabrain.co"
+    public static let defaultAdServerUrl = URL(string: "https://server.megabrain.co")!
 
     /// Default placement code used when the publisher omits `enabledPlacementCodes`
     /// or doesn't pass `code` to `Session.createAd()`. For the array form, wrap:

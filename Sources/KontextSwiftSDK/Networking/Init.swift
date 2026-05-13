@@ -24,10 +24,7 @@ enum Init {
         do {
             config.onDebugEvent?("Init: start", nil)
 
-            guard var request = buildRequest(config: config) else {
-                config.onDebugEvent?("Init: invalid-url", nil)
-                return nil
-            }
+            var request = buildRequest(config: config)
             request.httpBody = try buildBody(config: config)
 
             let (data, response) = try await HTTPRetry.fetch(request: request, session: session)
@@ -41,9 +38,8 @@ enum Init {
     // MARK: - Private
 
     /// Builds the `URLRequest` (URL + headers + timeout) without a body.
-    /// Returns nil if the configured ad-server URL can't be parsed.
-    private static func buildRequest(config: ResolvedConfig) -> URLRequest? {
-        guard let url = URL(string: "\(config.adServerUrl)/init") else { return nil }
+    private static func buildRequest(config: ResolvedConfig) -> URLRequest {
+        let url = config.adServerUrl.appendingPathComponent("init")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

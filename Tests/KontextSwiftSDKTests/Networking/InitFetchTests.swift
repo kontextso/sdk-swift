@@ -124,7 +124,7 @@ struct InitFetchTests {
             userId: "u1",
             conversationId: "c1",
             enabledPlacementCodes: ["inlineAd"],
-            adServerUrl: "https://example.test",
+            adServerUrl: URL(string: "https://example.test")!,
             character: nil,
             variantId: nil,
             regulatory: nil,

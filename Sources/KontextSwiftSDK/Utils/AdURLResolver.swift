@@ -1,3 +1,5 @@
+import Foundation
+
 /// Resolves a potentially relative ad URL against the ad server base URL.
 ///
 /// Server-relative paths (starting with `/` but not `//`) are prefixed
@@ -13,9 +15,9 @@
 /// Lifted out of `Ad` because the resolution is pure (no `self` state)
 /// and easier to unit-test as a free function. Mirrors sdk-react-native's
 /// `resolveAdUrl(url, adServerUrl)` helper.
-func resolveAdUrl(_ urlString: String, adServerUrl: String) -> String {
+func resolveAdUrl(_ urlString: String, adServerUrl: URL) -> String {
     if urlString.hasPrefix("/") && !urlString.hasPrefix("//") {
-        return "\(adServerUrl)\(urlString)"
+        return "\(adServerUrl.absoluteString)\(urlString)"
     }
     return urlString
 }

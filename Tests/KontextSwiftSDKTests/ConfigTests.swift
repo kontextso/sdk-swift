@@ -16,7 +16,7 @@ struct ConfigTests {
         #expect(config.userId == "user")
         #expect(config.conversationId == "conv")
         #expect(config.enabledPlacementCodes == ["inlineAd"])
-        #expect(config.adServerUrl == "https://server.megabrain.co")
+        #expect(config.adServerUrl == URL(string: "https://server.megabrain.co"))
         #expect(config.character == nil)
         #expect(config.variantId == nil)
         #expect(config.regulatory == nil)
@@ -39,7 +39,7 @@ struct ConfigTests {
             variantId: "variant-a",
             regulatory: regulatory,
             userEmail: "test@example.com",
-            adServerUrl: "https://custom.server.com",
+            adServerUrl: URL(string: "https://custom.server.com"),
             advertisingId: "ad-id",
             vendorId: "vendor-id"
         )
@@ -49,7 +49,7 @@ struct ConfigTests {
         #expect(config.userId == "my-user")
         #expect(config.conversationId == "my-conv")
         #expect(config.enabledPlacementCodes == ["banner", "inlineAd"])
-        #expect(config.adServerUrl == "https://custom.server.com")
+        #expect(config.adServerUrl == URL(string: "https://custom.server.com"))
         #expect(config.character?.id == "c1")
         #expect(config.character?.name == "Bot")
         #expect(config.character?.persona == "Friendly assistant")
@@ -68,7 +68,7 @@ struct ConfigTests {
             conversationId: "conv"
         )
         let config = resolveConfig(options)
-        #expect(config.adServerUrl == "https://server.megabrain.co")
+        #expect(config.adServerUrl == URL(string: "https://server.megabrain.co"))
     }
 
     @Test func defaultEnabledPlacementCodes() {
@@ -103,7 +103,7 @@ struct ConfigTests {
             adServerUrl: nil
         )
         let config = resolveConfig(options)
-        #expect(config.adServerUrl == "https://server.megabrain.co")
+        #expect(config.adServerUrl == URL(string: "https://server.megabrain.co"))
     }
 
     @Test func requestTrackingAuthorizationDefaultsTrue() {

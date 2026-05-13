@@ -7,14 +7,14 @@ import Foundation
 /// debug forwarding is enabled on a live session and the id lets the
 /// server filter for one diagnostic session at a time.
 struct DebugContext: Sendable {
-    let adServerUrl: String
+    let adServerUrl: URL
     let publisherToken: String?
     let conversationId: String?
     let userId: String?
     let sessionId: String?
 
     init(
-        adServerUrl: String,
+        adServerUrl: URL,
         publisherToken: String? = nil,
         conversationId: String? = nil,
         userId: String? = nil,
@@ -53,7 +53,7 @@ enum DebugCapture {
     ///     (errors, dates, etc.). nil when omitted.
     ///   - context: Session attribution metadata.
     static func capture(name: String, data: Any? = nil, context: DebugContext) {
-        guard let url = URL(string: "\(context.adServerUrl)/debug") else { return }
+        let url = context.adServerUrl.appendingPathComponent("debug")
 
         let dto = DebugRequestDTO(
             name: name,

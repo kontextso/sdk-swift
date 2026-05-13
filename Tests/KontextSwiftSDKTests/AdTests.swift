@@ -14,7 +14,7 @@ struct AdTests {
             userId: "test-user",
             conversationId: "test-conv",
             enabledPlacementCodes: ["inlineAd"],
-            adServerUrl: "http://0.0.0.0:1",
+            adServerUrl: URL(string: "http://0.0.0.0:1")!,
             character: nil,
             variantId: nil,
             regulatory: nil,

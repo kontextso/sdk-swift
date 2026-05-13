@@ -21,7 +21,7 @@ struct PreloadBodyTests {
             userId: userId,
             conversationId: conversationId,
             enabledPlacementCodes: enabledPlacementCodes,
-            adServerUrl: "http://0.0.0.0:1",
+            adServerUrl: URL(string: "http://0.0.0.0:1")!,
             character: character,
             variantId: nil,
             regulatory: regulatory,
@@ -44,10 +44,7 @@ struct PreloadBodyTests {
     ) -> (body: [String: Any]?, request: URLRequest?) {
         let cfg = config ?? makeConfig()
 
-        guard let url = URL(string: "\(cfg.adServerUrl)/preload") else {
-            return (nil, nil)
-        }
-
+        let url = cfg.adServerUrl.appendingPathComponent("preload")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

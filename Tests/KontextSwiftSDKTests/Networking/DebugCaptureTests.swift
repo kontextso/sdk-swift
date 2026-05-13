@@ -8,14 +8,14 @@ struct DebugCaptureTests {
 
     @Test func debugContextStoresAllFields() {
         let ctx = DebugContext(
-            adServerUrl: "https://example.com",
+            adServerUrl: URL(string: "https://example.com")!,
             publisherToken: "tok-123",
             conversationId: "conv-456",
             userId: "user-789",
             sessionId: "sess-abc"
         )
 
-        #expect(ctx.adServerUrl == "https://example.com")
+        #expect(ctx.adServerUrl == URL(string: "https://example.com"))
         #expect(ctx.publisherToken == "tok-123")
         #expect(ctx.conversationId == "conv-456")
         #expect(ctx.userId == "user-789")
@@ -23,7 +23,7 @@ struct DebugCaptureTests {
     }
 
     @Test func debugContextAllowsNilOptionalFields() {
-        let ctx = DebugContext(adServerUrl: "https://example.com")
+        let ctx = DebugContext(adServerUrl: URL(string: "https://example.com")!)
 
         #expect(ctx.publisherToken == nil)
         #expect(ctx.conversationId == nil)
@@ -37,7 +37,7 @@ struct DebugCaptureTests {
         // Fire-and-forget: any encoding/network failure must be
         // swallowed. Verifies the nil-data branch.
         DebugCapture.capture(name: "Session: pinged", context: DebugContext(
-            adServerUrl: "https://server.megabrain.co",
+            adServerUrl: URL(string: "https://server.megabrain.co")!,
             publisherToken: "tok",
             userId: "user-1",
             sessionId: "sess-1"
@@ -46,7 +46,7 @@ struct DebugCaptureTests {
 
     @Test func captureWithJSONShapedDataDoesNotCrash() {
         DebugCapture.capture(name: "Session: probe", data: ["k": "v"], context: DebugContext(
-            adServerUrl: "https://server.megabrain.co"
+            adServerUrl: URL(string: "https://server.megabrain.co")!
         ))
     }
 
@@ -55,7 +55,7 @@ struct DebugCaptureTests {
         // `String(describing:)` rather than dropping the field.
         struct Probe { let id = 1 }
         DebugCapture.capture(name: "Session: probe", data: Probe(), context: DebugContext(
-            adServerUrl: "https://server.megabrain.co"
+            adServerUrl: URL(string: "https://server.megabrain.co")!
         ))
     }
 

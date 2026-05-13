@@ -127,7 +127,7 @@ struct PreloadFetchTests {
             userId: "u1",
             conversationId: "c1",
             enabledPlacementCodes: ["inlineAd"],
-            adServerUrl: "https://example.test",
+            adServerUrl: URL(string: "https://example.test")!,
             character: nil,
             variantId: nil,
             regulatory: nil,
@@ -398,49 +398,6 @@ struct PreloadFetchTests {
             return
         }
         #expect(reason == "Ad generation skipped")
-    }
-
-    @Test func returnsFailureOnInvalidURL() async {
-        // Unparseable adServerUrl (contains a space) — buildRequest returns
-        // nil and Preload short-circuits before HTTPRetry is touched.
-        PreloadStubProtocol.reset()
-        let session = makeStubbedSession()
-
-        let badConfig = ResolvedConfig(
-            publisherToken: "tok",
-            userId: "u1",
-            conversationId: "c1",
-            enabledPlacementCodes: ["inlineAd"],
-            adServerUrl: "https://example .test",
-            character: nil,
-            variantId: nil,
-            regulatory: nil,
-            userEmail: nil,
-            advertisingId: nil,
-            vendorId: nil,
-            requestTrackingAuthorization: false,
-            onEvent: nil,
-            onDebugEvent: nil
-        )
-        let params = PreloadParams(
-            config: badConfig,
-            sessionId: nil,
-            timeout: 16000,
-            isDisabled: false,
-            advertisingId: nil,
-            vendorId: nil
-        )
-
-        let result = await makePreload().requestAd(params: params, session: session)
-
-        guard case .failure(let reason, let event, let disableSession) = result else {
-            Issue.record("Expected failure, got \(result)")
-            return
-        }
-        #expect(reason == "Invalid URL")
-        #expect(event == nil)
-        #expect(disableSession == false)
-        #expect(PreloadStubProtocol.capturedRequest == nil) // never reached the network
     }
 
     @Test func returnsFailureOnDecodeError() async {

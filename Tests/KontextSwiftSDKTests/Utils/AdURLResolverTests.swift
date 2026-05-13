@@ -1,3 +1,4 @@
+import Foundation
 @testable import KontextSwiftSDK
 import Testing
 
@@ -6,7 +7,7 @@ import Testing
 /// construct an `Ad` (and therefore a `Session`) just to exercise URL
 /// resolution.
 struct AdURLResolverTests {
-    private let adServerUrl = "https://server.megabrain.co"
+    private let adServerUrl = URL(string: "https://server.megabrain.co")!
 
     @Test func preservesHttpsUrls() {
         let resolved = resolveAdUrl("https://example.com/path", adServerUrl: adServerUrl)

@@ -41,7 +41,7 @@ struct KontextAdsTests {
             userId: "u",
             conversationId: "c",
             enabledPlacementCodes: ["banner", "interstitial"],
-            adServerUrl: "https://example.test",
+            adServerUrl: URL(string: "https://example.test"),
             advertisingId: "idfa-x",
             vendorId: "idfv-y",
             requestTrackingAuthorization: false,
@@ -50,7 +50,7 @@ struct KontextAdsTests {
         ))
 
         #expect(session.config.enabledPlacementCodes == ["banner", "interstitial"])
-        #expect(session.config.adServerUrl == "https://example.test")
+        #expect(session.config.adServerUrl == URL(string: "https://example.test"))
         #expect(session.config.advertisingId == "idfa-x")
         #expect(session.config.vendorId == "idfv-y")
         #expect(session.config.requestTrackingAuthorization == false)

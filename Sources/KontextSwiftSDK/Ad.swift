@@ -260,11 +260,14 @@ private extension Ad {
         bid: Bid,
         componentParams: [String: Any]? = nil
     ) -> String? {
-        let adServerUrl = session.config.adServerUrl
         // Swift's UUID.uuidString is uppercase; sdk-js / RFC 4122 use
         // lowercase. Use lowercase on the wire so the ad-server's
         // bidId lookup matches sdk-js's case convention.
-        var components = URLComponents(string: "\(adServerUrl)/api/\(kind.rawValue)/\(bid.bidId.uuidString.lowercased())")
+        let baseUrl = session.config.adServerUrl
+            .appendingPathComponent("api")
+            .appendingPathComponent(kind.rawValue)
+            .appendingPathComponent(bid.bidId.uuidString.lowercased())
+        var components = URLComponents(url: baseUrl, resolvingAgainstBaseURL: false)
         var queryItems = [
             URLQueryItem(name: "code", value: code),
             URLQueryItem(name: "messageId", value: messageId),

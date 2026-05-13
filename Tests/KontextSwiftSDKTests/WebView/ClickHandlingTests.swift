@@ -7,7 +7,7 @@ struct ClickHandlingTests {
 
     // MARK: - Helpers
 
-    private func makeSession(adServerUrl: String = "http://0.0.0.0:1") -> Session {
+    private func makeSession(adServerUrl: URL = URL(string: "http://0.0.0.0:1")!) -> Session {
         let config = ResolvedConfig(
             publisherToken: "test-token",
             userId: "test-user",

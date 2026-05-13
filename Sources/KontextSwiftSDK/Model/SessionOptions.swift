@@ -1,3 +1,5 @@
+import Foundation
+
 /// Publisher-facing configuration passed to `KontextAds.createSession()`.
 ///
 /// `enabledPlacementCodes` and `adServerUrl` are optional (publisher
@@ -26,7 +28,7 @@ public struct SessionOptions: Sendable {
     public let userEmail: String?
     /// Ad server base URL. Pass nil (or omit) to use the production
     /// endpoint (`Constants.defaultAdServerUrl`).
-    public let adServerUrl: String?
+    public let adServerUrl: URL?
     /// Platform advertising identifier (IDFA).
     public let advertisingId: String?
     /// Platform vendor identifier (IDFV).
@@ -47,7 +49,7 @@ public struct SessionOptions: Sendable {
         variantId: String? = nil,
         regulatory: Regulatory? = nil,
         userEmail: String? = nil,
-        adServerUrl: String? = nil,
+        adServerUrl: URL? = nil,
         advertisingId: String? = nil,
         vendorId: String? = nil,
         requestTrackingAuthorization: Bool = true,

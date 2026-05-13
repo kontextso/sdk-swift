@@ -1,3 +1,5 @@
+import Foundation
+
 /// Fully-resolved SDK configuration.
 ///
 /// Identity / server-binding fields (`publisherToken`, `userId`,
@@ -15,7 +17,7 @@ public struct ResolvedConfig: Sendable {
     public let userId: String
     public let conversationId: String
     public let enabledPlacementCodes: [String]
-    public let adServerUrl: String
+    public let adServerUrl: URL
     public internal(set) var character: Character?
     public internal(set) var variantId: String?
     public internal(set) var regulatory: Regulatory?

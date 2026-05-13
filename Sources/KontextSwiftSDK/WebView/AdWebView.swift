@@ -252,10 +252,10 @@ final class AdWebView: NSObject {
     /// banner's nested iframes can't directly postMessage to the host
     /// without going through the same-origin ad-server frame, so the
     /// origin check filters out third-party traffic.
-    fileprivate static func bridgeScript(adServerUrl: String) -> String {
+    fileprivate static func bridgeScript(adServerUrl: URL) -> String {
         """
         (function() {
-            var expectedOrigin = '\(adServerUrl)';
+            var expectedOrigin = '\(adServerUrl.absoluteString)';
             window.addEventListener('message', function(event) {
                 if (event.origin !== expectedOrigin) return;
                 try {
@@ -347,7 +347,7 @@ private extension AdWebView {
             debug("postMessage encoding failed for \(T.self)")
             return
         }
-        let origin = ad.session.config.adServerUrl
+        let origin = ad.session.config.adServerUrl.absoluteString
         webView.evaluateJavaScript("window.postMessage(\(json), '\(origin)');", completionHandler: nil)
     }
 }
@@ -357,7 +357,7 @@ private extension AdWebView {
 private extension AdWebView {
     static func injectUserScripts(
         into controller: WKUserContentController,
-        adServerUrl: String
+        adServerUrl: URL
     ) {
         injectOMSDKScript(into: controller)
         injectBridgeScript(into: controller, adServerUrl: adServerUrl)
@@ -377,7 +377,7 @@ private extension AdWebView {
 
     static func injectBridgeScript(
         into controller: WKUserContentController,
-        adServerUrl: String
+        adServerUrl: URL
     ) {
         controller.addUserScript(WKUserScript(
             source: bridgeScript(adServerUrl: adServerUrl),

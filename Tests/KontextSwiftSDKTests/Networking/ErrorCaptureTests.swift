@@ -8,14 +8,14 @@ struct ErrorCaptureTests {
 
     @Test func errorContextStoresAllFields() {
         let ctx = ErrorContext(
-            adServerUrl: "https://example.com",
+            adServerUrl: URL(string: "https://example.com")!,
             publisherToken: "tok-123",
             conversationId: "conv-456",
             userId: "user-789",
             bidId: "bid-abc"
         )
 
-        #expect(ctx.adServerUrl == "https://example.com")
+        #expect(ctx.adServerUrl == URL(string: "https://example.com"))
         #expect(ctx.publisherToken == "tok-123")
         #expect(ctx.conversationId == "conv-456")
         #expect(ctx.userId == "user-789")
@@ -24,14 +24,14 @@ struct ErrorCaptureTests {
 
     @Test func errorContextAllowsNilOptionalFields() {
         let ctx = ErrorContext(
-            adServerUrl: "https://example.com",
+            adServerUrl: URL(string: "https://example.com")!,
             publisherToken: nil,
             conversationId: nil,
             userId: nil,
             bidId: nil
         )
 
-        #expect(ctx.adServerUrl == "https://example.com")
+        #expect(ctx.adServerUrl == URL(string: "https://example.com"))
         #expect(ctx.publisherToken == nil)
         #expect(ctx.conversationId == nil)
         #expect(ctx.userId == nil)
@@ -47,7 +47,7 @@ struct ErrorCaptureTests {
 
     @Test func captureMessageWithValidContextDoesNotCrash() {
         let ctx = ErrorContext(
-            adServerUrl: "https://server.megabrain.co",
+            adServerUrl: URL(string: "https://server.megabrain.co")!,
             publisherToken: "token",
             conversationId: "conv",
             userId: "user",
@@ -58,7 +58,7 @@ struct ErrorCaptureTests {
 
     @Test func captureMessageWithNilStackDoesNotCrash() {
         let ctx = ErrorContext(
-            adServerUrl: "https://server.megabrain.co",
+            adServerUrl: URL(string: "https://server.megabrain.co")!,
             publisherToken: "token",
             conversationId: nil,
             userId: nil,
@@ -87,7 +87,7 @@ struct ErrorCaptureTests {
         // (Session.fireInit applies the flag).
         ErrorCapture.capture(
             message: "suppressed",
-            context: ErrorContext(adServerUrl: "https://example.test"),
+            context: ErrorContext(adServerUrl: URL(string: "https://example.test")!),
             reportEnabled: false
         )
     }
@@ -97,7 +97,7 @@ struct ErrorCaptureTests {
             NSLocalizedDescriptionKey: "A test error occurred"
         ])
         let ctx = ErrorContext(
-            adServerUrl: "https://server.megabrain.co",
+            adServerUrl: URL(string: "https://server.megabrain.co")!,
             publisherToken: "pub-token",
             conversationId: "conv-1",
             userId: "user-1",

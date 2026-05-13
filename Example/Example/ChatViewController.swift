@@ -59,6 +59,7 @@ final class ChatViewController: UIViewController {
             userId: UUID().uuidString,
             conversationId: UUID().uuidString,
             enabledPlacementCodes: ["inlineAd"],
+            adServerUrl: ExampleSecrets.adServerUrl,
             onEvent: { event in
                 print("[kontext] \(event)")
             },

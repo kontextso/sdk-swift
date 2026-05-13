@@ -9,7 +9,7 @@ struct SessionTests {
     // MARK: - Helpers
 
     private func makeConfig(
-        adServerUrl: String = "http://0.0.0.0:1",
+        adServerUrl: URL = URL(string: "http://0.0.0.0:1")!,
         onEvent: AdEventHandler? = nil,
         onDebugEvent: DebugEventHandler? = nil
     ) -> ResolvedConfig {

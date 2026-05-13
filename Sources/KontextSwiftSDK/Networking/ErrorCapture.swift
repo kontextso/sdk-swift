@@ -6,14 +6,14 @@ import Foundation
 /// happen before a session is established and only need the URL;
 /// `Ad`-side failures populate `bidId` when a bid has been resolved.
 struct ErrorContext: Sendable {
-    let adServerUrl: String
+    let adServerUrl: URL
     let publisherToken: String?
     let conversationId: String?
     let userId: String?
     let bidId: String?
 
     init(
-        adServerUrl: String,
+        adServerUrl: URL,
         publisherToken: String? = nil,
         conversationId: String? = nil,
         userId: String? = nil,
@@ -90,8 +90,7 @@ enum ErrorCapture {
         guard reportEnabled else { return }
 
         let adServerUrl = context?.adServerUrl ?? Constants.defaultAdServerUrl
-
-        guard let url = URL(string: "\(adServerUrl)/error") else { return }
+        let url = adServerUrl.appendingPathComponent("error")
 
         let dto = ErrorRequestDTO(
             error: message,
