@@ -84,7 +84,7 @@ struct MutablePublisherOptionsTests {
 
     @Test func updateOptionsPreservesExistingValuesForNilFields() {
         // Start with an already-populated session.
-        let originalCharacter = Character(id: "c1", name: "Bot")
+        let originalCharacter = Character(id: "c1", name: "Bot", avatarUrl: URL(string: "https://example.com/bot.png")!)
         let session = Session(config: makeConfig(
             character: originalCharacter,
             variantId: "original-variant",
@@ -108,7 +108,7 @@ struct MutablePublisherOptionsTests {
         // Switching personas requires a new Session because the message
         // history accumulated in the existing one belongs to the original
         // character.
-        let originalCharacter = Character(id: "c1", name: "Original")
+        let originalCharacter = Character(id: "c1", name: "Original", avatarUrl: URL(string: "https://example.com/original.png")!)
         let session = Session(config: makeConfig(character: originalCharacter))
 
         session.updateOptions(MutablePublisherOptions(variantId: "v"))

@@ -77,8 +77,11 @@ struct PreloadBodyTests {
             body["sessionId"] = sid
         }
         if let character = cfg.character {
-            var charDict: [String: Any] = ["id": character.id, "name": character.name]
-            if let v = character.avatarUrl { charDict["avatarUrl"] = v.absoluteString }
+            var charDict: [String: Any] = [
+                "id": character.id,
+                "name": character.name,
+                "avatarUrl": character.avatarUrl.absoluteString,
+            ]
             if let v = character.greeting { charDict["greeting"] = v }
             if let v = character.persona { charDict["persona"] = v }
             if let v = character.tags { charDict["tags"] = v }

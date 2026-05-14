@@ -15,8 +15,12 @@ public struct Character: Sendable, Equatable {
     public let id: String
     /// Display name of the character.
     public let name: String
-    /// URL of the character's avatar image, if any.
-    public let avatarUrl: URL?
+    /// URL of the character's avatar image. Required — publishers
+    /// without a real avatar should supply a stable placeholder URL
+    /// rather than passing a sentinel value. The server uses the URL
+    /// host as a frequency-cap signal alongside `id`, so omitting it
+    /// loses a piece of attribution.
+    public let avatarUrl: URL
     /// Greeting text shown by the character, if any.
     public let greeting: String?
     /// Free-form description of the character's persona.
@@ -29,7 +33,7 @@ public struct Character: Sendable, Equatable {
     public init(
         id: String,
         name: String,
-        avatarUrl: URL? = nil,
+        avatarUrl: URL,
         greeting: String? = nil,
         persona: String? = nil,
         tags: [String]? = nil,
@@ -54,7 +58,7 @@ extension Character {
         CharacterDTO(
             id: id,
             name: name,
-            avatarUrl: avatarUrl?.absoluteString,
+            avatarUrl: avatarUrl.absoluteString,
             greeting: greeting,
             persona: persona,
             tags: tags,

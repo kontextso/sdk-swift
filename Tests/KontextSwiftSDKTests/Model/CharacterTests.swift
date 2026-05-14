@@ -26,11 +26,12 @@ struct CharacterTests {
     }
 
     @Test func characterMinimalInit() {
-        let c = Character(id: "c1", name: "Bot")
+        let url = URL(string: "https://example.com/avatar.png")!
+        let c = Character(id: "c1", name: "Bot", avatarUrl: url)
 
         #expect(c.id == "c1")
         #expect(c.name == "Bot")
-        #expect(c.avatarUrl == nil)
+        #expect(c.avatarUrl == url)
         #expect(c.greeting == nil)
         #expect(c.persona == nil)
         #expect(c.tags == nil)
@@ -40,20 +41,22 @@ struct CharacterTests {
     // MARK: - toDTO()
 
     @Test func toDTOConvertsRequiredFields() {
-        let character = Character(id: "char-1", name: "Luna")
+        let url = URL(string: "https://example.com/luna.png")!
+        let character = Character(id: "char-1", name: "Luna", avatarUrl: url)
 
         let dto = character.toDTO()
 
         #expect(dto.id == "char-1")
         #expect(dto.name == "Luna")
+        #expect(dto.avatarUrl == "https://example.com/luna.png")
     }
 
     @Test func toDTOPreservesNilOptionalFields() {
-        let character = Character(id: "char-1", name: "Luna")
+        let url = URL(string: "https://example.com/luna.png")!
+        let character = Character(id: "char-1", name: "Luna", avatarUrl: url)
 
         let dto = character.toDTO()
 
-        #expect(dto.avatarUrl == nil)
         #expect(dto.greeting == nil)
         #expect(dto.persona == nil)
         #expect(dto.tags == nil)
@@ -95,7 +98,8 @@ struct CharacterTests {
 
     @Test func toDTOPreservesEmptyTagsArray() {
         // Empty tags array should round-trip as `[]`, distinct from nil.
-        let character = Character(id: "c1", name: "Bot", tags: [])
+        let url = URL(string: "https://example.com/avatar.png")!
+        let character = Character(id: "c1", name: "Bot", avatarUrl: url, tags: [])
 
         let dto = character.toDTO()
 

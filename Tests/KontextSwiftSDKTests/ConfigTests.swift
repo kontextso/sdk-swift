@@ -28,7 +28,12 @@ struct ConfigTests {
     }
 
     @Test func resolveConfigUsesProvidedValues() {
-        let character = Character(id: "c1", name: "Bot", persona: "Friendly assistant")
+        let character = Character(
+            id: "c1",
+            name: "Bot",
+            avatarUrl: URL(string: "https://example.com/bot.png")!,
+            persona: "Friendly assistant"
+        )
         let regulatory = Regulatory(gdpr: 1, gdprConsent: "consent-string")
         let options = SessionOptions(
             publisherToken: "my-token",

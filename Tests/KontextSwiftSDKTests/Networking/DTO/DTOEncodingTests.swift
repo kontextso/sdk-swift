@@ -61,7 +61,7 @@ struct DTOEncodingTests {
             ),
             app: AppDTO(bundleId: "com.test.app", version: "1.0.0"),
             sessionId: UUID(uuidString: "F8B7BE0F-4C3D-4D5A-9D5F-3E4F5A6B7C8D"),
-            character: CharacterDTO(id: "char-1", name: "Luna"),
+            character: CharacterDTO(id: "char-1", name: "Luna", avatarUrl: "https://example.com/luna.png"),
             regulatory: RegulatoryDTO(gdpr: 1, gdprConsent: nil, coppa: 0, gpp: nil, gppSid: nil, usPrivacy: nil),
             userEmail: "user@example.com",
             variantId: "variant-A",
@@ -203,12 +203,12 @@ struct DTOEncodingTests {
     }
 
     @Test func characterDTOOmitsNilOptionalFields() {
-        let dto = CharacterDTO(id: "char-1", name: "Luna")
+        let dto = CharacterDTO(id: "char-1", name: "Luna", avatarUrl: "https://example.com/luna.png")
 
         let dict = encodeToDict(dto)
         #expect(dict?["id"] as? String == "char-1")
         #expect(dict?["name"] as? String == "Luna")
-        #expect(dict?["avatarUrl"] == nil)
+        #expect(dict?["avatarUrl"] as? String == "https://example.com/luna.png")
         #expect(dict?["greeting"] == nil)
         #expect(dict?["persona"] == nil)
         #expect(dict?["tags"] == nil)

@@ -1,12 +1,13 @@
 /// Character / avatar metadata for character-based publisher apps.
 ///
-/// `id` and `name` are required; everything else is publisher-supplied
-/// optional metadata. The deprecated server field `title` is
-/// intentionally omitted — server treats it as superseded by `name`.
+/// `id`, `name`, and `avatarUrl` are required; everything else is
+/// publisher-supplied optional metadata. The deprecated server field
+/// `title` is intentionally omitted — server treats it as superseded
+/// by `name`.
 struct CharacterDTO: Encodable, Sendable {
     let id: String
     let name: String
-    let avatarUrl: String?
+    let avatarUrl: String
     let greeting: String?
     let persona: String?
     let tags: [String]?
@@ -15,7 +16,7 @@ struct CharacterDTO: Encodable, Sendable {
     init(
         id: String,
         name: String,
-        avatarUrl: String? = nil,
+        avatarUrl: String,
         greeting: String? = nil,
         persona: String? = nil,
         tags: [String]? = nil,
