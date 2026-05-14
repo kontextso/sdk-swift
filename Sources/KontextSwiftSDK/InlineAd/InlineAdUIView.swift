@@ -135,11 +135,18 @@ public final class InlineAdUIView: UIView {
 
     private func startDimensionTimer() {
         guard dimensionTimer == nil else { return }
-        dimensionTimer = Timer.scheduledTimer(withTimeInterval: Constants.dimensionReportIntervalMs / 1000, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: Constants.dimensionReportIntervalMs / 1000, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.reportDimensions()
             }
         }
+        // `.common` so the timer keeps firing while UIKit is in `.tracking`
+        // (during scroll/pan). `Timer.scheduledTimer` defaults to `.default`
+        // only — and `.default` is suspended whenever the run loop enters
+        // tracking, which is exactly when the ad is moving on screen and
+        // the iframe needs fresh viewport geometry for visibility tracking.
+        RunLoop.main.add(timer, forMode: .common)
+        dimensionTimer = timer
     }
 
     private func stopDimensionTimer() {
