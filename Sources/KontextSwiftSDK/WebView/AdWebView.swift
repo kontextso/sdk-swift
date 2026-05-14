@@ -40,6 +40,17 @@ final class AdWebView: NSObject {
     /// so no concurrent access happens in practice.
     private nonisolated(unsafe) var unregisterUserEventSender: (() -> Void)?
 
+    /// Latches `true` the first time the inner `WKWebView` enters a
+    /// window (flipped by `AdWKWebView.didMoveToWindow`). Used by
+    /// `decidePolicyFor` to distinguish two `window == nil` cases:
+    ///   - never attached yet → initial `load()`, allow
+    ///   - attached then detached → crash-recovery reload, cancel
+    ///
+    /// Mirrors v3's `hasEverHadWindow` on `AdWebView: WKWebView`
+    /// (origin/main). `internal private(set)` so tests can read the
+    /// flag without exposing a setter.
+    internal private(set) var hasEverHadWindow = false
+
     /// Name registered on `WKUserContentController` for native↔JS bridge.
     /// Single source of truth — interpolated into the bridge + console
     /// scripts (see `Self.bridgeScript` / `Self.consoleInterceptorScript`)
@@ -59,7 +70,7 @@ final class AdWebView: NSObject {
             config.upgradeKnownHostsToHTTPS = false
         }
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = AdWKWebView(frame: .zero, configuration: config)
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
@@ -82,6 +93,15 @@ final class AdWebView: NSObject {
             adServerUrl: ad.session.config.adServerUrl
         )
         webView.navigationDelegate = self
+
+        // Latch `hasEverHadWindow` the first time the WebView enters a
+        // window. `didMoveToWindow` fires on the main thread (UIView
+        // contract); AdWebView is `@MainActor`, so the assignment is
+        // safe. See `decidePolicyFor` for why this matters.
+        webView.onDidMoveToWindow = { [weak self] in
+            guard let self, webView.window != nil else { return }
+            self.hasEverHadWindow = true
+        }
 
         // Give the Ad a reference to the web view for OM session creation
         ad.currentWebView = webView
@@ -410,26 +430,71 @@ private extension AdWebView {
 // MARK: - WKNavigationDelegate
 
 extension AdWebView: WKNavigationDelegate {
-    /// Cancels navigations on a detached `WKWebView`. Without this guard,
-    /// WebKit's crash-recovery reload can fire after the view has been
-    /// removed from the hierarchy, leaving an OMID session attached to a
-    /// no-longer-visible WebView (orphan-mount issue from v3 OMID
-    /// certification work). Active sessions stay green; future
-    /// reload attempts on detached views are dropped.
-    // The closure attributes `@MainActor @Sendable` exactly mirror the
-    // protocol declaration. Without them this method only "nearly
-    // matches" the optional requirement — Swift never wires it as the
-    // delegate callback, so the orphan-mount check is silently bypassed.
+    /// Cancels navigations on a detached `WKWebView` **only after the
+    /// view has been in a window at least once**. Two cases this guard
+    /// has to balance:
+    ///
+    /// 1. **Initial load before attach**: `AdWebView.load()` may be
+    ///    called while the host view is still being constructed — e.g.
+    ///    a `UITableViewCell` dequeued and configured before
+    ///    `tableView` inserts it, or a publisher creating an
+    ///    `InlineAdUIView` in `viewDidLoad` before `addSubview`. The
+    ///    `decidePolicyFor` callback fires asynchronously; in fast
+    ///    paths the view is attached by then, but it's not guaranteed.
+    ///    Cancelling this load silently drops the iframe URL with no
+    ///    retry — must allow.
+    ///
+    /// 2. **WebKit crash-recovery reload after teardown**: the
+    ///    WebContent process exits; ~6 s later WebKit attempts a
+    ///    reload to recover, even though the view is gone. This
+    ///    re-attaches an OMID session to a detached WebView (the
+    ///    orphan-mount issue from v3 OMID certification work). Must
+    ///    cancel.
+    ///
+    /// The discriminator is `hasEverHadWindow`. Mirrors v3
+    /// (`origin/main:AdWebView.swift:194`):
+    ///
+    /// ```swift
+    /// guard window != nil || !hasEverHadWindow else {
+    ///     decisionHandler(.cancel); return
+    /// }
+    /// ```
+    ///
+    /// The closure attributes `@MainActor @Sendable` exactly mirror
+    /// the protocol declaration. Without them this method only
+    /// "nearly matches" the optional requirement — Swift never wires
+    /// it as the delegate callback, so the orphan-mount check is
+    /// silently bypassed.
     func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void
     ) {
-        if webView.window == nil {
+        if webView.window == nil && hasEverHadWindow {
             decisionHandler(.cancel)
             return
         }
         decisionHandler(.allow)
+    }
+}
+
+// MARK: - WKWebView subclass with window-lifecycle hook
+
+/// Internal `WKWebView` subclass that exposes `didMoveToWindow` as a
+/// closure callback. v3 `AdWebView` subclassed `WKWebView` directly
+/// and overrode `didMoveToWindow` to flip `hasEverHadWindow`; v4
+/// `AdWebView` uses composition (it's an `NSObject` wrapping a
+/// `WKWebView`), so the lifecycle hook can't be overridden the same
+/// way. This subclass restores the hook without forcing every host
+/// view to remember to call a method.
+private final class AdWKWebView: WKWebView {
+    /// Invoked from `didMoveToWindow`. Set on the main thread (init);
+    /// fires on the main thread (UIView lifecycle).
+    var onDidMoveToWindow: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onDidMoveToWindow?()
     }
 }
 
