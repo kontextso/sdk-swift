@@ -201,7 +201,7 @@ struct EventTests {
         let session = makeSession(onEvent: { events.append($0) })
         let ad = makeAd(session: session, messageId: "a1")
 
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.video.started", payload: ["id": bidId.uuidString])))
+        ad.handleIframeEvent(.eventIframe(.init(name: "video.started", payload: ["id": bidId.uuidString])))
 
         #expect(events.values == [.videoStarted(.init(bidId: bidId))])
     }
@@ -211,7 +211,7 @@ struct EventTests {
         let session = makeSession(onEvent: { events.append($0) })
         let ad = makeAd(session: session, messageId: "a1")
 
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.video.completed", payload: ["id": bidId.uuidString])))
+        ad.handleIframeEvent(.eventIframe(.init(name: "video.completed", payload: ["id": bidId.uuidString])))
 
         #expect(events.values == [.videoCompleted(.init(bidId: bidId))])
     }
@@ -221,7 +221,7 @@ struct EventTests {
         let session = makeSession(onEvent: { events.append($0) })
         let ad = makeAd(session: session, messageId: "a1")
 
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.reward.granted", payload: ["id": bidId.uuidString])))
+        ad.handleIframeEvent(.eventIframe(.init(name: "reward.granted", payload: ["id": bidId.uuidString])))
 
         #expect(events.values == [.rewardGranted(.init(bidId: bidId))])
     }
@@ -234,9 +234,9 @@ struct EventTests {
         let session = makeSession(onEvent: { events.append($0) })
         let ad = makeAd(session: session, messageId: "a1")
 
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.video.started", payload: nil)))
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.video.completed", payload: nil)))
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.reward.granted", payload: nil)))
+        ad.handleIframeEvent(.eventIframe(.init(name: "video.started", payload: nil)))
+        ad.handleIframeEvent(.eventIframe(.init(name: "video.completed", payload: nil)))
+        ad.handleIframeEvent(.eventIframe(.init(name: "reward.granted", payload: nil)))
         ad.handleIframeEvent(.eventIframe(.init(name: "ad.render-completed", payload: nil)))
 
         #expect(events.isEmpty)
@@ -255,9 +255,9 @@ struct EventTests {
         let ad = makeAd(session: session, messageId: "a1")
 
         ad.handleIframeEvent(.eventIframe(.init(name: "ad.render-completed", payload: ["id": "not-a-uuid"])))
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.video.started", payload: ["id": "garbage"])))
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.video.completed", payload: ["id": ""])))
-        ad.handleIframeEvent(.eventIframe(.init(name: "ad.reward.granted", payload: ["id": "12345"])))
+        ad.handleIframeEvent(.eventIframe(.init(name: "video.started", payload: ["id": "garbage"])))
+        ad.handleIframeEvent(.eventIframe(.init(name: "video.completed", payload: ["id": ""])))
+        ad.handleIframeEvent(.eventIframe(.init(name: "reward.granted", payload: ["id": "12345"])))
 
         #expect(events.isEmpty)
     }

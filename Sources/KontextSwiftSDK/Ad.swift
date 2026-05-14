@@ -468,17 +468,25 @@ private extension Ad {
                 session.emitEvent(.renderCompleted(.init(bidId: bidId)))
             }
 
-        case "ad.video.started":
+        // Media-playback and reward events live outside the `ad.*`
+        // namespace by design — see `AdEventMap` in
+        // `sdk-common/src/ad-events.ts:71-84`. The iframe's
+        // `emitAdEvent` is constrained to these exact keys, so the
+        // case strings MUST match without an `ad.` prefix. v3
+        // sdk-swift (`origin/main:EventIframeDataDTO`) had this
+        // right; the v4 port mistakenly added `ad.` and silently
+        // dropped every video / reward event.
+        case "video.started":
             if let bidId = resolvedBidId {
                 session.emitEvent(.videoStarted(.init(bidId: bidId)))
             }
 
-        case "ad.video.completed":
+        case "video.completed":
             if let bidId = resolvedBidId {
                 session.emitEvent(.videoCompleted(.init(bidId: bidId)))
             }
 
-        case "ad.reward.granted":
+        case "reward.granted":
             if let bidId = resolvedBidId {
                 session.emitEvent(.rewardGranted(.init(bidId: bidId)))
             }
