@@ -74,23 +74,30 @@ struct DimensionUpdate: Encodable, Sendable {
 /// envelope stays compile-time typed while the leaf accepts any
 /// JSON-shaped Foundation value (`String`, `Bool`, numbers, arrays,
 /// dictionaries).
+///
+/// `code` lives **inside** `data` (not at the top level) to match
+/// sdk-common's `makeIframeMessage` wire shape — the iframe's
+/// `handleIframeMessage` reads `event.data.data?.code` for per-
+/// placement filtering. A top-level `code` is silently ignored,
+/// which would broadcast every `sendUserEvent` to *all* mounted
+/// iframes regardless of the targeted placement.
 struct UserEventIframeMessageDTO: Encodable {
     let type: String
     let data: PayloadData
-    let code: String
 
     init(name: UserEventName, payload: [String: Any]?, code: String) {
         self.type = "user-event-iframe"
         self.data = PayloadData(
             name: name.rawValue,
-            payload: payload.map(AnyJSONEncodable.init)
+            payload: payload.map(AnyJSONEncodable.init),
+            code: code
         )
-        self.code = code
     }
 
     struct PayloadData: Encodable {
         let name: String
         let payload: AnyJSONEncodable?
+        let code: String
     }
 }
 

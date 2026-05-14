@@ -119,9 +119,15 @@ struct OutboundEncodingTests {
         let dto = UserEventIframeMessageDTO(name: .userTypingStarted, payload: nil, code: "inlineAd")
         let encoded = try jsonObject(dto)
         #expect(encoded["type"] as? String == "user-event-iframe")
-        #expect(encoded["code"] as? String == "inlineAd")
+        // `code` must be INSIDE `data` (not at the top level) so the
+        // iframe's `handleIframeMessage` finds it at `event.data.data.code`.
+        // sdk-common's `makeIframeMessage` builds the same shape — a
+        // top-level `code` here would silently break per-placement
+        // filtering. See `sdk-common/src/iframe-messaging.ts:193`.
+        #expect(encoded["code"] == nil)
         let data = encoded["data"] as? [String: Any]
         #expect(data?["name"] as? String == "user.typing.started")
+        #expect(data?["code"] as? String == "inlineAd")
     }
 
     @Test func userEventIframeMessageDTOEncodesPayload() throws {
@@ -131,8 +137,9 @@ struct OutboundEncodingTests {
             code: "sidebar"
         )
         let encoded = try jsonObject(dto)
-        #expect(encoded["code"] as? String == "sidebar")
+        #expect(encoded["code"] == nil)
         let data = encoded["data"] as? [String: Any]
+        #expect(data?["code"] as? String == "sidebar")
         let payload = data?["payload"] as? [String: Any]
         #expect(payload?["count"] as? Int == 3)
         #expect(payload?["isFinal"] as? Bool == true)
