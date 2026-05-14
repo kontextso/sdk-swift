@@ -20,12 +20,15 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Used to connect to a local development ad server during testing.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>This identifier will be used to deliver personalized ads to you.</string>
-	<!-- Placeholder SKAdNetwork IDs for local testing only. In production
-	     apps, replace this list with the SKAdNetworkIdentifier values
-	     provided by Kontext during onboarding. Missing or stale IDs mean
-	     conversions from those DSPs won't be attributed. -->
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
@@ -50,10 +53,10 @@
 			</array>
 		</dict>
 	</dict>
-	<key>UILaunchScreen</key>
-	<dict/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>arm64</string>

@@ -132,7 +132,7 @@ final class ChatViewController: UIViewController {
         NSLayoutConstraint.activate([
             bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            bar.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
             bar.topAnchor.constraint(equalTo: tableView.bottomAnchor),
             bar.heightAnchor.constraint(equalToConstant: 112),
 
