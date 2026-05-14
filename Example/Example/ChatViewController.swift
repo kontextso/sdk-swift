@@ -63,7 +63,7 @@ final class ChatViewController: UIViewController {
             character: Character(
                 id: "character-id-1",
                 name: "Aria",
-                avatarUrl: URL(string: "https://example.com/avatars/aria.png"),
+                avatarUrl: URL(string: "https://example.com/avatars/aria.png")!,
                 greeting: "Hi! I'm Aria, your friendly AI companion.",
                 persona: "Curious, upbeat, and loves talking about science.",
                 tags: ["assistant", "friendly", "sci-fi"],
@@ -105,6 +105,34 @@ final class ChatViewController: UIViewController {
         setupTableView()
         setupInputBar()
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+        seedDemoMessages()
+    }
+
+    /// Replays a short fake chat history at launch. Useful for exercising
+    /// the 10ms `addMessage` debounce — feeding three user + three
+    /// assistant messages back-to-back should produce exactly ONE
+    /// `Preload: request-ad-start` debug event (the SDK coalesces
+    /// consecutive user messages; assistant messages don't reset the
+    /// debounce). If you see six preloads in the console, debounce is
+    /// broken.
+    private func seedDemoMessages() {
+        let seed: [Message] = [
+            Message(id: UUID().uuidString, role: .user, content: "Hi Aria!"),
+            Message(id: UUID().uuidString, role: .assistant, content: "Hi! I'm Aria, your friendly AI companion."),
+        ]
+        for message in seed {
+            messages.append(message)
+            session.addMessage(message)
+        }
+        // Create an Ad bound to the last assistant message so the bid that
+        // the (single, debounced) preload will return has somewhere to land.
+        // Without this, the bid attaches in `Session` but nothing in the UI
+        // renders it.
+        if let lastAssistant = seed.last, lastAssistant.role == .assistant {
+            ads[lastAssistant.id] = session.createAd(lastAssistant.id)
+        }
+        rebuildItems()
+        scrollToBottom(animated: false)
     }
 
     private func setupTableView() {
