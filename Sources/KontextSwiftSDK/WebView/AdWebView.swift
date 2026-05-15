@@ -273,11 +273,22 @@ final class AdWebView: NSObject {
     /// without going through the same-origin ad-server frame, so the
     /// origin check filters out third-party traffic.
     fileprivate static func bridgeScript(adServerUrl: URL) -> String {
-        """
+        let origin = canonicalOrigin(of: adServerUrl)
+        return """
         (function() {
-            var expectedOrigin = '\(adServerUrl.absoluteString)';
+            var expectedOrigin = '\(origin)';
+            var loggedOrigins = {};
             window.addEventListener('message', function(event) {
-                if (event.origin !== expectedOrigin) return;
+                if (event.origin !== expectedOrigin) {
+                    if (!loggedOrigins[event.origin]) {
+                        loggedOrigins[event.origin] = true;
+                        window.webkit.messageHandlers.\(messageHandlerName).postMessage({
+                            type: '_console',
+                            message: '[kontext] bridge dropped message from origin ' + event.origin + ' (expected ' + expectedOrigin + ')'
+                        });
+                    }
+                    return;
+                }
                 try {
                     var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
                     if (data && data.type && data.type.indexOf('-iframe') !== -1) {
@@ -296,6 +307,30 @@ final class AdWebView: NSObject {
             });
         })();
         """
+    }
+
+    /// Canonical `scheme://host[:port]` form, matching the browser's
+    /// `event.origin` / `URL.origin` semantics:
+    ///   - Scheme and host are lowercased (RFC: both case-insensitive).
+    ///   - Default ports are stripped (`:443` for https, `:80` for http) —
+    ///     `URL.port` returns the explicit port even when it's the
+    ///     scheme's default, but `event.origin` always omits them.
+    ///   - Path / query / fragment / userinfo are dropped.
+    ///
+    /// Swift's `URL.absoluteString` is NOT spec-compliant — it returns the
+    /// input string verbatim — so a strict equality check against
+    /// `event.origin` breaks under common publisher configurations.
+    /// Mirrors sdk-js's `new URL(adServerUrl).origin`.
+    static func canonicalOrigin(of url: URL) -> String {
+        guard let scheme = url.scheme?.lowercased(),
+              let host = url.host?.lowercased()
+        else { return url.absoluteString }
+        let isDefaultPort = (scheme == "https" && url.port == 443) ||
+                            (scheme == "http" && url.port == 80)
+        if let port = url.port, !isDefaultPort {
+            return "\(scheme)://\(host):\(port)"
+        }
+        return "\(scheme)://\(host)"
     }
 }
 
@@ -367,7 +402,7 @@ private extension AdWebView {
             debug("postMessage encoding failed for \(T.self)")
             return
         }
-        let origin = ad.session.config.adServerUrl.absoluteString
+        let origin = Self.canonicalOrigin(of: ad.session.config.adServerUrl)
         webView.evaluateJavaScript("window.postMessage(\(json), '\(origin)');", completionHandler: nil)
     }
 }
