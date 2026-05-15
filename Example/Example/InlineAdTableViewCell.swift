@@ -52,9 +52,12 @@ final class InlineAdTableViewCell: UITableViewCell {
         inlineAdView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(inlineAdView)
 
+        let trailing = inlineAdView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12)
+        trailing.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
             inlineAdView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
-            inlineAdView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            trailing,
             inlineAdView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             inlineAdView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
         ])
