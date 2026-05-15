@@ -11,6 +11,7 @@ import Testing
 /// — so a strict equality check against `event.origin` breaks under
 /// common publisher configurations. These tests pin the normalisation
 /// rules to match sdk-js's `new URL(adServerUrl).origin`.
+@MainActor
 struct AdWebViewCanonicalOriginTests {
 
     @Test func bareUrl() {
