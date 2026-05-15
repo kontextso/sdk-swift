@@ -25,7 +25,7 @@ final class InterstitialAdViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.85)
         setupSpinner()
         setupWebView()
         observeModalDismiss()
