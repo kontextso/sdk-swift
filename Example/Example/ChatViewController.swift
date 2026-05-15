@@ -213,6 +213,7 @@ final class ChatViewController: UIViewController {
                 self.ads[assistant.id] = self.session.createAd(assistant.id)
             }
             self.rebuildItems()
+            self.scrollToBottom()
         }
     }
 

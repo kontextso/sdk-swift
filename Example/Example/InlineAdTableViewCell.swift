@@ -45,8 +45,17 @@ final class InlineAdTableViewCell: UITableViewCell {
         let inlineAdView = InlineAdUIView(ad: ad)
         inlineAdView.onHeightChange = { [weak self] _ in
             guard let tableView = self?.enclosingTableView else { return }
+            // Capture "was scrolled to bottom" before the height change so
+            // we know whether to follow the growing ad. ~24pt slack to
+            // tolerate the rubber-banding overshoot at the bottom edge.
+            let wasAtBottom = tableView.contentOffset.y + tableView.bounds.height
+                >= tableView.contentSize.height - 24
             tableView.beginUpdates()
             tableView.endUpdates()
+            guard wasAtBottom else { return }
+            let rows = tableView.numberOfRows(inSection: 0)
+            guard rows > 0 else { return }
+            tableView.scrollToRow(at: IndexPath(row: rows - 1, section: 0), at: .bottom, animated: true)
         }
         self.inlineAdView = inlineAdView
         inlineAdView.translatesAutoresizingMaskIntoConstraints = false
