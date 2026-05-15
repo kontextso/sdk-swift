@@ -225,7 +225,11 @@ final class Preload {
 
         if status == 204 {
             debug(config, "no-content", ["status": 204])
-            return .failure(reason: "No content", event: nil, disableSession: false)
+            return .failure(
+                reason: "No content",
+                event: .noFill(.init(skipCode: "unfilled_bid")),
+                disableSession: false
+            )
         }
 
         guard (200...299).contains(status) else {
@@ -245,6 +249,14 @@ final class Preload {
         }
 
         recordBids(config: config, jsonResponse: jsonResponse)
+        if bids.isEmpty {
+            debug(config, "no-bids-emit-noFill", ["sessionId": sessionId])
+            return .failure(
+                reason: "No bids in response",
+                event: .noFill(.init(skipCode: "unfilled_bid")),
+                disableSession: false
+            )
+        }
         return .success(bids: bids, sessionId: sessionId)
     }
 

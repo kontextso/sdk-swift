@@ -237,7 +237,9 @@ struct PreloadFetchTests {
     }
 
     @Test func filtersBidsByEnabledPlacementCodes() async {
-        // Server returns a bid for an unmapped placement — should be filtered.
+        // Server returns a bid for an unmapped placement — should be filtered
+        // out, and an empty matching-bid set surfaces to the publisher as
+        // `noFill` (not silence). Mirrors the 204 path.
         let sessionId = UUID()
         let bidId = UUID()
         let body = """
@@ -252,11 +254,17 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .success(let bids, _) = result else {
-            Issue.record("Expected success, got \(result)")
+        guard case .failure(let reason, let event, let disableSession) = result else {
+            Issue.record("Expected failure, got \(result)")
             return
         }
-        #expect(bids.isEmpty)
+        #expect(reason == "No bids in response")
+        #expect(disableSession == false)
+        guard case .noFill(let data) = event else {
+            Issue.record("Expected noFill event, got \(String(describing: event))")
+            return
+        }
+        #expect(data.skipCode == "unfilled_bid")
     }
 
     // MARK: - Skip path
@@ -347,10 +355,11 @@ struct PreloadFetchTests {
 
     // MARK: - HTTP-level failures
 
-    @Test func returnsNoContentFailureOn204() async {
+    @Test func returnsNoFillOn204() async {
         // 204 = server explicitly opted out of returning a body
         // (publisher disabled / unknown). No decode attempt, no
-        // ErrorCapture report — mirrors sdk-js + Init.fetch.
+        // ErrorCapture report. Publisher sees `noFill` so every
+        // preload produces exactly one of filled/noFill/error.
         PreloadStubProtocol.reset()
         PreloadStubProtocol.script = [.status(204)]
         let session = makeStubbedSession()
@@ -362,7 +371,11 @@ struct PreloadFetchTests {
             return
         }
         #expect(reason == "No content")
-        #expect(event == nil)
+        guard case .noFill(let data) = event else {
+            Issue.record("Expected noFill event, got \(String(describing: event))")
+            return
+        }
+        #expect(data.skipCode == "unfilled_bid")
         #expect(disableSession == false)
     }
 
