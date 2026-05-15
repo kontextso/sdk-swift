@@ -2,7 +2,7 @@
 
 ## 4.0.0
 ### Breaking
-Complete API redesign. The `AdsProvider`-centric model from v1–v2 is replaced by a session/ad pattern: `KontextAds.createSession(...)` returns a `Session`, you feed messages via `session.addMessage(...)`, then create one `Ad` per assistant message via `session.createAd(messageId:)`. Render with `InlineAdUIView` (UIKit). See https://docs.kontext.so/sdk/v4/swift for the integration guide.
+Complete API redesign. The `AdsProvider`-centric model from v1–v2 is replaced by a session/ad pattern: `KontextAds.createSession(...)` returns a `Session`, you feed messages via `session.addMessage(...)`, then create one `Ad` per assistant message via `session.createAd(messageId:)`. Render with `InlineAdUIView` (UIKit). See https://docs.kontext.so/sdk/ios for the integration guide.
 
 SwiftUI views (`InlineAdView`, `InterstitialAdView`) have been removed — the SDK is UIKit-only. SwiftUI hosts can wrap `InlineAdUIView` in a `UIViewRepresentable` (~10 lines).
 
