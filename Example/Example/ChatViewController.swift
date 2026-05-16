@@ -1,0 +1,278 @@
+import KontextSwiftSDK
+import UIKit
+
+final class ChatViewController: UIViewController {
+    private let session: Session
+    private var messages: [Message] = []
+    private var items: [Item] = []
+    private var ads: [String: Ad] = [:]
+
+    private let tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.separatorStyle = .none
+        tableView.keyboardDismissMode = .interactive
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.allowsSelection = false
+        return tableView
+    }()
+
+    private let inputField: UITextField = {
+        let field = UITextField()
+        field.placeholder = "Type a message…"
+        field.borderStyle = .roundedRect
+        field.font = .systemFont(ofSize: 15)
+        field.translatesAutoresizingMaskIntoConstraints = false
+        return field
+    }()
+
+    private let sendButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Send", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        button.backgroundColor = .systemBlue
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 8
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
+    private let trackOnlySwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.isOn = false
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        return toggle
+    }()
+
+    private let trackOnlyLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Track only (no ad)"
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    init() {
+        session = KontextAds.createSession(SessionOptions(
+            publisherToken: ExampleSecrets.publisherToken,
+            // Stable demo values so it's obvious these are placeholders —
+            // replace with your real user/conversation identifiers.
+            userId: "user-id-1",
+            conversationId: "conversation-id-1",
+            character: Character(
+                id: "character-id-1",
+                name: "Aria",
+                avatarUrl: URL(string: "https://example.com/avatars/aria.png")!,
+                greeting: "Hi! I'm Aria, your friendly AI companion.",
+                persona: "Curious, upbeat, and loves talking about science.",
+                tags: ["assistant", "friendly", "sci-fi"],
+                isNsfw: false
+            ),
+            // adServerUrl is optional — omit it to use the production
+            // endpoint (`Constants.defaultAdServerUrl`). Set here so
+            // the example can target a local ad server during dev.
+            adServerUrl: ExampleSecrets.adServerUrl,
+            onEvent: { event in
+                print("[kontext] \(event)")
+            },
+            onDebugEvent: { name, data in
+                // Filter out the 200ms dimension-tick chatter — uncomment
+                // if you need to debug viewport reporting.
+                if let dict = data as? [String: Any],
+                   dict["type"] as? String == "update-dimensions-iframe" {
+                    return
+                }
+                if let data {
+                    print("[kontext-debug] \(name) \(data)")
+                } else {
+                    print("[kontext-debug] \(name)")
+                }
+            }
+        ))
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        title = "Kontext v4"
+        setupTableView()
+        setupInputBar()
+        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+        seedDemoMessages()
+    }
+
+    /// Replays a short fake chat history at launch. Useful for exercising
+    /// the 10ms `addMessage` debounce — feeding three user + three
+    /// assistant messages back-to-back should produce exactly ONE
+    /// `Preload: request-ad-start` debug event (the SDK coalesces
+    /// consecutive user messages; assistant messages don't reset the
+    /// debounce). If you see six preloads in the console, debounce is
+    /// broken.
+    private func seedDemoMessages() {
+        let seed: [Message] = [
+            Message(id: UUID().uuidString, role: .user, content: "Hi Aria!"),
+            Message(id: UUID().uuidString, role: .assistant, content: "Hi! I'm Aria, your friendly AI companion."),
+        ]
+        for message in seed {
+            messages.append(message)
+            session.addMessage(message)
+        }
+        // Create an Ad bound to the last assistant message so the bid that
+        // the (single, debounced) preload will return has somewhere to land.
+        // Without this, the bid attaches in `Session` but nothing in the UI
+        // renders it.
+        if let lastAssistant = seed.last, lastAssistant.role == .assistant {
+            ads[lastAssistant.id] = session.createAd(lastAssistant.id)
+        }
+        rebuildItems()
+        scrollToBottom(animated: false)
+    }
+
+    private func setupTableView() {
+        tableView.register(MyMessageTableViewCell.self, forCellReuseIdentifier: MyMessageTableViewCell.reuseIdentifier)
+        tableView.register(InlineAdTableViewCell.self, forCellReuseIdentifier: InlineAdTableViewCell.reuseIdentifier)
+        tableView.dataSource = self
+        view.addSubview(tableView)
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+    }
+
+    private func setupInputBar() {
+        let bar = UIView()
+        bar.backgroundColor = .secondarySystemBackground
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        bar.addSubview(trackOnlyLabel)
+        bar.addSubview(trackOnlySwitch)
+        bar.addSubview(inputField)
+        bar.addSubview(sendButton)
+        view.addSubview(bar)
+
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bar.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+            bar.topAnchor.constraint(equalTo: tableView.bottomAnchor),
+            bar.heightAnchor.constraint(equalToConstant: 112),
+
+            trackOnlyLabel.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
+            trackOnlyLabel.topAnchor.constraint(equalTo: bar.topAnchor, constant: 14),
+
+            trackOnlySwitch.leadingAnchor.constraint(equalTo: trackOnlyLabel.trailingAnchor, constant: 8),
+            trackOnlySwitch.centerYAnchor.constraint(equalTo: trackOnlyLabel.centerYAnchor),
+
+            inputField.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 12),
+            inputField.topAnchor.constraint(equalTo: trackOnlySwitch.bottomAnchor, constant: 14),
+            inputField.heightAnchor.constraint(equalToConstant: 36),
+
+            sendButton.leadingAnchor.constraint(equalTo: inputField.trailingAnchor, constant: 8),
+            sendButton.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -12),
+            sendButton.centerYAnchor.constraint(equalTo: inputField.centerYAnchor),
+            sendButton.widthAnchor.constraint(equalToConstant: 64),
+            sendButton.heightAnchor.constraint(equalToConstant: 36),
+        ])
+    }
+
+    @objc private func sendTapped() {
+        let text = inputField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        guard !text.isEmpty else { return }
+        inputField.text = ""
+
+        // A new user message triggers a new preload; tear down any ads
+        // bound to earlier assistant messages so the chat only shows
+        // the ad for the latest reply. v4 leaves Ad lifecycle to the
+        // publisher (no auto-clear event like v3's `.cleared`).
+        for ad in ads.values { ad.destroy() }
+        ads.removeAll()
+
+        let trackOnly = trackOnlySwitch.isOn
+        let user = Message(id: UUID().uuidString, role: .user, content: text)
+        appendMessage(user, trackOnly: trackOnly)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard let self else { return }
+            let assistant = Message(
+                id: UUID().uuidString,
+                role: .assistant,
+                content: "This is a static reply. Replace with your own LLM."
+            )
+            self.appendMessage(assistant)
+            // When the preceding user message was sent with trackOnly,
+            // the server skipped ad generation for this turn — don't
+            // create an Ad placeholder under the assistant reply.
+            if !trackOnly {
+                self.ads[assistant.id] = self.session.createAd(assistant.id)
+            }
+            self.rebuildItems()
+            self.scrollToBottom()
+        }
+    }
+
+    private func appendMessage(_ message: Message, trackOnly: Bool = false) {
+        messages.append(message)
+        if trackOnly {
+            session.addMessage(message, options: AddMessageOptions(trackOnly: true))
+        } else {
+            session.addMessage(message)
+        }
+        rebuildItems()
+        scrollToBottom()
+    }
+
+    private func rebuildItems() {
+        var built: [Item] = []
+        for message in messages {
+            built.append(.message(message))
+            if let ad = ads[message.id] {
+                built.append(.ad(ad))
+            }
+        }
+        items = built
+        tableView.reloadData()
+    }
+
+    private func scrollToBottom(animated: Bool = true) {
+        guard !items.isEmpty else { return }
+        let last = IndexPath(row: items.count - 1, section: 0)
+        tableView.scrollToRow(at: last, at: .bottom, animated: animated)
+    }
+}
+
+extension ChatViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        items.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        switch items[indexPath.row] {
+        case .message(let message):
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: MyMessageTableViewCell.reuseIdentifier,
+                for: indexPath
+            ) as! MyMessageTableViewCell
+            cell.configure(with: message)
+            return cell
+        case .ad(let ad):
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: InlineAdTableViewCell.reuseIdentifier,
+                for: indexPath
+            ) as! InlineAdTableViewCell
+            cell.configure(with: ad)
+            return cell
+        }
+    }
+}
+
+private enum Item {
+    case message(Message)
+    case ad(Ad)
+}

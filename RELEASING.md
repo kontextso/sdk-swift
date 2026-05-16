@@ -16,8 +16,7 @@
 3. Create a new branch `release/1.0.0`
 4. Make sure it builds.
 5. Run tests and make sure they are green.
-6. Run ExampleSwiftUI and make sure it's OK.
-7. Run ExampleUIKit and make sure it's OK.
+6. Run Example and make sure it's OK.
 
 ## 2. Update the changelog
 

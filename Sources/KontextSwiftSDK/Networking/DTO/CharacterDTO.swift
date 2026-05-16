@@ -1,45 +1,33 @@
-import Foundation
-
-struct CharacterDTO: Encodable {
-    let id: String?
-    let name: String?
-    let avatarUrl: URL?
-    let isNsfw: Bool?
+/// Character / avatar metadata for character-based publisher apps.
+///
+/// `id`, `name`, and `avatarUrl` are required; everything else is
+/// publisher-supplied optional metadata. The deprecated server field
+/// `title` is intentionally omitted — server treats it as superseded
+/// by `name`.
+struct CharacterDTO: Encodable, Sendable {
+    let id: String
+    let name: String
+    let avatarUrl: String
     let greeting: String?
     let persona: String?
     let tags: [String]?
-    
+    let isNsfw: Bool?
+
     init(
-        id: String?,
-        name: String?,
-        avatarUrl: URL?,
-        isNsfw: Bool?,
-        greeting: String?,
-        persona: String?,
-        tags: [String]?
+        id: String,
+        name: String,
+        avatarUrl: String,
+        greeting: String? = nil,
+        persona: String? = nil,
+        tags: [String]? = nil,
+        isNsfw: Bool? = nil
     ) {
         self.id = id
         self.name = name
         self.avatarUrl = avatarUrl
-        self.isNsfw = isNsfw
         self.greeting = greeting
         self.persona = persona
         self.tags = tags
-    }
-    
-    init?(from model: Character?) {
-        guard let model else {
-            return nil
-        }
-        
-        self.init(
-            id: model.id,
-            name: model.name,
-            avatarUrl: model.avatarUrl,
-            isNsfw: model.isNsfw,
-            greeting: model.greeting,
-            persona: model.persona,
-            tags: model.tags
-        )
+        self.isNsfw = isNsfw
     }
 }

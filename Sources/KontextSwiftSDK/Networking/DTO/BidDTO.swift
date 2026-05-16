@@ -1,113 +1,82 @@
 import Foundation
+import KontextKit
 
-struct BidDTO: Decodable {
-    let bidId: String
+/// Wire-format bid as decoded from the `/preload` response.
+/// Convert to the SDK-internal `Bid` domain type via `toBid()`.
+///
+/// Strict on identity (`bidId: UUID`, `code: String`) — a malformed
+/// required field is treated as a server bug and fails the whole
+/// response decode rather than silently producing a half-broken bid.
+/// Tolerant on optional metadata (`revenue`, `creativeType`, `skan`)
+/// — unknown enum values or type mismatches fall back to nil so
+/// server-side additions don't break old SDKs.
+///
+/// `impressionTrigger` is normalised to `.immediate` when missing or
+/// unparseable — every consumer treats nil as `.immediate` anyway, so
+/// collapsing it at the decode boundary keeps that semantics in one
+/// place (same pattern as `InitResponseDTO.enabled/reportErrors/reportDebug`).
+///
+/// The v4 ad server emits the OMID creative type on a nested `om` block
+/// (`bids[i].om.creativeType`), not as a top-level field. Decode both
+/// shapes; `toBid()` prefers the nested location and falls back to the
+/// top-level slot for forward-compat. Without the nested-block decode
+/// the SDK silently fails to open OMID sessions in production
+/// (`bid.creativeType` is always nil, which guards the `startOMSession`
+/// call in `Ad.handleAdDoneIframe` / `Ad.handleAdDoneComponentIframe`).
+struct BidDTO: Sendable, Decodable {
+    let bidId: UUID
     let code: String
-    let adDisplayPosition: AdDisplayPositionDTO
-    let skan: SkanDTO?
+    let revenue: Double?
     let impressionTrigger: ImpressionTrigger
-    let om: OmInfoDTO?
+    let creativeType: OMCreativeType?
+    let om: OMDTO?
+    let skan: Skan?
 
-    private enum CodingKeys: String, CodingKey {
-        case bidId
-        case code
-        case adDisplayPosition
-        case skan
-        case impressionTrigger
-        case om
+    enum CodingKeys: String, CodingKey {
+        case bidId, code, revenue, impressionTrigger, creativeType, om, skan
     }
 
-    init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        bidId = try container.decode(String.self, forKey: .bidId)
-        code = try container.decode(String.self, forKey: .code)
-        adDisplayPosition = (try? container.decode(
-            AdDisplayPositionDTO.self,
-            forKey: .adDisplayPosition
-        )) ?? .afterAssistantMessage
-        do {
-            skan = try container.decodeIfPresent(SkanDTO.self, forKey: .skan)
-        } catch {
-            skan = nil
-        }
-        let decodedImpressionTrigger = try? container.decodeIfPresent(
-            String.self,
-            forKey: .impressionTrigger
-        )
-        impressionTrigger = ImpressionTrigger(
-            rawValue: decodedImpressionTrigger ?? ""
-        ) ?? .immediate
-        do {
-            om = try container.decodeIfPresent(OmInfoDTO.self, forKey: .om)
-        } catch {
-            om = nil
-        }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.bidId             = try c.decode(UUID.self, forKey: .bidId)
+        self.code              = try c.decode(String.self, forKey: .code)
+        self.revenue           = try? c.decode(Double.self, forKey: .revenue)
+        self.impressionTrigger = (try? c.decode(ImpressionTrigger.self, forKey: .impressionTrigger)) ?? .immediate
+        self.creativeType      = try? c.decode(OMCreativeType.self, forKey: .creativeType)
+        self.om                = try? c.decode(OMDTO.self, forKey: .om)
+        self.skan              = try? c.decode(Skan.self, forKey: .skan)
     }
 
-    var model: Bid? {
-        guard let uuid = UUID(uuidString: bidId) else {
-            return nil
-        }
-        return Bid(
-            bidId: uuid,
+    /// Maps the wire-format bid into the SDK-internal `Bid` domain type.
+    ///
+    /// Prefers the nested `om.creativeType` over the top-level
+    /// `creativeType` because the v4 server actually emits the nested
+    /// form on the wire; the top-level slot is forward-compat only.
+    func toBid() -> Bid {
+        Bid(
+            bidId: bidId,
             code: code,
-            adDisplayPosition: adDisplayPosition.model,
-            skan: skan?.model,
+            revenue: revenue,
             impressionTrigger: impressionTrigger,
-            creativeType: om?.model
+            creativeType: om?.creativeType ?? creativeType,
+            skan: skan
         )
     }
 }
 
-struct OmInfoDTO: Decodable {
-    let creativeType: String?
+/// Nested OM metadata block on a bid. Mirrors the server's
+/// `bids[i].om` object shape. The only field that currently matters
+/// is `creativeType`; the block is kept as a nested object on the wire
+/// so future OM fields can land here without breaking decode.
+struct OMDTO: Sendable, Decodable {
+    let creativeType: OMCreativeType?
 
-    var model: OmCreativeType? {
-        guard let creativeType else { return nil }
-        return OmCreativeType(rawValue: creativeType)
+    enum CodingKeys: String, CodingKey {
+        case creativeType
     }
-}
 
-struct SkanDTO: Decodable {
-    let version: String
-    let network: String
-    let itunesItem: String
-    let sourceApp: String
-    let sourceIdentifier: String?
-    let campaign: String?
-    let fidelities: [AttributionFidelityDTO]?
-    let nonce: String?
-    let timestamp: String?
-    let signature: String?
-
-    var model: Skan {
-        Skan(
-            version: version,
-            network: network,
-            itunesItem: itunesItem,
-            sourceApp: sourceApp,
-            sourceIdentifier: sourceIdentifier,
-            campaign: campaign,
-            fidelities: fidelities?.map(\.model),
-            nonce: nonce,
-            timestamp: timestamp,
-            signature: signature
-        )
-    }
-}
-
-struct AttributionFidelityDTO: Decodable {
-    let fidelity: Int
-    let signature: String
-    let nonce: String
-    let timestamp: String
-
-    var model: AttributionFidelity {
-        AttributionFidelity(
-            fidelity: fidelity,
-            signature: signature,
-            nonce: nonce,
-            timestamp: timestamp
-        )
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.creativeType = try? c.decode(OMCreativeType.self, forKey: .creativeType)
     }
 }

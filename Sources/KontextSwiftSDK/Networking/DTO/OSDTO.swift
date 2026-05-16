@@ -1,10 +1,13 @@
-struct OSDTO: Encodable {
-    /// "android" | "ios" | "web" | "windows" | ...
+/// Operating-system metadata. All four fields are always known on iOS.
+///
+/// `OSInfoProvider` populates these as:
+/// - `name` is the lowercase platform identifier (`"ios"`), matching
+///   the server's `osSchema` example and the SDK's own `sdk.platform`.
+/// - `locale` is a BCP-47 tag (e.g. `"en-US"`), not POSIX (`"en_US"`).
+/// - `timezone` is an IANA identifier.
+struct OSDTO: Encodable, Sendable {
     let name: String
-    /// "16.5"
     let version: String
-    /// BCP-47, e.g. "cs-CZ"
     let locale: String
-    /// IANA, e.g. "Europe/Prague"
     let timezone: String
 }

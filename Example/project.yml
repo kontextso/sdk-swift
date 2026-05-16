@@ -1,0 +1,28 @@
+name: Example
+options:
+  bundleIdPrefix: so.kontext
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "16.0"
+
+packages:
+  KontextSwiftSDK:
+    path: ../
+
+targets:
+  Example:
+    type: application
+    platform: iOS
+    sources:
+      - Example
+      - path: ../ExampleSecrets.swift
+        group: Example
+    dependencies:
+      - package: KontextSwiftSDK
+        product: KontextSwiftSDK
+    settings:
+      base:
+        INFOPLIST_FILE: Example/Info.plist
+        SWIFT_VERSION: "5.9"
+        PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example-uikit
+        TARGETED_DEVICE_FAMILY: "1"

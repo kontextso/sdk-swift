@@ -45,15 +45,10 @@
       <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
       <key>NSPrivacyAccessedAPITypeReasons</key>
       <array>
+        <!-- C617.1: timestamps/size/metadata of files inside the app
+             container. KontextKit's AppInfoProvider reads the Documents
+             directory creation date as a first-install-time proxy. -->
         <string>C617.1</string>
-      </array>
-    </dict>
-    <dict>
-      <key>NSPrivacyAccessedAPIType</key>
-      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
-      <key>NSPrivacyAccessedAPITypeReasons</key>
-      <array>
-        <string>8FFB.1</string>
       </array>
     </dict>
     <dict>

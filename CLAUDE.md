@@ -6,92 +6,107 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Kontext Swift SDK — an iOS SDK for integrating AI-powered contextual ads into chat apps. Distributed via Swift Package Manager and CocoaPods (`KontextSwiftSDK`). Minimum deployment target: iOS 14.
 
+Currently on the **v4** API. Full integration docs: https://docs.kontext.so/sdk/v4/swift.
+
 ## Common Commands
 
 ```bash
-# Build
-swift build
+# Build and test on a real iOS Simulator (UIKit isn't on host macOS, so
+# `swift build` / `swift test` won't work).
+xcodebuild build \
+  -scheme KontextSwiftSDK \
+  -destination 'platform=iOS Simulator,OS=latest,name=iPhone 16' \
+  -skipPackagePluginValidation
 
-# Run all tests
-swift test
-
-# Run a single test class or method
-swift test --filter AdsProviderActorTests
-swift test --filter "AdsProviderActorTests/testMethodName"
+xcodebuild test \
+  -scheme KontextSwiftSDK \
+  -destination 'platform=iOS Simulator,OS=latest,name=iPhone 16' \
+  -skipPackagePluginValidation
 ```
 
-There is no separate lint step — the project uses `.enableExperimentalFeature("StrictConcurrency")` in `Package.swift`, so Swift's strict concurrency checking acts as the linter. Fix all concurrency warnings as part of any PR.
+The project uses `.enableExperimentalFeature("StrictConcurrency")` in `Package.swift`, so Swift's strict concurrency checking acts as the linter. Fix all concurrency warnings as part of any PR.
 
 ## Architecture
 
-The SDK delivers AI-powered ads into iOS chat UIs. It is distributed via both Swift Package Manager and CocoaPods (`KontextSwiftSDK.podspec`). Minimum deployment target: iOS 14.
+### Public API (v4)
 
-### Entry Point & Public API
+**`KontextAds`** (`Sources/KontextSwiftSDK/KontextAds.swift`) — the static entry point. `KontextAds.createSession(SessionOptions(...))` returns a `Session`.
 
-**`AdsProvider`** (`Sources/KontextSwiftSDK/AdsProvider.swift`) is the only public class. One instance per chat conversation. It:
-- Accepts an immutable `AdsProviderConfiguration` at init
-- Exposes a Combine `eventPublisher` and `AdsProviderDelegate` for events (both deliver on main thread)
-- Forwards `setMessages([MessageRepresentable])` calls into the internal actor
-- Creates all dependencies via `DependencyContainer.defaultContainer()`
+**`Session`** — one instance per chat conversation. Lifecycle:
+- Constructed with immutable `SessionOptions` (publisher token, user id, conversation id, placement codes, character, regulatory, etc.) plus a `MutablePublisherOptions` for things that can change at runtime (consent, character switch).
+- Caller feeds messages via `session.addMessage(Message(...))` as the chat progresses.
+- For each assistant message that should host an ad, caller creates one `Ad` via `session.createAd(messageId:)`.
+- Events delivered via `Session.onEvent` callback (single closure) **and** `Session.eventPublisher` (Combine), both on the main thread.
 
-**`AdsProviderConfiguration`** (`AdsProviderConfiguration.swift`) holds all immutable per-conversation settings: `publisherToken`, `userId`, `conversationId`, `enabledPlacementCodes`, `character`, `variantId`, `advertisingId`, `vendorId`, `adServerUrl` (defaults to `https://server.megabrain.co/`), `regulatory`, `otherParams`, and `userEmail`.
-
-### Internal Business Logic
-
-**`AdsProviderActing`** (`AdsProviderActing.swift`) is the internal protocol bridging `AdsProvider` and `AdsProviderActor`. It defines `setDelegate()`, `setDisabled()`, `setMessages()`, `reset()`, and `setIFA()`. `AdsProviderActingDelegate` is the reverse callback protocol.
-
-**`AdsProviderActor`** (`AdsProviderActor.swift`) is a Swift `actor` that owns all mutable state:
-- Holds last 30 messages and detects new user messages to trigger preloads
-- Manages `AdLoadingState` per placement
-- Orchestrates `AdsServerAPI.preload()` calls
-- Handles SKAdNetwork impression lifecycle, SKOverlay, and StoreKit product views
-- Emits `AdsEvent` values to its delegate (`AdsProvider`)
-
-### Networking Layer
-
-**`AdsServerAPI` protocol** / **`BaseURLAdsServerAPI`** (`Networking/AdsServerAPI.swift`):
-- Uses a single `baseURL` taken from `AdsProviderConfiguration.adServerUrl` (defaults to `https://server.megabrain.co/`)
-- `preload()`: POST to `/preload` with full device/app/message context
-- `frameURL()` / `componentURL()`: Build iframe/component display URLs
-- `redirectURL()`: Resolves relative redirect URLs
-
-**`Networking`** (`Networking/Networking.swift`): Low-level async/await HTTP wrapper over `URLSession`.
-
-DTOs live in `Networking/DTO/` and map directly to/from JSON. Domain models live in `Model/`. The conversion layer is `Networking/Mapping/` and `ModelConvertible`.
-
-### UI Components
+**`Ad`** — per-message ad placeholder. Rendered via:
 
 | Component | Type | Purpose |
 |---|---|---|
-| `InlineAdView` | SwiftUI View | Embeds ad in chat feed; reports dimensions to server |
-| `InlineAdUIView` | UIView | UIKit equivalent of `InlineAdView` |
-| `InterstitialAdView` | SwiftUI View | Full-screen ad overlay |
-| `AdWebViewRepresentable` | UIViewRepresentable | SwiftUI wrapper for `AdWebView` |
-| `AdWebView` | WKWebView subclass | Renders ad iframe; bridges JS `postMessage` to Swift |
+| `InlineAdUIView` | UIView | Embeds ad in chat feed; reports dimensions to server |
+| `InterstitialAdViewController` | UIViewController | Internal: full-screen modal ad overlay (presented by `InlineAdUIView`) |
+| `AdWebView` | WKWebView wrapper | Internal: renders ad iframe; bridges JS `postMessage` to Swift |
 
-`InlineAdViewModel` and `InterstitialAdViewModel` hold the view state and communicate with `AdsProviderActor`.
+The SDK is UIKit-only. SwiftUI hosts can wrap `InlineAdUIView` in a `UIViewRepresentable`.
 
-### Privacy & Attribution
+**`AdEvent`** (`Sources/KontextSwiftSDK/Model/AdEvent.swift`) — discriminated enum covering `adFilled`, `adNoFill`, `adViewed`, `adClicked`, `adRenderStarted`, `adRenderCompleted`, `adError`, `videoStarted`, `videoCompleted`, `rewardGranted`, `event`. Each case carries placement code + bid id where applicable.
 
-- **`IFACollector`** (`Model/Info/IFACollector.swift`): Requests ATT (on iOS 14.5+), collects IDFA/IDFV via `collect(manualAdvertisingId:manualVendorId:)`
-- **`TCFInfo`** (`Model/Info/TCFInfo.swift`): Reads IAB TCF consent string from `UserDefaults` for GDPR compliance; merged with publisher-supplied `Regulatory`
-- **`SKAdNetworkManager`**, **`SKOverlayManager`**, **`SKStoreProductManager`**: Privacy-preserving install attribution and App Store overlays/product views
+**`UserEventName`** — namespaced strings for `session.sendUserEvent(name:payload:)` (forwards events into the mounted ad iframes).
 
-### Dependency Injection
+### Internal organization
 
-**`DependencyContainer`** (`Utils/DependencyContainer.swift`) is the only place where concrete types are wired together. Tests inject mock implementations via the internal `AdsProvider.init(dependencies:)`.
+- `Sources/KontextSwiftSDK/` — public types (`KontextAds`, `Session`, `Ad`, `SessionOptions`, …) at the top.
+- `Sources/KontextSwiftSDK/Networking/` — `Init`, `Preload`, `ErrorCapture`, `DebugCapture`, `HTTPRetry`, DTOs in `DTO/`, request collectors in `Collectors/`. **Convention in `DTO/`**: wire-record structs carry the `*DTO` suffix (`MessageDTO`, `BidDTO`); single-string enums that type a single DTO field (`HardwareType`, `BatteryState`, `ScreenOrientation`, …) live next to their parent DTO without a suffix — the naming (`Type` / `State` / `Orientation`) already conveys wire vocabulary. Anything that *also* appears in the domain layer (e.g. `ImpressionTrigger`, shared by `Bid` and `BidDTO`) belongs in `Model/`, not here.
+- `Sources/KontextSwiftSDK/WebView/` — `AdWebView` + the JS `postMessage` bridge.
+- `Sources/KontextSwiftSDK/InlineAd/`, `InterstitialAd/` — UIKit ad views (`InlineAdUIView`, `InterstitialAdViewController`).
+- `Sources/KontextSwiftSDK/Model/` — Swift-side domain models (`Message`, `Bid`, `AdEvent`, `Character`, `Regulatory`, …).
+- `Sources/KontextSwiftSDK/Utils/` — `DependencyContainer` (the only place concrete types get wired), helpers.
 
-### Event System
+### Networking
 
-`AdsEvent` (`Model/AdsEvent.swift`) is a rich enum covering: `cleared`, `filled`, `noFill`, `adHeight`, `viewed`, `clicked`, `renderStarted`, `renderCompleted`, `error`, `videoStarted`, `videoCompleted`, `rewardGranted`, `event`.
+- `/init` (background, non-blocking at session start) — returns server-controlled flags: `enabled`, `preloadTimeout`, `reportErrors`, `reportDebug`. The two reporting flags gate **only the network leg** — local logging always runs.
+- `/preload` — POST with full device/app/message context after each user message (10 ms debounce).
+- `/error`, `/debug` — fire-and-forget telemetry, gated by the corresponding `/init` flag.
+- `HTTPRetry.fetch(...)` — single retry-wrapped fetch used for all calls. Backoff is exponential with an injectable `sleep` for tests (wall-clock timing assertions are flaky on CI).
+
+### Privacy & attribution
+
+The SDK does not vendor IDFA / ATT / StoreKit / OMID code directly. Those primitives live in **[KontextKit](https://github.com/kontextso/kontextkit-ios)**, a separate platform-utility package consumed by this SDK plus the iOS halves of `sdk-react-native` and `sdk-flutter`. The Package.swift / podspec here pull KontextKit transitively — publishers don't depend on it directly.
+
+If a primitive feels like it should be in this repo but lives in KontextKit, that's intentional. Things that touch Apple system APIs or carry IAB OMID certification go there; things specific to Kontext's wire protocol or this SDK's API surface stay here.
+
+### Dependency injection
+
+`Utils/DependencyContainer.swift` is the only place where concrete types are wired together. Tests inject mocks via the internal `init(dependencies:)` constructors.
+
+## Server-controlled telemetry
+
+The `/init` response gates two reporting legs **per-user**:
+
+- `reportErrors` (default `true`) — sends caught errors to `/error`.
+- `reportDebug` (default `false`) — sends debug events to `/debug`.
+
+Local logging (`print` + the publisher's `onDebugEvent` callback) always runs regardless — only the network leg is gated. Stable for the session's lifetime; recreating the session re-fetches `/init`.
 
 ## Release Process
 
-See `RELEASING.md` for full steps. In short:
-1. Branch `release/X.Y.Z` from `main`
-2. Update `CHANGELOG.md`, `KontextSwiftSDK.podspec` (`s.version`), and `SDKInfo.swift` (`sdkVersion`)
-3. PR to `main`
-4. Annotated tag: `git tag -a X.Y.Z -m "Release X.Y.Z"`
-5. Publish: `pod trunk push KontextSwiftSDK.podspec --allow-warnings`
+See `RELEASING.md` for the full flow. In short:
 
-Version strings must not have a `v` prefix (e.g., `2.0.0`, not `v2.0.0`).
+1. Branch `release/X.Y.Z` from `main`.
+2. Update `CHANGELOG.md`, `KontextSwiftSDK.podspec` (`s.version`), and `Sources/KontextSwiftSDK/SDKInfo.swift` (`sdkVersion`).
+3. PR to `main`, merge.
+4. Annotated tag: `git tag -a X.Y.Z -m "Release X.Y.Z"` and `git push origin X.Y.Z`.
+5. Publish: `pod trunk push KontextSwiftSDK.podspec --allow-warnings --use-libraries`.
+
+Version strings have no `v` prefix (`4.0.0`, not `v4.0.0`).
+
+## Conventions
+
+- **Swift 5.9**, iOS 14.0+. `StrictConcurrency` experimental feature is on — anything crossing actor boundaries must be `Sendable`.
+- **No comments** unless the *why* is non-obvious (hidden constraint, subtle invariant, workaround for a specific bug, behavior that would surprise a reader). Don't reference PRs or tickets in code.
+- **`@MainActor`-isolated** anything that touches UIKit or ATT. Bridges hop to MainActor explicitly.
+
+## Related repos
+
+- [kontextkit-ios](https://github.com/kontextso/kontextkit-ios) — shared iOS primitives this SDK depends on
+- [sdk-v4](https://github.com/kontextso/sdk-v4) — monorepo where v4 was developed before extraction
+- [sdk-kotlin](https://github.com/kontextso/sdk-kotlin) — Kotlin counterpart

@@ -1,47 +1,58 @@
-/// Information about regulatory requirements that apply to the request.
-public struct Regulatory: Sendable {
-    /// Flag that indicates whether or not the request is subject to GDPR regulations (0 = No, 1 = Yes, null = Unknown).
+/// Privacy / regulatory consent signals passed to the ad server.
+///
+/// Conformances are deliberately minimal:
+/// - `Sendable` — required: `Session.addMessage` is `async`, so options cross
+///   actor boundaries.
+/// - `Equatable` — convenience for publishers doing change-detection
+///   (e.g. `if newRegulatory != oldRegulatory { update() }`); auto-synthesized.
+///
+/// Not conformed to `Hashable` (no set/dict-key usage) or `Encodable`
+/// (encoding goes through `RegulatoryDTO`, not this type directly).
+public struct Regulatory: Sendable, Equatable {
+    /// GDPR applies flag: 1 = yes, 0 = no, omitted = unknown.
     public let gdpr: Int?
-    /// When GDPR regulations are in effect this attribute contains the Transparency and Consent Framework's Consent String data structure
-    ///
-    /// https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20Consent%20string%20and%20vendor%20list%20formats%20v2.md#about-the-transparency--consent-string-tc-string
+    /// IAB TCF v2 consent string.
     public let gdprConsent: String?
-    /// Flag whether the request is subject to COPPA (0 = No, 1 = Yes, null = Unknown).
-    ///
-    /// https://www.ftc.gov/legal-library/browse/rules/childrens-online-privacy-protection-rule-coppa
+    /// COPPA flag: 1 = child-directed, 0 = not, omitted = unknown.
     public let coppa: Int?
-    /// Global Privacy Platform (GPP) consent string.
-    ///
-    /// https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform
+    /// IAB Global Privacy Platform string.
     public let gpp: String?
-    /// List of the section(s) of the GPP string which should be applied for this transaction
+    /// GPP section IDs that apply to this transaction.
     public let gppSid: [Int]?
-    /// Communicates signals regarding consumer privacy under US privacy regulation under CCPA and LSPA.
-    ///
-    /// https://github.com/InteractiveAdvertisingBureau/USPrivacy/blob/master/CCPA/US%20Privacy%20String.md
+    /// IAB US Privacy string (CCPA / LSPA).
     public let usPrivacy: String?
 
-    /// Initializes a new Regulatory object.
-    /// - Parameters:
-    ///   - gdpr: Flag that indicates whether or not the request is subject to GDPR regulations (0 = No, 1 = Yes, null = Unknown).
-    ///   - gdprConsent: When GDPR regulations are in effect this attribute contains the Transparency and Consent Framework's Consent String data structure.
-    ///   - coppa: Flag whether the request is subject to COPPA (0 = No, 1 = Yes, null = Unknown).
-    ///   - usPrivacy: Communicates signals regarding consumer privacy under US privacy regulation under CCPA and LSPA.
-    ///   - gpp: Global Privacy Platform (GPP) consent string.
-    ///   - gppSid: List of the section(s) of the GPP string which should be applied for this transaction.
     public init(
         gdpr: Int? = nil,
         gdprConsent: String? = nil,
         coppa: Int? = nil,
-        usPrivacy: String? = nil,
         gpp: String? = nil,
-        gppSid: [Int]? = nil
+        gppSid: [Int]? = nil,
+        usPrivacy: String? = nil
     ) {
         self.gdpr = gdpr
         self.gdprConsent = gdprConsent
         self.coppa = coppa
-        self.usPrivacy = usPrivacy
         self.gpp = gpp
         self.gppSid = gppSid
+        self.usPrivacy = usPrivacy
+    }
+}
+
+// MARK: - Wire-format conversion
+
+extension Regulatory {
+    /// Converts to the `/preload`-bound `RegulatoryDTO`. Pure passthrough —
+    /// `Regulatory` and `RegulatoryDTO` have identical field names and
+    /// types; the two types exist only to separate domain from wire.
+    func toDTO() -> RegulatoryDTO {
+        RegulatoryDTO(
+            gdpr: gdpr,
+            gdprConsent: gdprConsent,
+            coppa: coppa,
+            gpp: gpp,
+            gppSid: gppSid,
+            usPrivacy: usPrivacy
+        )
     }
 }

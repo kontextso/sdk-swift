@@ -1,34 +1,51 @@
-import Foundation
-
-/// Provides necessary information for the AdsProvider about the message's content.
-/// - Either conform to this protocol
-public protocol MessageRepresentable: Sendable {
-    /// Unique ID of the message
-    var id: String { get }
-    /// Role of the author of the message (user or assistant)
-    var role: Role { get }
-    /// Text content of the message
-    var content: String { get }
-    /// Date of message creation
-    var createdAt: Date { get }
+/// A type that can be passed to `Session.addMessage()` as a message.
+///
+/// Conform your own message model to this protocol to skip the manual
+/// adapter step:
+///
+/// ```swift
+/// struct MyChatMessage {
+///     let id: UUID
+///     let role: String
+///     let body: String
+///     let sentAt: Date
+/// }
+///
+/// extension MyChatMessage: MessageRepresentable {
+///     var asKontextMessage: Message {
+///         Message(
+///             id: id.uuidString,
+///             role: role == "user" ? .user : .assistant,
+///             content: body,
+///             createdAt: sentAt
+///         )
+///     }
+/// }
+///
+/// for msg in chat.messages {
+///     session.addMessage(msg.asKontextMessage)
+/// }
+/// ```
+///
+/// `Message` itself conforms to `MessageRepresentable`, so callers can
+/// pass `Message` instances directly.
+public protocol MessageRepresentable {
+    /// Returns the Kontext-shaped message for the ad server.
+    var asKontextMessage: Message { get }
 }
 
-/// Protocol that provides a type that conforms to `MessageRepresentable`.
-/// - This can be useful if conforming to `MessageRepresentable` directly is not desired.
-/// - Ideally use with AdsMessage as the default type.
-public protocol MessageRepresentableProviding {
-    /// The message that provides necessary information for the AdsProvider and conforms to `MessageRepresentable`
-    var message: MessageRepresentable { get }
+extension Message: MessageRepresentable {
+    public var asKontextMessage: Message { self }
 }
 
-// MARK: Mapping
-extension MessageRepresentable {
-    func toModel() -> AdsMessage {
-        AdsMessage(
-            id: id,
-            role: role,
-            content: content,
-            createdAt: createdAt
-        )
+public extension Session {
+    /// Convenience overload that accepts any `MessageRepresentable`.
+    ///
+    /// - SeeAlso: ``addMessage(_:options:)``
+    func addMessage(
+        _ message: MessageRepresentable,
+        options: AddMessageOptions? = nil
+    ) {
+        addMessage(message.asKontextMessage, options: options)
     }
 }

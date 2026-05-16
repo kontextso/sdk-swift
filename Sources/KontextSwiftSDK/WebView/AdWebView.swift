@@ -1,247 +1,551 @@
-import Combine
-import OSLog
-import SwiftUI
+import Foundation
+import KontextKit
 import UIKit
 import WebKit
 
-/// Events targeted for AdWebView
-enum AdWebViewUpdateEvent {
-    case didPrepareUpdateDimensions(UpdateDimensionsIFrameDataDTO)
-}
+/// Native↔iframe bridge for a single ad. Owns the `WKWebView`, installs
+/// the postMessage handler + supporting user scripts (omsdk-v1.js,
+/// bridge, console-interceptor), enforces navigation policy via
+/// `WKNavigationDelegate` (cancels navigations on detached webviews to
+/// prevent orphaned OMID sessions during WebKit crash recovery),
+/// dispatches inbound iframe messages as typed `IframeEvent` values to
+/// the owning `Ad`, and sends host→iframe messages (`update-iframe`,
+/// `update-dimensions-iframe`).
+///
+/// Two flavours: inline (default) and interstitial (`isInterstitial: true`),
+/// the latter exposing `onComponentInitialized` / `onComponentDone`
+/// callbacks for `InterstitialAdViewController` lifecycle hooks.
+///
+/// See `IframeEvent` for the inbound vocabulary.
+@MainActor
+final class AdWebView: NSObject {
+    let webView: WKWebView
+    let ad: Ad
 
-// MARK: - AdWebView
+    /// Whether this is an interstitial (modal) web view.
+    let isInterstitial: Bool
 
-final class AdWebView: WKWebView {
-    private let webConfiguration = WKWebViewConfiguration()
-    private let updateIframeData: UpdateIFrameDTO?
-    private let eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>?
-    private let onIFrameEvent: (IframeEvent) -> Void
-    private let onOMEvent: (OMEvent) -> Void
+    /// Called when the interstitial component iframe is initialized.
+    var onComponentInitialized: (() -> Void)?
 
-    private var cancellables: Set<AnyCancellable> = []
-    private var scriptHandler: AdScriptMessageHandler?
-    private var hasEverHadWindow = false
+    /// Called when the interstitial component ad is done rendering.
+    var onComponentDone: (() -> Void)?
 
-    init(
-        frame: CGRect = .zero,
-        updateIframeData: UpdateIFrameDTO?,
-        eventPublisher: AnyPublisher<AdWebViewUpdateEvent, Never>? = nil,
-        onIFrameEvent: @escaping (IframeEvent) -> Void,
-        onOMEvent: @escaping (OMEvent) -> Void
-    ) {
-        self.eventPublisher = eventPublisher
-        self.onIFrameEvent = onIFrameEvent
-        self.onOMEvent = onOMEvent
+    /// Drops this AdWebView's registration on `Session.userEventSenders`.
+    /// Set in `init`, invoked from `deinit` so events stop being
+    /// forwarded to a teardown-bound iframe. `nonisolated(unsafe)`
+    /// because deinit reads it from a nonisolated context — the
+    /// property is set once in init (which runs on MainActor) and
+    /// the captured value is invoked back on MainActor via a Task,
+    /// so no concurrent access happens in practice.
+    private nonisolated(unsafe) var unregisterUserEventSender: (() -> Void)?
 
-        let contentController = WKUserContentController()
+    /// Latches `true` the first time the inner `WKWebView` enters a
+    /// window (flipped by `AdWKWebView.didMoveToWindow`). Used by
+    /// `decidePolicyFor` to distinguish two `window == nil` cases:
+    ///   - never attached yet → initial `load()`, allow
+    ///   - attached then detached → crash-recovery reload, cancel
+    ///
+    /// Mirrors v3's `hasEverHadWindow` on `AdWebView: WKWebView`
+    /// (origin/main). `internal private(set)` so tests can read the
+    /// flag without exposing a setter.
+    internal private(set) var hasEverHadWindow = false
 
-        if
-            let omsdkURL = Bundle.module.url(forResource: "omsdk-v1", withExtension: "js"),
-            let omsdkJS = try? String(contentsOf: omsdkURL, encoding: .utf8)
-        {
-            let omsdkScript = WKUserScript(
-                source: omsdkJS,
-                injectionTime: .atDocumentStart,
-                forMainFrameOnly: true
-            )
-            contentController.addUserScript(omsdkScript)
+    /// Name registered on `WKUserContentController` for native↔JS bridge.
+    /// Single source of truth — interpolated into the bridge + console
+    /// scripts (see `Self.bridgeScript` / `Self.consoleInterceptorScript`)
+    /// so a rename here propagates everywhere.
+    /// `nonisolated` because `deinit` (which references this) is not
+    /// MainActor-isolated; it's a String literal, so concurrent reads
+    /// are safe.
+    fileprivate nonisolated static let messageHandlerName = "kontextBridge"
+
+    init(ad: Ad, isInterstitial: Bool = false) {
+        self.isInterstitial = isInterstitial
+        self.ad = ad
+
+        let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true
+        if #available(iOS 15.0, *) {
+            config.upgradeKnownHostsToHTTPS = false
         }
 
-        let js = """
-        window.addEventListener('message', function(event) {
-            window.webkit.messageHandlers.iframeMessage.postMessage(event.data);
-        });
-        """
-        let userScript = WKUserScript(
-            source: js,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false
-        )
-        contentController.addUserScript(userScript)
-
+        let webView = AdWKWebView(frame: .zero, configuration: config)
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.isScrollEnabled = false
+        // Allow Safari Web Inspector to attach in debug builds. iOS
+        // 16.4+ hides WKWebView from the Develop menu unless the app
+        // explicitly opts in. Off in release builds for safety.
         #if DEBUG
-        let consoleJS = """
-        (function() {
-            var orig = console.log.bind(console);
-            console.log = function() {
-                var msg = Array.prototype.slice.call(arguments).join(' ');
-                if (msg.indexOf('[OMID]') !== -1) {
-                    window.webkit.messageHandlers.consoleLog.postMessage(msg);
-                }
-                orig.apply(console, arguments);
-            };
-        })();
-        """
-        let consoleScript = WKUserScript(
-            source: consoleJS,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false
-        )
-        contentController.addUserScript(consoleScript)
+        if #available(iOS 16.4, *) { webView.isInspectable = true }
         #endif
+        self.webView = webView
 
-        self.updateIframeData = updateIframeData
-        webConfiguration.allowsInlineMediaPlayback = true
-        webConfiguration.userContentController = contentController
+        super.init()
 
-        super.init(frame: frame, configuration: webConfiguration)
+        let handler = ScriptMessageHandler { [weak self] message in
+            self?.handleMessage(message)
+        }
+        webView.configuration.userContentController.add(handler, name: Self.messageHandlerName)
+        Self.injectUserScripts(
+            into: webView.configuration.userContentController,
+            adServerUrl: ad.session.config.adServerUrl
+        )
+        webView.navigationDelegate = self
 
-        isOpaque = false
-        backgroundColor = .clear
-        scrollView.isScrollEnabled = false
-        navigationDelegate = self
-
-        scriptHandler = AdScriptMessageHandler(adWebView: self)
-        if let scriptHandler {
-            configuration.userContentController.add(scriptHandler, name: "iframeMessage")
-            #if DEBUG
-            configuration.userContentController.add(scriptHandler, name: "consoleLog")
-            #endif
+        // Latch `hasEverHadWindow` the first time the WebView enters a
+        // window. `didMoveToWindow` fires on the main thread (UIView
+        // contract); AdWebView is `@MainActor`, so the assignment is
+        // safe. See `decidePolicyFor` for why this matters.
+        webView.onDidMoveToWindow = { [weak self] in
+            guard let self, webView.window != nil else { return }
+            self.hasEverHadWindow = true
         }
 
-        observeEvents()
-    }
+        // Give the Ad a reference to the web view for OM session creation
+        ad.currentWebView = webView
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        // Register as a recipient of `Session.sendUserEvent` broadcasts.
+        // The closure forwards into this iframe; the iframe filters by
+        // the `code` field so multi-placement scenarios stay
+        // independent. Mirrors sdk-js's `Ad.registerUserEventSender`.
+        unregisterUserEventSender = ad.session.registerUserEventSender { [weak self] event in
+            self?.sendMessage(event)
+        }
     }
 
     deinit {
-        scriptHandler = nil        
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        if window != nil {
-            hasEverHadWindow = true
+        // `removeScriptMessageHandler` is `@MainActor`-isolated, but
+        // `deinit` runs on whatever thread released the last strong ref.
+        // Hop to MainActor via Task instead of `assumeIsolated` — the
+        // latter would crash if a future caller ever holds AdWebView
+        // off-main. The captured `wv` keeps the WKWebView alive long
+        // enough for the cleanup to run.
+        let wv = webView
+        let name = Self.messageHandlerName
+        let unregister = unregisterUserEventSender
+        Task { @MainActor in
+            wv.configuration.userContentController.removeScriptMessageHandler(forName: name)
+            unregister?()
         }
     }
 
-    override func removeFromSuperview() {
-        stopLoading()
-        super.removeFromSuperview()
-        webConfiguration.userContentController
-            .removeScriptMessageHandler(forName: "iframeMessage")
-        #if DEBUG
-        webConfiguration.userContentController
-            .removeScriptMessageHandler(forName: "consoleLog")
-        #endif
-    }
+    // MARK: - Loading
 
-    func loadAd(from url: URL) {
-        load(URLRequest(url: url))
-    }
-}
-
-// MARK: - Events
-
-private extension AdWebView {
-    func observeEvents() {
-        eventPublisher?
-            .sink { [weak self] event in
-                switch event {
-                case .didPrepareUpdateDimensions(let data):
-                    self?.sendUpdateIframe(data: data)
-                }
-            }
-            .store(in: &cancellables)
-    }
-
-    func sendIframeEvent(event: IframeEvent) {
-        switch event {
-        case .initIframe:
-            sendUpdateIframe(data: updateIframeData)
-        default:
-            break
+    func load() {
+        guard let urlString = ad.iframeUrl, let url = URL(string: urlString) else {
+            debug("no URL to load")
+            return
         }
-        onIFrameEvent(event)
+        debug("loading URL: \(url)")
+        webView.load(URLRequest(url: url))
     }
 
-    func sendUpdateIframe<T: Encodable>(data: T?) {
-        guard let data else {
+    /// Loads a specific URL (used by `InterstitialAdViewController` for modal URLs).
+    func loadURL(_ url: URL) {
+        debug("loading interstitial URL: \(url)")
+        webView.load(URLRequest(url: url))
+    }
+
+    fileprivate func debug(_ msg: String) {
+        ad.session.config.onDebugEvent?("AdWebView: \(msg)", nil)
+    }
+
+    // MARK: - Message Handling
+
+    private func handleMessage(_ body: Any) {
+        guard let dict = body as? [String: Any],
+              let type = dict["type"] as? String else {
+            ad.session.config.onDebugEvent?("AdWebView: inbound-message-unparseable", nil)
             return
         }
 
-        do {
-            let data = try JSONEncoder().encode(data)
-            guard let jsonString = String(data: data, encoding: .utf8) else {
-                throw EncodingError.invalidValue(
-                    data,
-                    EncodingError.Context(
-                        codingPath: [],
-                        debugDescription: "Failed to convert Data to String"
-                    )
-                )
-            }
-            // Post the message to the iframe
-            let javascript = "window.postMessage(\(jsonString), '*');"
-            evaluateJavaScript(javascript, completionHandler: nil)
-        } catch {
-            os_log(.error, "[Ad]: Failed to postMessage with error: \(error)")
+        // Log every inbound postMessage with its wire type so a missing
+        // handler (or a missing message type from the iframe entirely)
+        // is observable via `onDebugEvent`. Suppress the `_console`
+        // chatter since the interceptor pipes those separately.
+        if type != "_console" {
+            ad.session.config.onDebugEvent?("AdWebView: inbound-message", [
+                "messageId": ad.messageId,
+                "type": type,
+            ])
         }
+
+        switch type {
+        case "_console":
+            handleConsoleMessage(dict)
+        case "init-iframe":
+            handleInitIframeMessage()
+        case "resize-iframe":
+            handleResizeMessage(dict)
+        case "event-iframe":
+            handleEventMessage(dict)
+        case "show-iframe":
+            ad.handleIframeEvent(.showIframe)
+        case "hide-iframe":
+            ad.handleIframeEvent(.hideIframe)
+        case "click-iframe":
+            handleClickMessage(dict)
+        case "ad-done-iframe":
+            handleAdDoneIframeMessage(dict)
+        case "error-iframe":
+            handleErrorIframeMessage()
+        case "open-component-iframe":
+            handleOpenComponentMessage(dict)
+        case "init-component-iframe":
+            ad.handleIframeEvent(.initComponentIframe)
+            onComponentInitialized?()
+        case "close-component-iframe":
+            ad.handleIframeEvent(.closeComponentIframe)
+        case "error-component-iframe":
+            handleErrorComponentMessage(dict)
+        case "ad-done-component-iframe":
+            ad.handleIframeEvent(.adDoneComponentIframe)
+            onComponentDone?()
+        case "open-skoverlay-iframe":
+            handleOpenSKOverlayMessage(dict)
+        case "close-skoverlay-iframe":
+            ad.handleIframeEvent(.closeSKOverlayIframe)
+        default:
+            break
+        }
+    }
+
+    // MARK: - Sending Messages to Iframe
+
+    private func sendUpdateIframe() {
+        let preload = ad.session.preload(messageId: ad.messageId)
+        let messages = preload?.messages.map { $0.toDTO() } ?? []
+
+        var otherParams: [String: String] = [:]
+        if let theme = ad.theme {
+            otherParams["theme"] = theme
+        }
+
+        let payload = UpdateIframeMessageDTO(
+            data: .init(
+                messages: messages,
+                sdk: SDKInfo.current.name,
+                messageId: ad.messageId,
+                otherParams: otherParams,
+                code: ad.code
+            )
+        )
+        postPayloadToIframe(payload)
+    }
+
+    /// Sends a dimension update to the iframe.
+    ///
+    /// Called periodically (every 200ms) by `InlineAdUIView` to report the
+    /// container's position and size for viewport-based ad optimization.
+    func sendDimensionUpdate(_ update: DimensionUpdate) {
+        postPayloadToIframe(UpdateDimensionsIframeMessageDTO(data: update))
+    }
+
+    /// Sends a typed `UserEvent` into the iframe as the
+    /// `user-event-iframe` wire message. Pairs with
+    /// `Session.registerUserEventSender`. The wrapper is fully typed;
+    /// the publisher-supplied `payload` is encoded via
+    /// `AnyJSONEncodable` so the envelope still goes through
+    /// `JSONEncoder`.
+    func sendMessage(_ event: UserEvent) {
+        postPayloadToIframe(UserEventIframeMessageDTO(
+            name: event.name,
+            payload: event.payload,
+            code: event.code
+        ))
+    }
+
+    // MARK: - Bridge Script
+
+    /// JavaScript bridge that forwards iframe `postMessage` calls to the
+    /// native handler. The expected origin is hardcoded to the SDK's
+    /// configured `adServerUrl` rather than read from
+    /// `window.location.origin`, so the check stays anchored to the
+    /// ad-server identity even if the WKWebView ever loads a different
+    /// page (defence-in-depth — the navigation policy should already
+    /// prevent that).
+    ///
+    /// Architecture context: WKWebView loads an ad-server page whose
+    /// iframe contains banner content (potentially third-party). The
+    /// banner's nested iframes can't directly postMessage to the host
+    /// without going through the same-origin ad-server frame, so the
+    /// origin check filters out third-party traffic.
+    fileprivate static func bridgeScript(adServerUrl: URL) -> String {
+        let origin = canonicalOrigin(of: adServerUrl)
+        return """
+        (function() {
+            var expectedOrigin = '\(origin)';
+            var loggedOrigins = {};
+            window.addEventListener('message', function(event) {
+                if (event.origin !== expectedOrigin) {
+                    if (!loggedOrigins[event.origin]) {
+                        loggedOrigins[event.origin] = true;
+                        window.webkit.messageHandlers.\(messageHandlerName).postMessage({
+                            type: '_console',
+                            message: '[kontext] bridge dropped message from origin ' + event.origin + ' (expected ' + expectedOrigin + ')'
+                        });
+                    }
+                    return;
+                }
+                try {
+                    var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                    if (data && data.type && data.type.indexOf('-iframe') !== -1) {
+                        window.webkit.messageHandlers.\(messageHandlerName).postMessage(data);
+                    }
+                } catch(e) {
+                    // Surface bridge errors via the same `_console` channel the
+                    // console interceptor uses, so the SDK's `onDebugEvent`
+                    // callback can see iframe-side parse failures instead of
+                    // silently dropping them.
+                    window.webkit.messageHandlers.\(messageHandlerName).postMessage({
+                        type: '_console',
+                        message: '[kontext] bridge parse error: ' + (e && e.message ? e.message : String(e))
+                    });
+                }
+            });
+        })();
+        """
+    }
+
+    /// Canonical `scheme://host[:port]` form, matching the browser's
+    /// `event.origin` / `URL.origin` semantics:
+    ///   - Scheme and host are lowercased (RFC: both case-insensitive).
+    ///   - Default ports are stripped (`:443` for https, `:80` for http) —
+    ///     `URL.port` returns the explicit port even when it's the
+    ///     scheme's default, but `event.origin` always omits them.
+    ///   - Path / query / fragment / userinfo are dropped.
+    ///
+    /// Swift's `URL.absoluteString` is NOT spec-compliant — it returns the
+    /// input string verbatim — so a strict equality check against
+    /// `event.origin` breaks under common publisher configurations.
+    /// Mirrors sdk-js's `new URL(adServerUrl).origin`.
+    static func canonicalOrigin(of url: URL) -> String {
+        guard let scheme = url.scheme?.lowercased(),
+              let host = url.host?.lowercased()
+        else { return url.absoluteString }
+        let isDefaultPort = (scheme == "https" && url.port == 443) ||
+                            (scheme == "http" && url.port == 80)
+        if let port = url.port, !isDefaultPort {
+            return "\(scheme)://\(host):\(port)"
+        }
+        return "\(scheme)://\(host)"
+    }
+}
+
+// MARK: - Per-message Handlers
+
+private extension AdWebView {
+    func handleConsoleMessage(_ dict: [String: Any]) {
+        let msg = dict["message"] as? String ?? ""
+        debug(msg)
+    }
+
+    func handleInitIframeMessage() {
+        sendUpdateIframe()
+        ad.handleIframeEvent(.initIframe)
+    }
+
+    func handleResizeMessage(_ dict: [String: Any]) {
+        let data = dict["data"] as? [String: Any] ?? dict
+        guard let resize = IframeEvent.ResizeData.from(dict: data) else { return }
+        ad.handleIframeEvent(.resizeIframe(resize))
+    }
+
+    func handleEventMessage(_ dict: [String: Any]) {
+        let data = dict["data"] as? [String: Any] ?? dict
+        ad.handleIframeEvent(.eventIframe(.from(dict: data)))
+    }
+
+    func handleClickMessage(_ dict: [String: Any]) {
+        let data = dict["data"] as? [String: Any] ?? dict
+        ad.handleIframeEvent(.clickIframe(.from(dict: data)))
+    }
+
+    func handleAdDoneIframeMessage(_ dict: [String: Any]) {
+        let data = dict["data"] as? [String: Any] ?? dict
+        ad.handleIframeEvent(.adDoneIframe(.from(dict: data)))
+    }
+
+    func handleOpenComponentMessage(_ dict: [String: Any]) {
+        let data = dict["data"] as? [String: Any] ?? dict
+        ad.handleIframeEvent(.openComponentIframe(.from(dict: data)))
+    }
+
+    func handleErrorComponentMessage(_ dict: [String: Any]) {
+        let data = dict["data"] as? [String: Any] ?? dict
+        ad.handleIframeEvent(.errorComponentIframe(.from(dict: data)))
+    }
+
+    func handleOpenSKOverlayMessage(_ dict: [String: Any]) {
+        let data = dict["data"] as? [String: Any] ?? dict
+        ad.handleIframeEvent(.openSKOverlayIframe(.from(dict: data)))
+    }
+
+    func handleErrorIframeMessage() {
+        ad.handleIframeEvent(.errorIframe)
+        ad.destroy()
+    }
+}
+
+// MARK: - Iframe postMessage helper
+
+private extension AdWebView {
+    /// Encodes a typed `Encodable` payload via `JSONEncoder` and forwards
+    /// it to the iframe via `window.postMessage(...)`. On encoding
+    /// failure (a real bug in our DTOs) the message is dropped and the
+    /// failure is surfaced via `onDebugEvent` instead of being lost.
+    func postPayloadToIframe<T: Encodable>(_ payload: T) {
+        guard let data = try? JSONEncoder().encode(payload),
+              let json = String(data: data, encoding: .utf8) else {
+            debug("postMessage encoding failed for \(T.self)")
+            return
+        }
+        let origin = Self.canonicalOrigin(of: ad.session.config.adServerUrl)
+        webView.evaluateJavaScript("window.postMessage(\(json), '\(origin)');", completionHandler: nil)
+    }
+}
+
+// MARK: - User Script Injection
+
+private extension AdWebView {
+    static func injectUserScripts(
+        into controller: WKUserContentController,
+        adServerUrl: URL
+    ) {
+        injectOMSDKScript(into: controller)
+        injectBridgeScript(into: controller, adServerUrl: adServerUrl)
+        injectConsoleInterceptorScript(into: controller)
+    }
+
+    static func injectOMSDKScript(into controller: WKUserContentController) {
+        // Inject omsdk-v1.js at document start (before any ad content loads).
+        // The script is bundled with KontextKit so all iOS SDKs share it.
+        guard let omsdkJS = OMManager.omsdkScript() else { return }
+        controller.addUserScript(WKUserScript(
+            source: omsdkJS,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
+    }
+
+    static func injectBridgeScript(
+        into controller: WKUserContentController,
+        adServerUrl: URL
+    ) {
+        controller.addUserScript(WKUserScript(
+            source: bridgeScript(adServerUrl: adServerUrl),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        ))
+    }
+
+    static func injectConsoleInterceptorScript(into controller: WKUserContentController) {
+        let source = """
+        (function() {
+            var _log = console.log;
+            console.log = function() {
+                var msg = Array.prototype.slice.call(arguments).join(' ');
+                if (msg.indexOf('[kontext') !== -1 || msg.indexOf('[OMID') !== -1) {
+                    window.webkit.messageHandlers.\(messageHandlerName).postMessage({type:'_console', message: msg});
+                }
+                _log.apply(console, arguments);
+            };
+        })();
+        """
+        controller.addUserScript(WKUserScript(
+            source: source,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        ))
     }
 }
 
 // MARK: - WKNavigationDelegate
 
 extension AdWebView: WKNavigationDelegate {
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        // Cancel navigation only after the view has been in a window and was then removed —
-        // this blocks WebKit's crash-recovery reload that fires ~6s after the WebContent process
-        // is terminated post-ad.cleared. We allow navigations before the view has ever been
-        // attached to a window (initial load), since load() may be called before the view
-        // enters the hierarchy.
-        guard window != nil || !hasEverHadWindow else {
+    /// Cancels navigations on a detached `WKWebView` **only after the
+    /// view has been in a window at least once**. Two cases this guard
+    /// has to balance:
+    ///
+    /// 1. **Initial load before attach**: `AdWebView.load()` may be
+    ///    called while the host view is still being constructed — e.g.
+    ///    a `UITableViewCell` dequeued and configured before
+    ///    `tableView` inserts it, or a publisher creating an
+    ///    `InlineAdUIView` in `viewDidLoad` before `addSubview`. The
+    ///    `decidePolicyFor` callback fires asynchronously; in fast
+    ///    paths the view is attached by then, but it's not guaranteed.
+    ///    Cancelling this load silently drops the iframe URL with no
+    ///    retry — must allow.
+    ///
+    /// 2. **WebKit crash-recovery reload after teardown**: the
+    ///    WebContent process exits; ~6 s later WebKit attempts a
+    ///    reload to recover, even though the view is gone. This
+    ///    re-attaches an OMID session to a detached WebView (the
+    ///    orphan-mount issue from v3 OMID certification work). Must
+    ///    cancel.
+    ///
+    /// The discriminator is `hasEverHadWindow`. Mirrors v3
+    /// (`origin/main:AdWebView.swift:194`):
+    ///
+    /// ```swift
+    /// guard window != nil || !hasEverHadWindow else {
+    ///     decisionHandler(.cancel); return
+    /// }
+    /// ```
+    ///
+    /// The closure attributes `@MainActor @Sendable` exactly mirror
+    /// the protocol declaration. Without them this method only
+    /// "nearly matches" the optional requirement — Swift never wires
+    /// it as the delegate callback, so the orphan-mount check is
+    /// silently bypassed.
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction,
+        decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void
+    ) {
+        if webView.window == nil && hasEverHadWindow {
             decisionHandler(.cancel)
             return
         }
         decisionHandler(.allow)
     }
+}
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        onOMEvent(.didStart(webView, url))
+// MARK: - WKWebView subclass with window-lifecycle hook
+
+/// Internal `WKWebView` subclass that exposes `didMoveToWindow` as a
+/// closure callback. v3 `AdWebView` subclassed `WKWebView` directly
+/// and overrode `didMoveToWindow` to flip `hasEverHadWindow`; v4
+/// `AdWebView` uses composition (it's an `NSObject` wrapping a
+/// `WKWebView`), so the lifecycle hook can't be overridden the same
+/// way. This subclass restores the hook without forcing every host
+/// view to remember to call a method.
+private final class AdWKWebView: WKWebView {
+    /// Invoked from `didMoveToWindow`. Set on the main thread (init);
+    /// fires on the main thread (UIView lifecycle).
+    var onDidMoveToWindow: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onDidMoveToWindow?()
     }
 }
 
-// MARK: - AdScriptMessageHandler
+// MARK: - Script Message Handler (prevents retain cycle)
 
-private let consoleLogFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.dateFormat = "HH:mm:ss.SSS"
-    return f
-}()
+private final class ScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    let handler: (Any) -> Void
 
-private final class AdScriptMessageHandler: NSObject, WKScriptMessageHandler {
-    private weak var adWebView: AdWebView?
-
-    init(adWebView: AdWebView) {
-        self.adWebView = adWebView
-        super.init()
+    init(handler: @escaping (Any) -> Void) {
+        self.handler = handler
     }
 
     func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
-        #if DEBUG
-        if message.name == "consoleLog", let msg = message.body as? String {
-            print("[\(consoleLogFormatter.string(from: Date()))] [WebView] \(msg)")
-            return
-        }
-        #endif
-
-        guard
-            message.name == "iframeMessage",
-            let adWebView
-        else {
-            return
-        }
-
-        do {
-            let event = try IframeEvent(fromJSON: message.body)
-            adWebView.sendIframeEvent(event: event)
-        } catch {
-            os_log(.error, "[Ad]: iframeMessage failed to decode with error: \(error)")
-        }
+        handler(message.body)
     }
 }

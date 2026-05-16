@@ -1,39 +1,41 @@
 // swift-tools-version: 5.9
-
 import PackageDescription
 
 let package = Package(
     name: "KontextSwiftSDK",
-    platforms: [.iOS(.v14)],
+    platforms: [
+        .iOS(.v14)
+    ],
     products: [
         .library(
             name: "KontextSwiftSDK",
             targets: ["KontextSwiftSDK"]
-        ),
+        )
+    ],
+    dependencies: [
+        // Pre-1.0 KontextKit: pin exact. Once KontextKit hits 1.0, switch to from: "1.0.0".
+        // Matches the strictness of KontextSwiftSDK.podspec's exact `'0.0.4'` pin so SPM
+        // and CocoaPods consumers resolve to the same KontextKit version.
+        .package(url: "https://github.com/kontextso/kontextkit-ios.git", exact: "0.0.4"),
     ],
     targets: [
         .target(
             name: "KontextSwiftSDK",
-            dependencies: ["OMSDK_Kontextso"],
+            dependencies: [
+                .product(name: "KontextKit", package: "kontextkit-ios"),
+            ],
+            path: "Sources/KontextSwiftSDK",
             resources: [
                 .copy("PrivacyInfo.xcprivacy"),
-                .copy("OMSDK/omsdk-v1.js")
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
-            ],
-            linkerSettings: [
-                .linkedFramework("AdSupport"),
-                .linkedFramework("AppTrackingTransparency"),
             ]
         ),
-        .binaryTarget(
-            name: "OMSDK_Kontextso",
-            path: "Frameworks/OMSDK_Kontextso.xcframework"
-        ),
         .testTarget(
-            name: "KontextAdsTests",
-            dependencies: ["KontextSwiftSDK"]
+            name: "KontextSwiftSDKTests",
+            dependencies: ["KontextSwiftSDK"],
+            path: "Tests/KontextSwiftSDKTests"
         )
     ]
 )

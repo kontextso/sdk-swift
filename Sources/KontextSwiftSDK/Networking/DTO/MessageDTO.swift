@@ -1,19 +1,13 @@
-import Foundation
-
-struct MessageDTO: Codable, Hashable {
-    /// Unique ID of the message
+/// A single conversation message in the `/preload` body.
+///
+/// `role` is the strict `Message.Role` enum (`user` / `assistant`) —
+/// the server's enum also allows `'system'`, but that case is reserved
+/// for server-generated system prompts and is not exposed in the
+/// publisher API. `createdAt` is a pre-formatted ISO 8601 string with
+/// millisecond precision (see `DateFormatting`).
+struct MessageDTO: Encodable, Sendable {
     let id: String
-    /// Role of the author of the message (user or assistant)
-    let role: RoleDTO
-    /// Content of the message
+    let role: Message.Role
     let content: String
-    /// Timestamp when the message was created
-    let createdAt: Date
-
-    init(from model: AdsMessage) {
-        id = model.id
-        role = RoleDTO(from: model.role)
-        content = model.content
-        createdAt = model.createdAt
-    }
+    let createdAt: String
 }

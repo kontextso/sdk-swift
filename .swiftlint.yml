@@ -1,0 +1,83 @@
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+
+line_length:
+  warning: 150
+  error: 200
+
+type_body_length:
+  # Test fixture files (e.g. PreloadResponseDecodingTests) legitimately
+  # carry many small @Test functions and outgrow 300 lines.
+  warning: 400
+  error: 600
+
+file_length:
+  # Generous limit — a class with rich domain logic organized via private
+  # extensions in the same file (e.g. Ad.swift) outgrows 500 quickly without
+  # the file becoming hard to navigate. Bumped from 1000 to accommodate the
+  # per-handler debug instrumentation on `Ad.swift` (logging every iframe
+  # protocol event via `onDebugEvent`) — splitting that surface across
+  # files would scatter the iframe state-machine for no readability win.
+  warning: 1100
+  error: 1100
+
+function_body_length:
+  # 80-line warning (was 60) accommodates handlers that thread debug
+  # logging through every code path — `Ad.handleEventIframe` switches
+  # on N event names and logs both the entry and the missing-fields-drop
+  # in the `ad.viewed` branch.
+  warning: 80
+  error: 100
+
+cyclomatic_complexity:
+  # Allow up to 20: thin dispatchers over wire-protocol enums (e.g. AdWebView
+  # postMessage handler) and exhaustive test helpers naturally exceed 15.
+  warning: 20
+  error: 25
+
+disabled_rules:
+  - trailing_comma
+  - identifier_name
+  - type_name
+  - nesting
+  # TODOs are intentional reminders we want to keep visible in source —
+  # flagging every commit that adds one is noise.
+  - todo
+  # Fires when a `// swiftlint:disable:next` directive sits between a
+  # `///` doc comment and its declaration. We use that pattern to
+  # suppress unused_declaration on TODO-pending scaffolding.
+  - orphaned_doc_comment
+  # Tests legitimately use try!/as!/!. The simple force-* rules don't
+  # support per-rule path excludes, so they're off globally.
+  - force_cast
+  - force_try
+  # JSON DTOs use Bool? to faithfully encode/decode optional API fields —
+  # the wire format may omit the key, so an enum is not a substitute.
+  - discouraged_optional_boolean
+
+opt_in_rules:
+  - closure_end_indentation
+  - closure_spacing
+  - contains_over_first_not_nil
+  - empty_count
+  - empty_string
+  - redundant_nil_coalescing
+  - implicit_optional_initialization
+  - sorted_imports
+  - unneeded_parentheses_in_closure_argument
+
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+custom_rules:
+  no_print_in_sdk:
+    name: "Use os_log or the onDebugEvent callback instead of print"
+    regex: '\bprint\s*\('
+    match_kinds:
+      - identifier
+    severity: warning
