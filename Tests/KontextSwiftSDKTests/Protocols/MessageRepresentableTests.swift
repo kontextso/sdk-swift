@@ -102,7 +102,8 @@ struct MessageRepresentableTests {
             vendorId: nil,
             requestTrackingAuthorization: false,
             onEvent: nil,
-            onDebugEvent: nil
+            onDebugEvent: nil,
+            installId: "00000000-0000-7000-8000-000000000000"
         )
         return Session(config: config)
     }

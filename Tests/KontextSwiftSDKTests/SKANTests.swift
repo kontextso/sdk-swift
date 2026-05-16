@@ -79,7 +79,8 @@ struct SKANTests {
             vendorId: nil,
             requestTrackingAuthorization: false,
             onEvent: nil,
-            onDebugEvent: nil
+            onDebugEvent: nil,
+            installId: "00000000-0000-7000-8000-000000000000"
         )
         return Session(config: config, dependencies: makeDependencies(skanManager: skanManager))
     }
@@ -153,7 +154,8 @@ struct SKANTests {
             vendorId: nil,
             requestTrackingAuthorization: false,
             onEvent: { events.append($0) },
-            onDebugEvent: nil
+            onDebugEvent: nil,
+            installId: "00000000-0000-7000-8000-000000000000"
         )
         let session = Session(config: config, dependencies: makeDependencies(skanManager: skanManager))
         let ad = Ad(session: session, messageId: "a1", options: nil, omManager: MockOMManager())

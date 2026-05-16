@@ -29,7 +29,8 @@ struct MutablePublisherOptionsTests {
             vendorId: vendorId,
             requestTrackingAuthorization: false,
             onEvent: nil,
-            onDebugEvent: nil
+            onDebugEvent: nil,
+            installId: "00000000-0000-7000-8000-000000000000"
         )
     }
 
@@ -143,7 +144,8 @@ struct MutablePublisherOptionsTests {
             vendorId: nil,
             requestTrackingAuthorization: false,
             onEvent: nil,
-            onDebugEvent: { name, _ in box.names.append(name) }
+            onDebugEvent: { name, _ in box.names.append(name) },
+            installId: "00000000-0000-7000-8000-000000000000"
         ))
 
         session.updateOptions(MutablePublisherOptions(variantId: "v1"))
