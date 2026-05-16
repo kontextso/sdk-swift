@@ -96,6 +96,7 @@ struct DTOEncodingTests {
         let dto = PreloadRequestDTO(
             publisherToken: "pub-123",
             userId: "user-1",
+            installId: "01890000-0000-7000-8000-000000000000",
             conversationId: "conv-1",
             enabledPlacementCodes: ["inlineAd"],
             messages: [],
@@ -119,6 +120,7 @@ struct DTOEncodingTests {
         let dto = PreloadRequestDTO(
             publisherToken: "pub-123",
             userId: "user-1",
+            installId: "01890000-0000-7000-8000-000000000000",
             conversationId: "conv-1",
             enabledPlacementCodes: ["inlineAd"],
             messages: [],
@@ -530,6 +532,7 @@ struct DTOEncodingTests {
         let dto = InitRequestDTO(
             publisherToken: "pub-123",
             userId: "user-1",
+            installId: "01890000-0000-7000-8000-000000000000",
             sdk: SDKDTO(name: "sdk-swift", platform: "ios", version: "4.0.0"),
             app: InitRequestDTO.AppMetadata(bundleId: "com.example.myapp", version: "1.2.3"),
             skan: InitRequestDTO.SKANItems(items: ["abc123.skadnetwork", "def456.skadnetwork"])
@@ -558,6 +561,7 @@ struct DTOEncodingTests {
         let dto = InitRequestDTO(
             publisherToken: "pub-123",
             userId: "user-1",
+            installId: "01890000-0000-7000-8000-000000000000",
             sdk: SDKDTO(name: "sdk-swift", platform: "ios", version: "4.0.0"),
             app: InitRequestDTO.AppMetadata(bundleId: "com.example.myapp", version: "1.2.3"),
             skan: InitRequestDTO.SKANItems(items: [])
@@ -575,6 +579,7 @@ struct DTOEncodingTests {
         let dto = InitRequestDTO(
             publisherToken: "pub-123",
             userId: "user-1",
+            installId: "01890000-0000-7000-8000-000000000000",
             sdk: SDKDTO(name: "sdk-swift", platform: "ios", version: "4.0.0"),
             app: InitRequestDTO.AppMetadata(bundleId: "", version: ""),
             skan: InitRequestDTO.SKANItems(items: [])
