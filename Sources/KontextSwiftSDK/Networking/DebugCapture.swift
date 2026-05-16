@@ -11,6 +11,7 @@ struct DebugContext: Sendable {
     let publisherToken: String?
     let conversationId: String?
     let userId: String?
+    let installId: String?
     let sessionId: String?
 
     init(
@@ -18,12 +19,14 @@ struct DebugContext: Sendable {
         publisherToken: String? = nil,
         conversationId: String? = nil,
         userId: String? = nil,
+        installId: String? = nil,
         sessionId: String? = nil
     ) {
         self.adServerUrl = adServerUrl
         self.publisherToken = publisherToken
         self.conversationId = conversationId
         self.userId = userId
+        self.installId = installId
         self.sessionId = sessionId
     }
 }
@@ -72,6 +75,7 @@ enum DebugCapture {
                 publisherToken: context.publisherToken,
                 conversationId: context.conversationId,
                 userId: context.userId,
+                installId: context.installId,
                 sessionId: context.sessionId,
                 sdk: SDKInfo.current.toDTO()
             )

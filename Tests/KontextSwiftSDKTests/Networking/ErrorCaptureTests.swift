@@ -197,6 +197,7 @@ struct ErrorCaptureTests {
                 publisherToken: "tok",
                 conversationId: "conv",
                 userId: "usr",
+                installId: "01890000-0000-7000-8000-000000000000",
                 bidId: "bid",
                 sdk: SDKInfo.current.toDTO()
             )
@@ -212,6 +213,7 @@ struct ErrorCaptureTests {
         #expect(additionalData?["publisherToken"] as? String == "tok")
         #expect(additionalData?["conversationId"] as? String == "conv")
         #expect(additionalData?["userId"] as? String == "usr")
+        #expect(additionalData?["installId"] as? String == "01890000-0000-7000-8000-000000000000")
         #expect(additionalData?["bidId"] as? String == "bid")
 
         let sdk = additionalData?["sdk"] as? [String: Any]
@@ -231,6 +233,7 @@ struct ErrorCaptureTests {
                 publisherToken: nil,
                 conversationId: nil,
                 userId: nil,
+                installId: nil,
                 bidId: nil,
                 sdk: SDKInfo.current.toDTO()
             )

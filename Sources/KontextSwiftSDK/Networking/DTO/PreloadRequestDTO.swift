@@ -15,6 +15,8 @@ import Foundation
 struct PreloadRequestDTO: Encodable, Sendable {
     let publisherToken: String
     let userId: String
+    /// Per-install identifier (UUID v7), persistent across launches and conversations.
+    let installId: String
     let conversationId: String
     let enabledPlacementCodes: [String]
     let messages: [MessageDTO]
@@ -40,6 +42,7 @@ struct PreloadRequestDTO: Encodable, Sendable {
     init(
         publisherToken: String,
         userId: String,
+        installId: String,
         conversationId: String,
         enabledPlacementCodes: [String],
         messages: [MessageDTO],
@@ -56,6 +59,7 @@ struct PreloadRequestDTO: Encodable, Sendable {
     ) {
         self.publisherToken = publisherToken
         self.userId = userId
+        self.installId = installId
         self.conversationId = conversationId
         self.enabledPlacementCodes = enabledPlacementCodes
         self.messages = messages

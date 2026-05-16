@@ -60,6 +60,7 @@ enum Init {
         let body = InitRequestDTO(
             publisherToken: config.publisherToken,
             userId: config.userId,
+            installId: config.installId,
             sdk: SDKInfo.current.toDTO(),
             app: InitRequestDTO.AppMetadata(
                 bundleId: appInfo.bundleId,
@@ -140,7 +141,8 @@ enum Init {
             adServerUrl: config.adServerUrl,
             publisherToken: config.publisherToken,
             conversationId: config.conversationId,
-            userId: config.userId
+            userId: config.userId,
+            installId: config.installId
         ))
     }
 }

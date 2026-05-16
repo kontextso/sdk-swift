@@ -174,6 +174,7 @@ final class Preload {
         return PreloadRequestDTO(
             publisherToken: config.publisherToken,
             userId: config.userId,
+            installId: config.installId,
             conversationId: config.conversationId,
             enabledPlacementCodes: config.enabledPlacementCodes,
             messages: messages.map { $0.toDTO() },
@@ -323,7 +324,8 @@ final class Preload {
             adServerUrl: config.adServerUrl,
             publisherToken: config.publisherToken,
             conversationId: config.conversationId,
-            userId: config.userId
+            userId: config.userId,
+            installId: config.installId
         ), reportEnabled: params.reportErrors)
 
         // Include the underlying error in the in-band event so the

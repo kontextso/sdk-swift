@@ -10,6 +10,7 @@ struct ErrorContext: Sendable {
     let publisherToken: String?
     let conversationId: String?
     let userId: String?
+    let installId: String?
     let bidId: String?
 
     init(
@@ -17,12 +18,14 @@ struct ErrorContext: Sendable {
         publisherToken: String? = nil,
         conversationId: String? = nil,
         userId: String? = nil,
+        installId: String? = nil,
         bidId: String? = nil
     ) {
         self.adServerUrl = adServerUrl
         self.publisherToken = publisherToken
         self.conversationId = conversationId
         self.userId = userId
+        self.installId = installId
         self.bidId = bidId
     }
 }
@@ -105,6 +108,7 @@ enum ErrorCapture {
                 publisherToken: context?.publisherToken,
                 conversationId: context?.conversationId,
                 userId: context?.userId,
+                installId: context?.installId,
                 bidId: context?.bidId,
                 sdk: SDKInfo.current.toDTO()
             )

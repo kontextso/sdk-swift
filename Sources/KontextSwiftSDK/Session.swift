@@ -495,6 +495,7 @@ public final class Session {
             publisherToken: config.publisherToken,
             conversationId: config.conversationId,
             userId: config.userId,
+            installId: config.installId,
             bidId: bidId?.uuidString.lowercased()
         ), reportEnabled: reportErrors)
     }
@@ -564,6 +565,7 @@ public final class Session {
             publisherToken: config.publisherToken,
             conversationId: config.conversationId,
             userId: config.userId,
+            installId: config.installId,
             sessionId: sessionId?.uuidString.lowercased()
         ))
     }

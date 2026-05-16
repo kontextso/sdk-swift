@@ -143,6 +143,7 @@ struct DebugCaptureTests {
                 publisherToken: "tok",
                 conversationId: "conv",
                 userId: "usr",
+                installId: "01890000-0000-7000-8000-000000000000",
                 sessionId: "sess",
                 sdk: SDKInfo.current.toDTO()
             )
@@ -158,6 +159,7 @@ struct DebugCaptureTests {
         #expect(additionalData?["publisherToken"] as? String == "tok")
         #expect(additionalData?["conversationId"] as? String == "conv")
         #expect(additionalData?["userId"] as? String == "usr")
+        #expect(additionalData?["installId"] as? String == "01890000-0000-7000-8000-000000000000")
         #expect(additionalData?["sessionId"] as? String == "sess")
 
         let sdk = additionalData?["sdk"] as? [String: Any]
@@ -176,6 +178,7 @@ struct DebugCaptureTests {
                 publisherToken: nil,
                 conversationId: nil,
                 userId: nil,
+                installId: nil,
                 sessionId: nil,
                 sdk: SDKInfo.current.toDTO()
             )

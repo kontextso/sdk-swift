@@ -10,6 +10,8 @@
 struct InitRequestDTO: Encodable, Sendable {
     let publisherToken: String
     let userId: String
+    /// Per-install identifier (UUID v7), persistent across launches and conversations.
+    let installId: String
     let sdk: SDKDTO
     let app: AppMetadata
     let skan: SKANItems

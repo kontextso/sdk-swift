@@ -25,6 +25,8 @@ struct DebugRequestDTO: Encodable, Sendable {
         let publisherToken: String?
         let conversationId: String?
         let userId: String?
+        /// Per-install identifier (UUID v7).
+        let installId: String?
         let sessionId: String?
         let sdk: SDKDTO
     }

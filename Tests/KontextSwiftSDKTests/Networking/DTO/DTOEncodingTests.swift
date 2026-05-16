@@ -18,6 +18,7 @@ struct DTOEncodingTests {
         let dto = PreloadRequestDTO(
             publisherToken: "pub-123",
             userId: "user-1",
+            installId: "01890000-0000-7000-8000-000000000000",
             conversationId: "conv-1",
             enabledPlacementCodes: ["inlineAd"],
             messages: [MessageDTO(id: "m1", role: .user, content: "Hello", createdAt: "2024-01-01T00:00:00.000Z")],
@@ -36,6 +37,7 @@ struct DTOEncodingTests {
         #expect(dict != nil)
         #expect(dict?["publisherToken"] as? String == "pub-123")
         #expect(dict?["userId"] as? String == "user-1")
+        #expect(dict?["installId"] as? String == "01890000-0000-7000-8000-000000000000")
         #expect(dict?["conversationId"] as? String == "conv-1")
         #expect((dict?["enabledPlacementCodes"] as? [String])?.first == "inlineAd")
         #expect((dict?["messages"] as? [[String: Any]])?.count == 1)
@@ -48,6 +50,7 @@ struct DTOEncodingTests {
         let dto = PreloadRequestDTO(
             publisherToken: "pub-123",
             userId: "user-1",
+            installId: "01890000-0000-7000-8000-000000000000",
             conversationId: "conv-1",
             enabledPlacementCodes: ["inlineAd"],
             messages: [MessageDTO(id: "m1", role: .user, content: "Hello", createdAt: "2024-01-01T00:00:00.000Z")],

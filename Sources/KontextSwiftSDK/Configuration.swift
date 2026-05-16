@@ -1,4 +1,5 @@
 import Foundation
+import KontextKit
 
 /// Fully-resolved SDK configuration.
 ///
@@ -30,6 +31,14 @@ public struct ResolvedConfig: Sendable {
     public let requestTrackingAuthorization: Bool
     public let onEvent: AdEventHandler?
     public let onDebugEvent: DebugEventHandler?
+    /// SDK-managed per-install identifier (UUID v7), persisted in
+    /// `UserDefaults` by `InstallIdProvider`. Sent on every `/init`,
+    /// `/preload`, `/error`, and `/debug` request so the server can key
+    /// pacing / frequency caps / per-install diagnostics to a stable
+    /// identity independent of `conversationId` or `userId`. Not exposed
+    /// on `SessionOptions` or `MutablePublisherOptions` — publishers
+    /// neither set nor override it.
+    public let installId: String
 }
 
 /// Resolves raw publisher options into an immutable `ResolvedConfig`.
@@ -60,6 +69,7 @@ func resolveConfig(_ options: SessionOptions) -> ResolvedConfig {
         vendorId: options.vendorId,
         requestTrackingAuthorization: options.requestTrackingAuthorization,
         onEvent: options.onEvent,
-        onDebugEvent: options.onDebugEvent
+        onDebugEvent: options.onDebugEvent,
+        installId: InstallIdProvider.getOrCreate()
     )
 }
