@@ -15,7 +15,7 @@ struct SDKInfo: Sendable {
 
     /// Current SDK version in Major.Minor.Patch format.
     /// Bump on every release; keep in sync with the podspec when one is added.
-    static let sdkVersion = "4.0.0"
+    static let sdkVersion = "4.0.1"
 
     /// SDK identifier sent in the `sdk` field of `/preload` and `/init`.
     static let sdkName = "sdk-swift"

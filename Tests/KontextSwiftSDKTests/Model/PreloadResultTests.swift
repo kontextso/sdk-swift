@@ -56,9 +56,9 @@ struct PreloadResultTests {
     // MARK: - .failure
 
     @Test func failureWithReasonOnly() {
-        let result: PreloadResult = .failure(reason: "No fill", event: nil, disableSession: false)
+        let result: PreloadResult = .failure(reason: "No fill", event: nil, disableSession: false, sessionId: nil)
 
-        guard case .failure(let reason, let event, let disable) = result else {
+        guard case .failure(let reason, let event, let disable, _) = result else {
             Issue.record("Expected failure")
             return
         }
@@ -71,9 +71,9 @@ struct PreloadResultTests {
         // Server returned a skip with an event payload — the SDK forwards
         // the event to the publisher's onEvent handler.
         let event: AdEvent = .noFill(.init(skipCode: "frequency_cap"))
-        let result: PreloadResult = .failure(reason: "Skipped", event: event, disableSession: false)
+        let result: PreloadResult = .failure(reason: "Skipped", event: event, disableSession: false, sessionId: nil)
 
-        guard case .failure(_, let extractedEvent, _) = result else {
+        guard case .failure(_, let extractedEvent, _, _) = result else {
             Issue.record("Expected failure")
             return
         }
@@ -83,9 +83,9 @@ struct PreloadResultTests {
     @Test func failureWithDisableSession() {
         // Server permanently disabled the session — the SDK should stop
         // sending preload requests.
-        let result: PreloadResult = .failure(reason: "Publisher disabled", event: nil, disableSession: true)
+        let result: PreloadResult = .failure(reason: "Publisher disabled", event: nil, disableSession: true, sessionId: nil)
 
-        guard case .failure(let reason, _, let disable) = result else {
+        guard case .failure(let reason, _, let disable, _) = result else {
             Issue.record("Expected failure")
             return
         }

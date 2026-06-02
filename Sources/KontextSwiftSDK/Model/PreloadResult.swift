@@ -21,5 +21,13 @@ enum PreloadResult: Sendable {
     /// that should be forwarded to the publisher's `onEvent` handler.
     /// `disableSession` indicates the server flagged this session as
     /// permanently disabled and no further preloads should be attempted.
-    case failure(reason: String, event: AdEvent?, disableSession: Bool)
+    ///
+    /// `sessionId` carries the server session id when the response included
+    /// one — skip / no-fill / ads-disabled responses return a sessionId too,
+    /// and `Session` must persist it from any of them. Otherwise a session
+    /// that only ever skips (trackOnly / frequency-capped) never captures a
+    /// sessionId, sends an empty one every request, and the server mints a
+    /// fresh session each time. `nil` for the genuinely empty cases (network
+    /// / decode failure, 204, or a body without one).
+    case failure(reason: String, event: AdEvent?, disableSession: Bool, sessionId: UUID?)
 }

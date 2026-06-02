@@ -255,7 +255,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, let event, let disableSession) = result else {
+        guard case .failure(let reason, let event, let disableSession, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -285,7 +285,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, let event, let disableSession) = result else {
+        guard case .failure(let reason, let event, let disableSession, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -296,6 +296,52 @@ struct PreloadFetchTests {
             return
         }
         #expect(data.skipCode == "no_inventory")
+    }
+
+    @Test func skipFailureCarriesServerSessionId() async {
+        // The server returns a sessionId on skip / ads-disabled responses;
+        // it must reach the failure so Session can persist it.
+        let sessionId = UUID()
+        let body = """
+        {
+          "sessionId": "\(sessionId.uuidString)",
+          "bids": [],
+          "skip": true,
+          "skipCode": "ads_disabled"
+        }
+        """
+        PreloadStubProtocol.reset()
+        PreloadStubProtocol.script = [.ok(body)]
+        let session = makeStubbedSession()
+
+        let result = await makePreload().requestAd(params: makeParams(isDisabled: true), session: session)
+
+        guard case .failure(_, _, _, let returnedSessionId) = result else {
+            Issue.record("Expected failure, got \(result)")
+            return
+        }
+        #expect(returnedSessionId == sessionId)
+    }
+
+    @Test func noFillFailureCarriesServerSessionId() async {
+        let sessionId = UUID()
+        let body = """
+        {
+          "sessionId": "\(sessionId.uuidString)",
+          "bids": []
+        }
+        """
+        PreloadStubProtocol.reset()
+        PreloadStubProtocol.script = [.ok(body)]
+        let session = makeStubbedSession()
+
+        let result = await makePreload().requestAd(params: makeParams(), session: session)
+
+        guard case .failure(_, _, _, let returnedSessionId) = result else {
+            Issue.record("Expected failure, got \(result)")
+            return
+        }
+        #expect(returnedSessionId == sessionId)
     }
 
     // MARK: - Error path (server-side, in 200 body)
@@ -314,7 +360,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, let event, let disableSession) = result else {
+        guard case .failure(let reason, let event, let disableSession, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -341,7 +387,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, let event, let disableSession) = result else {
+        guard case .failure(let reason, let event, let disableSession, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -367,7 +413,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, let event, let disableSession) = result else {
+        guard case .failure(let reason, let event, let disableSession, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -390,7 +436,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, _, _) = result else {
+        guard case .failure(let reason, _, _, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -407,7 +453,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, _, _) = result else {
+        guard case .failure(let reason, _, _, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -423,7 +469,7 @@ struct PreloadFetchTests {
 
         let result = await makePreload().requestAd(params: makeParams(), session: session)
 
-        guard case .failure(let reason, _, _) = result else {
+        guard case .failure(let reason, _, _, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }
@@ -462,7 +508,7 @@ struct PreloadFetchTests {
         // case blocks on the 15s+ request timeout.
         #expect(elapsed < 10.0, "cancel should abort fast, took \(elapsed)s")
 
-        guard case .failure(let reason, let event, let disableSession) = result else {
+        guard case .failure(let reason, let event, let disableSession, _) = result else {
             Issue.record("Expected failure, got \(result)")
             return
         }

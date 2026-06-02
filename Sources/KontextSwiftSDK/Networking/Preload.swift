@@ -103,7 +103,7 @@ final class Preload {
         // Validate before request
         if messages.isEmpty {
             debug(params.config, "no-messages", ["messages": messages])
-            return .failure(reason: "No messages", event: nil, disableSession: false)
+            return .failure(reason: "No messages", event: nil, disableSession: false, sessionId: nil)
         }
 
         isRunning = true
@@ -229,7 +229,8 @@ final class Preload {
             return .failure(
                 reason: "No content",
                 event: .noFill(.init(skipCode: "unfilled_bid")),
-                disableSession: false
+                disableSession: false,
+                sessionId: nil
             )
         }
 
@@ -255,7 +256,8 @@ final class Preload {
             return .failure(
                 reason: "No bids in response",
                 event: .noFill(.init(skipCode: "unfilled_bid")),
-                disableSession: false
+                disableSession: false,
+                sessionId: sessionId
             )
         }
         return .success(bids: bids, sessionId: sessionId)
@@ -269,7 +271,8 @@ final class Preload {
             return .failure(
                 reason: "Session is disabled",
                 event: .error(.init(message: "Session is disabled", errCode: errCode ?? "session_disabled")),
-                disableSession: true
+                disableSession: true,
+                sessionId: jsonResponse.sessionId
             )
         }
 
@@ -277,7 +280,8 @@ final class Preload {
         return .failure(
             reason: "Ad generation skipped",
             event: .error(.init(message: "Ad generation skipped", errCode: errCode ?? "unknown")),
-            disableSession: false
+            disableSession: false,
+            sessionId: jsonResponse.sessionId
         )
     }
 
@@ -286,7 +290,8 @@ final class Preload {
         return .failure(
             reason: "Ad generation skipped",
             event: .noFill(.init(skipCode: jsonResponse.skipCode ?? "unknown")),
-            disableSession: false
+            disableSession: false,
+            sessionId: jsonResponse.sessionId
         )
     }
 
@@ -316,7 +321,7 @@ final class Preload {
 
         if isCancellation {
             debug(config, "cancelled")
-            return .failure(reason: "Cancelled", event: nil, disableSession: false)
+            return .failure(reason: "Cancelled", event: nil, disableSession: false, sessionId: nil)
         }
 
         debug(config, "error-preloading-ads", ["error": error])
@@ -335,7 +340,8 @@ final class Preload {
         return .failure(
             reason: "Error preloading ads",
             event: .error(.init(message: message, errCode: "request_failed")),
-            disableSession: false
+            disableSession: false,
+            sessionId: nil
         )
     }
 }
