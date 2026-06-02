@@ -638,7 +638,15 @@ public final class Session {
 
             updateBids()
 
-        case .failure(_, let event, let disableSession):
+        case .failure(_, let event, let disableSession, let newSessionId):
+            // Persist the server sessionId even on skip / no-fill / ads-disabled
+            // responses. Without this a session that never fills (trackOnly /
+            // frequency-capped) sends an empty sessionId every request and the
+            // server mints a fresh session each time. Guarded — a response
+            // without a sessionId never clears a previously stored one.
+            if let newSessionId {
+                sessionId = newSessionId
+            }
             if disableSession {
                 disabled = true
                 // Ensure publisher always sees ad.error when a preload

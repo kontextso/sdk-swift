@@ -82,7 +82,7 @@ struct PreloadTests {
         let preload = Preload(messages: [])
         let result = await preload.requestAd(params: makeParams())
 
-        if case .failure(let reason, _, _) = result {
+        if case .failure(let reason, _, _, _) = result {
             #expect(reason == "No messages")
         } else {
             Issue.record("Expected failure for empty messages")
@@ -96,7 +96,7 @@ struct PreloadTests {
         // Connecting to 0.0.0.0:1 should fail
         let result = await preload.requestAd(params: makeParams())
 
-        if case .failure(let reason, _, _) = result {
+        if case .failure(let reason, _, _, _) = result {
             #expect(reason == "Error preloading ads")
         } else {
             Issue.record("Expected failure for network error")

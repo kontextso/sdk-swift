@@ -47,7 +47,7 @@ struct RetryTests {
         let preload = Preload(messages: messages)
         let result = await preload.requestAd(params: makeParams())
 
-        if case .failure(let reason, _, _) = result {
+        if case .failure(let reason, _, _, _) = result {
             #expect(reason == "Error preloading ads")
         } else {
             Issue.record("Expected failure after retries")

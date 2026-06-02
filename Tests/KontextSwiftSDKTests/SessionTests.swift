@@ -354,7 +354,8 @@ struct SessionTests {
         session.applyPreloadResult(.failure(
             reason: "test-disable",
             event: nil,
-            disableSession: true
+            disableSession: true,
+            sessionId: nil
         ))
 
         #expect(session.disabled)
@@ -408,12 +409,53 @@ struct SessionTests {
         session.applyPreloadResult(.failure(
             reason: "test-disable",
             event: serverEvent,
-            disableSession: true
+            disableSession: true,
+            sessionId: nil
         ))
 
         #expect(session.disabled)
         #expect(received.values.count == 1)
         #expect(received.values.first == serverEvent)
+    }
+
+    @Test func applyPreloadResultStoresSessionIdFromFailure() {
+        // The server returns a sessionId on skip / no-fill responses; Session
+        // must persist it even though the result is a .failure, so later
+        // preloads reuse it instead of minting a new server session.
+        let session = makeSession()
+        let sid = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
+
+        session.applyPreloadResult(.failure(
+            reason: "skip",
+            event: .noFill(.init(skipCode: "ads_disabled")),
+            disableSession: false,
+            sessionId: sid
+        ))
+
+        #expect(session.sessionId == sid)
+    }
+
+    @Test func applyPreloadResultFailureWithoutSessionIdDoesNotClearStoredOne() {
+        // Defensive: a later response that omits a sessionId must not wipe a
+        // previously stored one (guarded `if let` in applyPreloadResult).
+        let session = makeSession()
+        let sid = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
+
+        session.applyPreloadResult(.failure(
+            reason: "skip",
+            event: .noFill(.init(skipCode: "ads_disabled")),
+            disableSession: false,
+            sessionId: sid
+        ))
+        #expect(session.sessionId == sid)
+
+        session.applyPreloadResult(.failure(
+            reason: "skip",
+            event: .noFill(.init(skipCode: "ads_disabled")),
+            disableSession: false,
+            sessionId: nil
+        ))
+        #expect(session.sessionId == sid)
     }
 
     // MARK: - emitEvent

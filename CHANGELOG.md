@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.0.1
+
+Fix the server `sessionId` being dropped on skip / no-fill / ads-disabled / error preload responses.
+
+* `Session` now persists the `sessionId` the server returns on skip / no-fill / ads-disabled / error responses, not only on filled ones. Previously the id was captured only from a filled (`.success`) preload, so a session that never filled — `trackOnly`, frequency-capped, or no-fill — sent an empty `sessionId` on every request and the server minted a fresh session each time, resetting per-session pacing / frequency capping / RTB bid cache. `PreloadResult.failure` now carries the `sessionId`, and `Session.applyPreloadResult` stores it; the update is guarded, so a response without a `sessionId` never clears a previously stored one. No public API changes.
+
 ## 4.0.0
 ### Breaking
 Complete API redesign. The `AdsProvider`-centric model from v1–v2 is replaced by a session/ad pattern: `KontextAds.createSession(...)` returns a `Session`, you feed messages via `session.addMessage(...)`, then create one `Ad` per assistant message via `session.createAd(messageId:)`. Render with `InlineAdUIView` (UIKit). See https://docs.kontext.so/sdk/ios for the integration guide.
