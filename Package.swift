@@ -16,7 +16,7 @@ let package = Package(
         // Pre-1.0 KontextKit: pin exact. Once KontextKit hits 1.0, switch to from: "1.0.0".
         // Matches the strictness of KontextSwiftSDK.podspec's exact `'0.0.4'` pin so SPM
         // and CocoaPods consumers resolve to the same KontextKit version.
-        .package(url: "https://github.com/kontextso/kontextkit-ios.git", exact: "0.0.4"),
+        .package(url: "https://github.com/kontextso/kontextkit-ios.git", exact: "0.1.0"),
     ],
     targets: [
         .target(

@@ -441,16 +441,24 @@ struct DTOEncodingTests {
     }
 
     @Test func networkDTOOmitsNilOptionalFields() {
-        // type is required; carrier/detail/userAgent are honestly nullable
-        // (Wi-Fi has no carrier, iOS 16+ never has carrier, WKWebView eval
-        // can fail, detail is cellular-only).
-        let dto = NetworkDTO(type: .wifi)
+        // Every field is nullable and omitted when nil: type detection was
+        // removed (KontextKit 0.1.0), Wi-Fi / iOS 16+ never has a carrier,
+        // detail is no longer collected, and the WKWebView user-agent eval
+        // can fail.
+        let dto = NetworkDTO(userAgent: "TestAgent/1.0")
 
         let dict = encodeToDict(dto)
-        #expect(dict?["type"] as? String == "wifi")
+        #expect(dict?["type"] == nil)
         #expect(dict?["carrier"] == nil)
         #expect(dict?["detail"] == nil)
-        #expect(dict?["userAgent"] == nil)
+        #expect(dict?["userAgent"] as? String == "TestAgent/1.0")
+    }
+
+    @Test func networkDTOOmitsNilType() {
+        // `type` detection was removed; the collector sends it as nil, so
+        // the `type` key must be absent (not `null`) on the wire.
+        let dict = encodeToDict(NetworkDTO(userAgent: "UA/1.0"))
+        #expect(dict?["type"] == nil)
     }
 
     // MARK: - Enum rawValue spelling

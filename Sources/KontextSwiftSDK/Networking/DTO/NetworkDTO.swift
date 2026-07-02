@@ -1,18 +1,19 @@
 /// Network connectivity information. Server treats every field as
-/// optional, but KontextKit's `NetworkInfoProvider` always classifies
-/// `type` (falling back to `.other` when the connection is unknown,
-/// or after a 100ms `NWPathMonitor` timeout). The other three are
-/// honestly optional: iOS 16+ never has a `carrier` (CTCarrier removed),
+/// optional. On-device `type` detection was removed in KontextKit 0.1.0
+/// (it relied on an `NWPathMonitor` read that could double-resume its
+/// continuation and crash the app), and the ad server does not use `type`
+/// for ad selection — so `type` is optional and currently always nil.
+/// `carrier` is likewise always nil on iOS 16+ (CTCarrier removed),
 /// `userAgent` requires a `WKWebView` eval that can fail, and `detail`
-/// is only present on cellular.
+/// is no longer collected.
 struct NetworkDTO: Encodable, Sendable {
-    let type: NetworkType
+    let type: NetworkType?
     let carrier: String?
     let detail: String?
     let userAgent: String?
 
     init(
-        type: NetworkType,
+        type: NetworkType? = nil,
         carrier: String? = nil,
         detail: String? = nil,
         userAgent: String? = nil

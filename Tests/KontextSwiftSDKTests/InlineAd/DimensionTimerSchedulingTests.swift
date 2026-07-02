@@ -39,9 +39,7 @@ struct DimensionTimerSchedulingTests {
         // This is the pattern `InlineAdUIView.startDimensionTimer` uses.
         // The runloop will be driven in `.tracking` mode only — if the
         // timer was registered with `.common` (which encompasses
-        // tracking), it must fire. The 0.05s interval inside a 0.25s
-        // window gives ~5 expected fires; `>= 2` keeps the assert robust
-        // against scheduler jitter.
+        // tracking), it must fire.
         var fireCount = 0
         let timer = Timer(timeInterval: 0.05, repeats: true) { _ in
             fireCount += 1
@@ -49,7 +47,16 @@ struct DimensionTimerSchedulingTests {
         RunLoop.main.add(timer, forMode: .common)
         defer { timer.invalidate() }
 
-        _ = RunLoop.main.run(mode: trackingMode, before: Date(timeIntervalSinceNow: 0.25))
+        // Pump the tracking-mode run loop in short slices until the timer
+        // has fired enough times or a generous deadline passes. A single
+        // `run(mode:before:)` call handles only one pass and can return
+        // after zero or one fire depending on scheduler load (flaky on a
+        // loaded CI host), so drive it in a loop; `>= 2` keeps the assert
+        // meaningful without depending on exact fire count.
+        let deadline = Date(timeIntervalSinceNow: 2.0)
+        while fireCount < 2, Date() < deadline {
+            RunLoop.main.run(mode: trackingMode, before: Date(timeIntervalSinceNow: 0.05))
+        }
 
         #expect(fireCount >= 2, "Timer added to .common must fire while runloop is in .tracking")
     }

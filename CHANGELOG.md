@@ -1,6 +1,11 @@
 # Changelog
 
-## 4.0.1
+## 4.0.2
+
+Fix a production crash during network-type collection and stop sending `network.type`.
+
+* Bump KontextKit to `0.1.0`, which removes on-device `network.type` detection. It resolved the type by bridging `NWPathMonitor.pathUpdateHandler` into a `CheckedContinuation`, but that handler is not one-shot — a second callback (on flapping / constrained networks) resumed the continuation twice and crashed the app (`EXC_BREAKPOINT`). This ran on every `/preload`, so at scale it was a high-volume production crash. The ad server does not use `network.type` for ad selection, so the value is removed rather than guarded.
+* `NetworkDTO.type` is now optional and sent as `null` (previously it coerced an unknown type to `.other`). `detail` is no longer collected. `userAgent` — the one field the server consumes — is unchanged. No public API changes.
 
 Fix the server `sessionId` being dropped on skip / no-fill / ads-disabled / error preload responses.
 
