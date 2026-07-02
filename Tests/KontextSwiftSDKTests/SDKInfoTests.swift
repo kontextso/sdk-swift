@@ -8,7 +8,7 @@ struct SDKInfoTests {
         let sdk = SDKInfo.current
         #expect(sdk.name == "sdk-swift")
         #expect(sdk.platform == "ios")
-        #expect(sdk.version == "4.0.1")
+        #expect(sdk.version == "4.0.2")
     }
 
     // MARK: - toDTO()
@@ -28,6 +28,6 @@ struct SDKInfoTests {
 
         #expect(dto.name == "sdk-swift")
         #expect(dto.platform == "ios")
-        #expect(dto.version == "4.0.1")
+        #expect(dto.version == "4.0.2")
     }
 }

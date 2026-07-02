@@ -66,10 +66,13 @@ enum DeviceCollector {
     /// WKWebView warmup, every subsequent call is near-instant.
     static func collectAsync() async -> DeviceDTO {
         let net = await NetworkInfoProvider.collect()
+        // KontextKit 0.1.0 removed on-device network-type detection (an
+        // `NWPathMonitor` read that could double-resume and crash the app);
+        // `net.type` is now nil, so we forward no `network.type` — the ad
+        // server doesn't use it for ad selection. `detail` went with it.
         let networkDTO = NetworkDTO(
-            type: NetworkType(rawValue: net.type) ?? .other,
+            type: net.type.flatMap(NetworkType.init(rawValue:)),
             carrier: net.carrier,
-            detail: net.detail,
             userAgent: net.userAgent
         )
 
