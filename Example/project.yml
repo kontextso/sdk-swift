@@ -26,3 +26,23 @@ targets:
         SWIFT_VERSION: "5.9"
         PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example-uikit
         TARGETED_DEVICE_FAMILY: "1"
+    scheme:
+      testTargets:
+        - ExampleSKANTests
+
+  # Option 1 (SKAN Testing doc): Apple StoreKit Test harness. App-hosted XCTest
+  # so it can link StoreKitTest.framework and run SKAdTestSession on a device.
+  ExampleSKANTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - ExampleSKANTests
+    dependencies:
+      - target: Example
+      - sdk: StoreKitTest.framework
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        PRODUCT_BUNDLE_IDENTIFIER: so.kontext.example-uikit.skantests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TARGETED_DEVICE_FAMILY: "1"
