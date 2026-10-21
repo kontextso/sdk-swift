@@ -17,5 +17,5 @@ Pod::Spec.new do |spec|
     spec.resource_bundles     = { 'KontextSwiftSDKPrivacy' => ['Sources/KontextSwiftSDK/PrivacyInfo.xcprivacy'] }
 
     # Pre-1.0 KontextKit: pin exact. Once KontextKit hits 1.0, switch to `~> 1.0`.
-    spec.dependency 'KontextKit', '0.1.0'
+    spec.dependency 'KontextKit/OMSDK', '0.2.0'
 end

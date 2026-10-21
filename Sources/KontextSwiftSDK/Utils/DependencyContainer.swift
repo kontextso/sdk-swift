@@ -1,4 +1,5 @@
 import KontextKit
+import KontextKitOM
 
 /// Holds shared dependencies for a single session lifecycle.
 ///

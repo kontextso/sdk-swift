@@ -1,5 +1,6 @@
 import Foundation
 import KontextKit
+import KontextKitOM
 
 /// A winning bid returned by the ad server for a specific placement.
 ///

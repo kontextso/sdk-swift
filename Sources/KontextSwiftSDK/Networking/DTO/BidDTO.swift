@@ -1,5 +1,6 @@
 import Foundation
 import KontextKit
+import KontextKitOM
 
 /// Wire-format bid as decoded from the `/preload` response.
 /// Convert to the SDK-internal `Bid` domain type via `toBid()`.

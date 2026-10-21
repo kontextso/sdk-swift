@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KontextKit
+import KontextKitOM
 
 /// Bid assignment: links a Preload to the assistant message it was assigned to.
 private struct AssignedBid {
