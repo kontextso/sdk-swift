@@ -1,4 +1,5 @@
 import Combine
+import KontextKitOM
 import UIKit
 
 /// A UIKit view that renders an inline ad for a given message.

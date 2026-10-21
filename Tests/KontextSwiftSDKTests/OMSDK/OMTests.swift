@@ -1,5 +1,6 @@
 import Foundation
 import KontextKit
+import KontextKitOM
 @testable import KontextSwiftSDK
 import Testing
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Take Open Measurement from KontextKit's new `KontextKitOM` product.
+
+* Bump KontextKit to `0.2.0`, which splits Open Measurement into its own product so that SDKs without OMID (sdk-swift-video) no longer link the OMSDK xcframework. This SDK keeps measuring with OMID: it depends on both `KontextKit` and `KontextKitOM` (CocoaPods: `KontextKit/OMSDK`) and imports `KontextKitOM` in the files that use `OMManager`, `OMSession` and `OMCreativeType`. No behaviour change, no public API changes.
+
 ## 4.0.2
 
 Fix a production crash during network-type collection and stop sending `network.type`.
